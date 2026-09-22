@@ -2,6 +2,7 @@ import { state, setSession } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, logo, svg } from '../core/utils.js';
 import { go } from '../core/router.js';
+import { shouldShowAppSetup } from '../core/pwa.js';
 
 export function renderAuth() {
   const app = document.getElementById('app');
@@ -95,7 +96,8 @@ async function submitAuth(event) {
     setSession(data.session_token, data.user);
     status.className = 'request-status ok';
     status.textContent = data.recovered ? 'Akun ditemukan. Session dipulihkan.' : 'Berhasil.';
-    go(data.user.profile_complete ? 'setup' : 'profile');
+    if (!data.user.profile_complete) go('profile');
+    else go(shouldShowAppSetup() ? 'setup' : 'dashboard');
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = esc(err.message);

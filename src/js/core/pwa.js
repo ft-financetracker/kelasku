@@ -1,6 +1,9 @@
 import { state } from './state.js';
 import { C, toast, isStandalone } from './utils.js';
-import { writeBool } from './storage.js';
+import { readBool, writeBool } from './storage.js';
+
+const SETUP_DONE_KEY = 'kelasku_app_setup_completed';
+const PWA_INSTALLED_KEY = 'kelasku_pwa_installed';
 
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
@@ -14,6 +17,38 @@ export async function registerServiceWorker() {
   }
 }
 
+export function getAppSetupState() {
+  const installed = isStandalone() || readBool(PWA_INSTALLED_KEY);
+  const notificationPermission = 'Notification' in window
+    ? Notification.permission
+    : 'unsupported';
+  const completed = readBool(SETUP_DONE_KEY);
+
+  return { installed, notificationPermission, completed };
+}
+
+/**
+ * Setup adalah status PERANGKAT, bukan status login user.
+ * Sekali user memilih selesai/lewati, login berikutnya langsung Dashboard.
+ */
+export function shouldShowAppSetup() {
+  const setup = getAppSetupState();
+  if (setup.completed) return false;
+
+  // Recovery untuk user versi lama yang sudah install + izinkan notif,
+  // tetapi flag setup belum sempat tersimpan.
+  if (setup.installed && setup.notificationPermission === 'granted') {
+    writeBool(SETUP_DONE_KEY, true);
+    return false;
+  }
+
+  return true;
+}
+
+export function completeAppSetup() {
+  writeBool(SETUP_DONE_KEY, true);
+}
+
 export function initInstallCapture() {
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
@@ -22,9 +57,10 @@ export function initInstallCapture() {
   });
 
   window.addEventListener('appinstalled', async () => {
-    writeBool('kelasku_pwa_installed', true);
+    writeBool(PWA_INSTALLED_KEY, true);
     toast('KelasKu berhasil dipasang.');
     if ('Notification' in window && Notification.permission === 'granted') {
+      writeBool(SETUP_DONE_KEY, true);
       await showSystemNotification(
         'KelasKu siap digunakan',
         'Aplikasi sudah terpasang. Informasi kelasmu kini lebih mudah diakses.',
@@ -37,7 +73,7 @@ export function initInstallCapture() {
 
 export async function installPWA() {
   if (isStandalone()) {
-    writeBool('kelasku_pwa_installed', true);
+    writeBool(PWA_INSTALLED_KEY, true);
     toast('KelasKu sudah terpasang.');
     return true;
   }
@@ -50,7 +86,16 @@ export async function installPWA() {
   state.installPrompt.prompt();
   const choice = await state.installPrompt.userChoice;
   state.installPrompt = null;
-  return choice.outcome === 'accepted';
+
+  if (choice.outcome === 'accepted') {
+    // appinstalled biasanya ikut terpanggil, marker ini menjadi fallback cepat.
+    writeBool(PWA_INSTALLED_KEY, true);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      writeBool(SETUP_DONE_KEY, true);
+    }
+    return true;
+  }
+  return false;
 }
 
 export async function enableNotifications() {
@@ -61,9 +106,12 @@ export async function enableNotifications() {
 
   const permission = await Notification.requestPermission();
   if (permission === 'granted') {
+    toast('Notifikasi KelasKu aktif.');
+    const setup = getAppSetupState();
+    if (setup.installed) writeBool(SETUP_DONE_KEY, true);
     await showSystemNotification(
       'Notifikasi KelasKu aktif',
-      'Pengumuman dan informasi penting bisa tampil di perangkatmu selama aplikasi aktif.',
+      'Pengumuman, jadwal, dan informasi penting siap muncul di perangkat ini.',
       '#dashboard',
       'notification-enabled'
     );
@@ -71,22 +119,26 @@ export async function enableNotifications() {
   return permission;
 }
 
-export async function showSystemNotification(title, body, hash = '#dashboard', tag = 'kelasku-info') {
+export async function showSystemNotification(title, body, url = '#dashboard', tag = '') {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const reg = state.swReg || await navigator.serviceWorker.ready;
-  await reg.showNotification(title, {
+  return reg.showNotification(title, {
     body,
-    icon: 'assets/icons/icon-192.png',
-    badge: 'assets/icons/icon-192.png',
-    tag,
-    data: { url: `./${hash}` }
+    icon: './assets/icons/icon-192.png',
+    badge: './assets/icons/icon-192.png',
+    tag: tag || undefined,
+    data: { url }
   });
 }
 
 export async function updateApp() {
   try {
-    if (state.swReg) await state.swReg.update();
-  } finally {
-    window.location.reload();
+    const reg = state.swReg || await navigator.serviceWorker.getRegistration();
+    if (reg) await reg.update();
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k.startsWith('kelasku-')).map(k => caches.delete(k)));
+  } catch (err) {
+    console.warn('Update app:', err);
   }
+  window.location.reload();
 }

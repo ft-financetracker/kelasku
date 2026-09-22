@@ -2,6 +2,7 @@ import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, logo, svg } from '../core/utils.js';
 import { go } from '../core/router.js';
+import { shouldShowAppSetup } from '../core/pwa.js';
 
 export function renderProfile() {
   const app = document.getElementById('app');
@@ -86,7 +87,7 @@ async function submitProfile(event) {
     localStorage.setItem('kelasku_user_cache', JSON.stringify(data.user));
     status.className = 'request-status ok';
     status.textContent = 'Profil tersimpan.';
-    go('setup');
+    go(shouldShowAppSetup() ? 'setup' : 'dashboard');
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = err.message;

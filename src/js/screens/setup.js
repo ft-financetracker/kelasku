@@ -1,12 +1,19 @@
-import { svg, logo, isStandalone } from '../core/utils.js';
-import { installPWA, enableNotifications } from '../core/pwa.js';
-import { writeBool } from '../core/storage.js';
+import { svg, logo } from '../core/utils.js';
+import { installPWA, enableNotifications, getAppSetupState, shouldShowAppSetup, completeAppSetup } from '../core/pwa.js';
 import { go } from '../core/router.js';
 
 export function renderSetup() {
   const app = document.getElementById('app');
-  const installed = isStandalone() || localStorage.getItem('kelasku_pwa_installed') === 'true';
-  const permission = 'Notification' in window ? Notification.permission : 'unsupported';
+
+  // Jangan ganggu user lama: setup cukup sekali per perangkat.
+  if (!shouldShowAppSetup()) {
+    go('dashboard');
+    return;
+  }
+
+  const setup = getAppSetupState();
+  const installed = setup.installed;
+  const permission = setup.notificationPermission;
 
   app.innerHTML = `
     <section class="screen">
@@ -65,7 +72,7 @@ export function renderSetup() {
   };
 
   document.getElementById('finish-setup').onclick = () => {
-    writeBool('kelasku_app_setup_completed', true);
+    completeAppSetup();
     go('dashboard');
   };
 }

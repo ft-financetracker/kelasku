@@ -2,7 +2,7 @@ import { state, clearSession } from '../core/state.js';
 import { api } from '../core/api.js';
 import { C, esc, svg, logo, fmtDate, semverCmp, toast } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
-import { go } from '../core/router.js';
+import { go, currentRoute, openDeepLink } from '../core/router.js';
 
 export function renderDashboard() {
   const app = document.getElementById('app');
@@ -12,7 +12,7 @@ export function renderDashboard() {
       <aside class="sidebar">
         ${logo()}
         <nav class="nav">
-          ${nav('i-home', 'Beranda', true)}
+          ${nav('i-home', 'Beranda', true, true)}
           ${nav('i-class', 'Kelas')}
           ${nav('i-calendar', 'Jadwal')}
           ${nav('i-task', 'Tugas')}
@@ -41,7 +41,7 @@ export function renderDashboard() {
       </main>
 
       <nav class="bottom-nav">
-        ${bottom('i-home', 'Beranda', true)}${bottom('i-class', 'Kelas')}${bottom('i-task', 'Tugas')}${bottom('i-chat', 'Chat')}${bottom('i-user', 'Profil')}
+        ${bottom('i-class', 'Kelas')}${bottom('i-task', 'Tugas')}${bottom('i-home', 'Beranda', true, true)}${bottom('i-chat', 'Chat')}${bottom('i-user', 'Profil')}
       </nav>
     </div>
     <div id="notif-drawer" class="drawer glass hidden"></div>`;
@@ -53,6 +53,17 @@ export function renderDashboard() {
   document.getElementById('notif-toggle').onclick = toggleNotifications;
   document.getElementById('future-search').onclick = () => toast('Pencarian nama, KelasKu ID, NIM/NIS sudah disiapkan di backend dan akan dibuka pada fase berikutnya.');
 
+  document.querySelectorAll('[data-nav], [data-bottom-nav]').forEach(btn => {
+    btn.onclick = () => {
+      const target = btn.dataset.nav || btn.dataset.bottomNav;
+      if (target === 'beranda') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      toast(`${target.charAt(0).toUpperCase() + target.slice(1)} akan dibuka pada fase berikutnya.`);
+    };
+  });
+
   const updateBtn = document.getElementById('update-now');
   if (updateBtn) updateBtn.onclick = updateApp;
 
@@ -60,11 +71,19 @@ export function renderDashboard() {
   startNotificationPolling();
 }
 
-function nav(icon, label, active = false) {
-  return `<a href="#" class="nav-item ${active ? 'active' : ''}">${svg(icon)}<span>${label}</span></a>`;
+function nav(icon, label, active = false, homeCta = false) {
+  const cls = `nav-item ${active ? 'active' : ''} ${homeCta ? 'nav-home-cta' : ''}`;
+  const iconHtml = homeCta
+    ? `<span class="nav-diamond">${svg(icon)}</span>`
+    : svg(icon);
+  return `<button type="button" class="${cls}" data-nav="${label.toLowerCase()}">${iconHtml}<span>${label}</span></button>`;
 }
-function bottom(icon, label, active = false) {
-  return `<a href="#" class="bottom-item ${active ? 'active' : ''}">${svg(icon)}<span>${label}</span></a>`;
+function bottom(icon, label, active = false, homeCta = false) {
+  const cls = `bottom-item ${active ? 'active' : ''} ${homeCta ? 'bottom-home-cta' : ''}`;
+  const iconHtml = homeCta
+    ? `<span class="bottom-diamond">${svg(icon)}</span>`
+    : svg(icon);
+  return `<button type="button" class="${cls}" data-bottom-nav="${label.toLowerCase()}">${iconHtml}<span>${label}</span></button>`;
 }
 function empty(title, copy) {
   return `<div class="empty"><div><strong>${esc(title)}</strong><span>${esc(copy)}</span></div></div>`;
@@ -89,7 +108,7 @@ async function refreshDashboard() {
     state.user = data.user || state.user;
     localStorage.setItem('kelasku_dashboard_cache', JSON.stringify(data));
     localStorage.setItem('kelasku_user_cache', JSON.stringify(state.user));
-    if (location.hash === '#dashboard') drawDashboard(data);
+    if (currentRoute() === 'dashboard') drawDashboard(data);
   } catch (err) {
     if (!state.dashboard) {
       const slot = document.getElementById('dashboard-slot');
@@ -188,7 +207,7 @@ async function markNotification(id) {
     localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
     renderNotificationDrawer();
   }
-  if (n.deep_link) location.hash = n.deep_link.replace(/^.*#/, '#');
+  if (n.deep_link) openDeepLink(n.deep_link);
 }
 
 function startNotificationPolling() {

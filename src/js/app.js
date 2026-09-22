@@ -12,7 +12,7 @@ import { state, setSession, clearSession } from './core/state.js';
 import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
-import { registerServiceWorker, initInstallCapture, updateApp } from './core/pwa.js';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup } from './core/pwa.js';
 import { registerRoute, go, startRouter } from './core/router.js';
 
 import { renderSplash } from './screens/splash.js';
@@ -58,7 +58,7 @@ async function boot() {
   // Cache lokal dipakai dulu agar aplikasi terasa cepat.
   if (state.user) {
     if (!state.user.profile_complete) go('profile');
-    else if (!readBool('kelasku_app_setup_completed')) go('setup');
+    else if (shouldShowAppSetup()) go('setup');
     else go('dashboard');
   }
 
@@ -91,7 +91,7 @@ async function boot() {
   }
 
   if (!data.user.profile_complete) go('profile');
-  else if (!readBool('kelasku_app_setup_completed')) go('setup');
+  else if (shouldShowAppSetup()) go('setup');
   else go('dashboard');
 }
 
