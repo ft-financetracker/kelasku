@@ -68,14 +68,18 @@ async function submitProfile(event) {
     bio: document.getElementById('bio').value
   };
 
+  const originalButtonHtml = button.innerHTML;
   button.disabled = true;
-  status.textContent = 'Menyimpan profil…';
+  button.classList.add('is-loading');
+  button.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span>Menyimpan profil…</span>`;
+  status.className = 'request-status progress';
+  status.innerHTML = '<span class="status-dot"></span>Menyimpan seluruh profil dalam satu proses…';
 
   try {
     const data = await api('saveProfile', payload, {
       onSlow: () => {
         status.className = 'request-status slow';
-        status.textContent = 'Sedang menyimpan satu paket profil. Tidak perlu klik ulang.';
+        status.innerHTML = '<span class="status-dot"></span>Masih menyimpan. Jangan klik ulang.';
       }
     });
     state.user = data.user;
@@ -88,5 +92,7 @@ async function submitProfile(event) {
     status.textContent = err.message;
   } finally {
     button.disabled = false;
+    button.classList.remove('is-loading');
+    button.innerHTML = originalButtonHtml;
   }
 }

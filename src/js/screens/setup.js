@@ -49,10 +49,20 @@ export function renderSetup() {
     </section>`;
 
   const installBtn = document.getElementById('install-btn');
-  if (installBtn && !installed) installBtn.onclick = async () => { await installPWA(); renderSetup(); };
+  if (installBtn && !installed) installBtn.onclick = async () => {
+    const old = installBtn.innerHTML;
+    installBtn.disabled = true;
+    installBtn.innerHTML = '<span class="btn-spinner"></span><span>Menyiapkan instalasi…</span>';
+    try { await installPWA(); } finally { installBtn.innerHTML = old; renderSetup(); }
+  };
 
   const notifBtn = document.getElementById('notif-btn');
-  if (notifBtn && permission !== 'granted') notifBtn.onclick = async () => { await enableNotifications(); renderSetup(); };
+  if (notifBtn && permission !== 'granted') notifBtn.onclick = async () => {
+    const old = notifBtn.innerHTML;
+    notifBtn.disabled = true;
+    notifBtn.innerHTML = '<span class="btn-spinner"></span><span>Meminta izin…</span>';
+    try { await enableNotifications(); } finally { notifBtn.innerHTML = old; renderSetup(); }
+  };
 
   document.getElementById('finish-setup').onclick = () => {
     writeBool('kelasku_app_setup_completed', true);

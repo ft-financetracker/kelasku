@@ -72,9 +72,12 @@ async function submitAuth(event) {
     return;
   }
 
+  const originalButtonHtml = button.innerHTML;
   button.disabled = true;
-  status.className = 'request-status';
-  status.textContent = 'Memproses…';
+  button.classList.add('is-loading');
+  button.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span><span>${register ? 'Membuat akun…' : 'Masuk…'}</span>`;
+  status.className = 'request-status progress';
+  status.innerHTML = `<span class="status-dot"></span>${register ? 'Membuat akun dan menyiapkan session…' : 'Memeriksa akun dan menyiapkan session…'}`;
 
   try {
     const data = await api(
@@ -84,19 +87,21 @@ async function submitAuth(event) {
         auth: false,
         onSlow: () => {
           status.className = 'request-status slow';
-          status.textContent = 'Masih memproses. Tidak perlu klik ulang.';
+          status.innerHTML = `<span class="status-dot"></span>Server sedang menyelesaikan proses. Jangan klik dua kali.`;
         }
       }
     );
 
     setSession(data.session_token, data.user);
     status.className = 'request-status ok';
-    status.textContent = 'Berhasil.';
+    status.textContent = data.recovered ? 'Akun ditemukan. Session dipulihkan.' : 'Berhasil.';
     go(data.user.profile_complete ? 'setup' : 'profile');
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = esc(err.message);
   } finally {
     button.disabled = false;
+    button.classList.remove('is-loading');
+    button.innerHTML = originalButtonHtml;
   }
 }

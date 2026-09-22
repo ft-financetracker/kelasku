@@ -18,6 +18,17 @@ export function apiConfigured() {
   return Boolean(C.API_URL && !C.API_URL.includes('PASTE_'));
 }
 
+function isAllowedAppsScriptOrigin(origin) {
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    return host === 'script.google.com' ||
+      host === 'script.googleusercontent.com' ||
+      host.endsWith('.googleusercontent.com');
+  } catch {
+    return false;
+  }
+}
+
 export function api(action, payload = {}, options = {}) {
   if (!apiConfigured()) {
     return Promise.reject(new Error('API_URL belum diatur di config.js'));
@@ -78,7 +89,10 @@ export function api(action, payload = {}, options = {}) {
     };
 
     const onMessage = event => {
-      if (event.source !== iframe.contentWindow) return;
+      // Apps Script HtmlService dapat memakai wrapper/nested iframe.
+      // Karena itu event.source tidak selalu sama dengan iframe.contentWindow.
+      // Keamanan dijaga dengan origin Google + request_id + channel acak.
+      if (!isAllowedAppsScriptOrigin(event.origin)) return;
       const data = event.data;
       if (!data || data.__kelasku_api_response !== true) return;
       if (data.request_id !== requestId || data.channel !== channel) return;
@@ -94,7 +108,7 @@ export function api(action, payload = {}, options = {}) {
     };
 
     const timer = setTimeout(() => {
-      finish(reject, new Error('Server terlalu lama merespons. Coba lagi beberapa saat.'));
+      finish(reject, new Error('Respons server belum kembali. Jika ini pendaftaran, data mungkin sudah tersimpan — coba Masuk dengan username yang sama.'));
     }, timeoutMs);
 
     window.addEventListener('message', onMessage);
