@@ -9,7 +9,7 @@ window.KELASKU_CONFIG = Object.freeze({
   APP_VERSION: '1.2.1',
   BUILD: '20260922.004',
 
-  API_URL: 'PASTE_APPS_SCRIPT_WEB_APP_URL_HERE',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyIsv19DU3M-zWu2HCvDvRQgYbstNy1wHF-8ehaMh0OnQ8ousYswuGmsz23S_QD2FRH/exec',
 
   API_TIMEOUT_MS: 12000,
   SLOW_REQUEST_MS: 1400,
