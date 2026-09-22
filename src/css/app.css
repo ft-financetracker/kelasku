@@ -109,3 +109,182 @@ button,input,select,textarea{font:inherit}.svg-sprite{position:absolute;width:0;
   .bottom-item{font-size:9px}
   .bottom-diamond{width:45px;height:45px}
 }
+
+
+/* ============================================================
+   v1.3.1 — Mobile Bottom Navigation Precision Hotfix
+   ------------------------------------------------------------
+   Tujuan:
+   - 5 menu benar-benar rata tengah dan punya lebar yang sama.
+   - Icon normal lebih terbaca tanpa terasa besar.
+   - Garis divider diturunkan dan melewati titik tengah Diamond CTA.
+   - Beranda tetap menjadi CTA utama dengan diamond 58x58.
+   - Icon Home di dalam diamond tetap tegak (tidak ikut miring).
+   ============================================================ */
+@media(max-width:900px){
+  .main{
+    /* Memberi ruang aman agar konten terakhir tidak tertutup navbar. */
+    padding-bottom:126px;
+  }
+
+  .bottom-nav{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:40;
+
+    /* Geometry LOCK */
+    height:calc(90px + env(safe-area-inset-bottom));
+    min-height:calc(90px + env(safe-area-inset-bottom));
+    padding:18px 8px calc(9px + env(safe-area-inset-bottom));
+
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    align-items:end;
+    overflow:visible;
+
+    background:linear-gradient(180deg,rgba(5,18,43,.965),rgba(4,16,39,.985));
+    border-top:0;
+    box-shadow:0 -14px 34px rgba(0,7,25,.24);
+    backdrop-filter:blur(22px);
+  }
+
+  /* Divider berada DI DALAM navbar, bukan menempel pada tepi atas.
+     top:25px dibuat sejajar dengan pusat visual diamond. */
+  .bottom-nav::before{
+    content:"";
+    position:absolute;
+    z-index:0;
+    top:25px;
+    left:14px;
+    right:14px;
+    height:1px;
+    pointer-events:none;
+    background:linear-gradient(90deg,
+      rgba(93,169,255,.08) 0%,
+      rgba(93,169,255,.24) 18%,
+      rgba(34,224,199,.22) 50%,
+      rgba(93,169,255,.24) 82%,
+      rgba(93,169,255,.08) 100%);
+  }
+
+  .bottom-item{
+    position:relative;
+    z-index:1;
+    appearance:none;
+    border:0;
+    background:transparent;
+    font-family:inherit;
+
+    width:100%;
+    min-width:0;
+    height:62px;
+    min-height:62px;
+    padding:7px 2px 4px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    gap:6px;
+
+    color:#86A1BF;
+    text-align:center;
+    font-size:10.5px;
+    line-height:1;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  .bottom-item>.icon{
+    width:24px;
+    height:24px;
+    flex:0 0 24px;
+    stroke-width:1.85;
+  }
+
+  .bottom-item>span:last-child{
+    width:100%;
+    min-height:11px;
+    display:block;
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  .bottom-item:not(.bottom-home-cta).active{
+    color:var(--tosca);
+  }
+
+  /* Home CTA: pusat diamond tepat di sekitar divider. */
+  .bottom-home-cta{
+    height:86px;
+    min-height:86px;
+    padding:0 2px 3px;
+    transform:translateY(-19px);
+    justify-content:flex-end;
+    gap:8px;
+    color:#F4FFFF!important;
+    font-weight:800;
+  }
+
+  .bottom-diamond{
+    width:58px;
+    height:58px;
+    flex:0 0 58px;
+    border-radius:16px;
+    transform:rotate(45deg);
+    display:grid;
+    place-items:center;
+
+    background:linear-gradient(135deg,#22E0C7 0%,#2BE3D0 34%,#2B9CF4 69%,#1976FF 100%);
+    border:1px solid rgba(255,255,255,.28);
+    box-shadow:
+      0 11px 28px rgba(0,13,46,.52),
+      0 0 0 5px rgba(34,224,199,.07),
+      inset 0 1px 0 rgba(255,255,255,.18);
+  }
+
+  .bottom-diamond .icon{
+    width:25px;
+    height:25px;
+    transform:rotate(-45deg);
+    color:#041A31;
+    stroke-width:2.25;
+  }
+
+  .bottom-home-cta>span:last-child{
+    color:#F3FFFF;
+    font-size:10.5px;
+    line-height:1;
+  }
+}
+
+@media(max-width:380px){
+  .bottom-nav{
+    padding-left:4px;
+    padding-right:4px;
+  }
+  .bottom-nav::before{
+    left:9px;
+    right:9px;
+  }
+  .bottom-item{
+    font-size:9.5px;
+  }
+  .bottom-item>.icon{
+    width:22px;
+    height:22px;
+    flex-basis:22px;
+  }
+  .bottom-diamond{
+    width:54px;
+    height:54px;
+    flex-basis:54px;
+    border-radius:15px;
+  }
+  .bottom-diamond .icon{
+    width:24px;
+    height:24px;
+  }
+}
