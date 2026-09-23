@@ -14,7 +14,7 @@ export function renderClassRoom() {
 
   const cached = state.classDetails[classId] || null;
   const content = `
-    <div class="page-head"><div><div class="eyebrow">PHASE 3 • Ruang Kelas</div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${cached.class?.role || 'MEMBER'}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary">${svg('i-back')} Kembali</button></div>
+    <div class="page-head"><div><div class="eyebrow">PHASE 3 • Ruang Kelas</div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${roleLabel(cached.class?.role || 'MEMBER')}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary">${svg('i-back')} Kembali</button></div>
     <div id="class-room-slot">${cached ? '' : roomSkeleton()}</div>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'classes', content, hideSearch: true });
@@ -43,12 +43,12 @@ function drawClass(data, preserveTab = true) {
   const c = data.class || {};
   const p = data.permissions || {};
   const desiredTab = preserveTab ? activeTab : 'overview';
-  document.getElementById('class-room-subtitle').textContent = `${c.class_code || ''} · ${c.role || 'MEMBER'}`;
+  document.getElementById('class-room-subtitle').textContent = `${c.class_code || ''} · ${roleLabel(c.role || 'MEMBER')}`;
 
   document.getElementById('class-room-slot').innerHTML = `
     <section class="class-hero panel">
       <div class="class-hero-icon">${svg('i-class')}</div>
-      <div class="class-hero-main"><div class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(c.role || 'MEMBER')}</div><h2>${esc(c.name)}</h2><p>${esc(c.description || 'Belum ada deskripsi kelas.')}</p><div class="class-meta-line"><span>${esc(c.institution || 'KelasKu')}</span>${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}<span>${esc(c.visibility || 'DISCOVERABLE')}</span></div></div>
+      <div class="class-hero-main"><div class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</div><h2>${esc(c.name)}</h2><p>${esc(c.description || 'Belum ada deskripsi kelas.')}</p><div class="class-meta-line"><span>${esc(c.institution || 'KelasKu')}</span>${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}<span>${esc(c.visibility || 'DISCOVERABLE')}</span></div></div>
       <div class="class-code-stack">
         <div class="code-card"><span>Class Code</span><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini">${svg('i-copy')}</button></div>
         ${p.can_manage_class ? `<div class="code-card"><span>Join Code</span><strong id="join-code-value">${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini">${svg('i-copy')}</button></div>`:''}
@@ -113,7 +113,7 @@ function overviewHtml(data) {
   const c=data.class||{}, p=data.permissions||{};
   return `<section class="settings-grid two-settings room-overview">
     <div class="panel"><div class="panel-head"><div><div class="panel-title">Fondasi Kelas</div><p class="panel-copy">Identitas dan akses kelas aktif.</p></div></div><div class="detail-list">
-      ${detail('Role kamu', c.role||'MEMBER')}${detail('Class Code', c.class_code||'-')}${detail('Visibilitas', c.visibility||'-')}${detail('Anggota aktif', String((data.members||[]).length))}
+      ${detail('Role kamu', roleLabel(c.role||'MEMBER'))}${detail('Class Code', c.class_code||'-')}${detail('Visibilitas', c.visibility||'-')}${detail('Anggota aktif', String((data.members||[]).length))}
     </div></div>
     <div class="panel"><div class="panel-head"><div><div class="panel-title">Academic Core</div><p class="panel-copy">Phase 3 sudah aktif.</p></div></div><div class="class-module-grid">
       ${moduleButton('i-mega','Pengumuman','Informasi resmi kelas','announcements')}
@@ -242,12 +242,20 @@ async function saveAttendance(event,attendanceId){event.preventDefault();const b
 function membersHtml(data) {
   const p=data.permissions||{};
   const items=data.members||[];
-  return `<section class="panel"><div class="panel-head"><div><div class="panel-title">Anggota Kelas</div><p class="panel-copy">Role berlaku khusus di kelas ini, bukan global aplikasi.</p></div></div><div class="member-list">${items.length?items.map(m=>memberRow(m,p)).join(''):'<div class="search-empty">Belum ada anggota.</div>'}</div></section>`;
+  const leaders=items.filter(m=>String(m.class_role||'').toUpperCase()==='COORDINATOR');
+  const leader=leaders[0] || null;
+  const candidates=items.filter(m=>String(m.class_role||'').toUpperCase()!=='OWNER');
+  const leaderCard = `<div class="class-leader-card">
+    <div class="class-leader-icon">${svg('i-shield')}</div>
+    <div class="class-leader-copy"><span>KETUA KELAS</span><strong>${leader?esc(leader.full_name||leader.username):'Belum ditetapkan'}</strong><small>${leader?'@'+esc(leader.username||'-')+' · role teknis COORDINATOR':'Owner dapat menunjuk satu anggota sebagai Ketua Kelas.'}</small></div>
+    ${p.is_owner?`<div class="class-leader-control"><select id="class-leader-select" class="control"><option value="">Pilih anggota…</option>${candidates.map(m=>`<option value="${esc(m.user_id)}" ${leader&&String(leader.user_id)===String(m.user_id)?'selected':''}>${esc(m.full_name||m.username)} · @${esc(m.username||'-')}</option>`).join('')}</select><button type="button" id="save-class-leader" class="btn btn-primary">Tetapkan</button></div>`:''}
+  </div>`;
+  return `<section class="panel"><div class="panel-head"><div><div class="panel-title">Anggota & Ketua Kelas</div><p class="panel-copy">OWNER adalah pembuat kelas. Ketua Kelas adalah role COORDINATOR dengan akses pengelolaan operasional.</p></div></div>${leaderCard}<div class="member-list">${items.length?items.map(m=>memberRow(m,p)).join(''):'<div class="search-empty">Belum ada anggota.</div>'}</div></section>`;
 }
 function memberRow(m,p) {
   const canEdit=p.can_manage_roles && m.class_role!=='OWNER';
   const canRemove=p.can_manage_members && m.class_role!=='OWNER';
-  return `<div class="member-row"><div class="member-avatar">${initials(m.full_name||m.username)}</div><div class="member-info"><strong>${esc(m.full_name||m.username)}</strong><span>@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span><small>${esc(m.study_program||'')} ${m.cohort?'· '+esc(m.cohort):''}</small></div><div class="member-actions">${canEdit?`<select class="control role-select" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Coordinator</option></select>`:`<span class="role-pill role-${String(m.class_role||'member').toLowerCase()}">${esc(m.class_role||'MEMBER')}</span>`}${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}">${svg('i-close')}</button>`:''}</div></div>`;
+  return `<div class="member-row"><div class="member-avatar">${initials(m.full_name||m.username)}</div><div class="member-info"><strong>${esc(m.full_name||m.username)}</strong><span>@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span><small>${esc(m.study_program||'')} ${m.cohort?'· '+esc(m.cohort):''}</small></div><div class="member-actions">${canEdit?`<select class="control role-select" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Ketua Kelas</option></select>`:`<span class="role-pill role-${String(m.class_role||'member').toLowerCase()}">${esc(roleLabel(m.class_role||'MEMBER'))}</span>`}${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}">${svg('i-close')}</button>`:''}</div></div>`;
 }
 function requestsHtml(data) {
   const items=data.pending_requests||[];
@@ -267,6 +275,8 @@ function bindTab(tab,data) {
   if(tab==='members'){
     document.querySelectorAll('[data-role-user]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleUser,sel.value));
     document.querySelectorAll('[data-remove-user]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.removeUser));
+    const leaderBtn=document.getElementById('save-class-leader');
+    if(leaderBtn) leaderBtn.onclick=setClassLeader;
   }
   if(tab==='requests') document.querySelectorAll('[data-request]').forEach(btn=>btn.onclick=()=>decideRequest(btn.dataset.request,btn.dataset.decision));
   if(tab==='settings'){
@@ -277,7 +287,8 @@ function bindTab(tab,data) {
 }
 
 async function decideRequest(requestId,decision){try{await api('decideJoinRequest',{request_id:requestId,decision});toast(decision==='APPROVE'?'Anggota diterima.':'Permintaan ditolak.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}}
-async function changeRole(userId,role){try{await api('setClassMemberRole',{class_id:state.selectedClassId,user_id:userId,class_role:role});toast('Role anggota diperbarui.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}}
+async function changeRole(userId,role){try{await api('setClassMemberRole',{class_id:state.selectedClassId,user_id:userId,class_role:role,replace_coordinator:role==='COORDINATOR'});toast(role==='COORDINATOR'?'Anggota menjadi Ketua Kelas.':'Role anggota diperbarui.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}}
+async function setClassLeader(){const select=document.getElementById('class-leader-select');const btn=document.getElementById('save-class-leader');const userId=select?.value||'';if(!userId)return toast('Pilih anggota yang akan menjadi Ketua Kelas.');const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menetapkan…</span>';try{await api('setClassMemberRole',{class_id:state.selectedClassId,user_id:userId,class_role:'COORDINATOR',replace_coordinator:true});toast('Ketua Kelas berhasil ditetapkan.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
 async function removeMember(userId){if(!confirm('Keluarkan anggota ini dari kelas?'))return;try{await api('removeClassMember',{class_id:state.selectedClassId,user_id:userId});toast('Anggota dikeluarkan.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}}
 async function saveClassProfile(){const form=document.getElementById('class-settings-form'),btn=document.getElementById('save-class-profile'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{await api('updateClassProfile',{class_id:state.selectedClassId,name:form.name.value,description:form.description.value,institution:form.institution.value,cohort:form.cohort.value});toast('Identitas kelas tersimpan.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
 async function saveClassSettings(event){event.preventDefault();const form=event.currentTarget,btn=document.getElementById('save-class-settings'),status=document.getElementById('class-settings-status'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';const payload={class_id:state.selectedClassId,visibility:form.visibility.value,join_approval:form.join_approval.checked,join_code_enabled:form.join_code_enabled.checked,member_list_visible:form.member_list_visible.checked,allow_member_posts:form.allow_member_posts.checked,allow_member_uploads:form.allow_member_uploads.checked,allow_member_invites:form.allow_member_invites.checked};try{await api('updateClassSettings',payload);status.className='request-status ok';status.textContent='Tersimpan ✓';toast('Pengaturan kelas tersimpan.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
@@ -287,6 +298,8 @@ async function copyText(text){try{await navigator.clipboard.writeText(text||'');
 function academicRoomSkeleton(){return `<div class="academic-card-list">${[1,2,3].map(()=>'<div class="panel skeleton" style="height:104px"></div>').join('')}</div>`;}
 function roomSkeleton(){return `<div class="class-hero panel skeleton" style="height:190px"></div><div class="panel skeleton" style="height:300px;margin-top:16px"></div>`;}
 function detail(label,value){return `<div class="detail-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;}
+
+function roleLabel(role){const key=String(role||'MEMBER').toUpperCase();if(key==='COORDINATOR')return 'Ketua Kelas';if(key==='OWNER')return 'Owner';if(key==='MODERATOR')return 'Moderator';return 'Member';}
 function initials(name){return String(name||'K').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'K';}
 function selectRow(label,name,value,options){return `<label class="setting-row"><span><strong>${esc(label)}</strong></span><select class="control setting-control" name="${esc(name)}">${options.map(x=>`<option value="${x[0]}" ${String(value)===x[0]?'selected':''}>${esc(x[1])}</option>`).join('')}</select></label>`;}
 function toggleRow(label,name,value){return `<label class="setting-row"><span><strong>${esc(label)}</strong></span><span class="switch"><input type="checkbox" name="${esc(name)}" ${truthy(value)?'checked':''}><span></span></span></label>`;}

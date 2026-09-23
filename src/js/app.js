@@ -1,5 +1,5 @@
 /**
- * KelasKu — Application Entry Point v3.0.0
+ * KelasKu — Application Entry Point v3.1.0
  * ============================================================
  * Phase 3 membuka Academic Core: Pengumuman, Jadwal, Tugas, Materi, dan Absensi.
  * Bootstrap tetap compound: config + user + settings + dashboard.
@@ -9,7 +9,7 @@ import { state, setSession, setIdentity, clearSession } from './core/state.js';
 import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
-import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup } from './core/pwa.js';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate } from './core/pwa.js';
 import { registerRoute, go, startRouter } from './core/router.js';
 import { applyPreferences } from './core/preferences.js';
 
@@ -25,6 +25,7 @@ import { renderClasses } from './screens/classes.js';
 import { renderClassRoom } from './screens/classRoom.js';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance } from './screens/academic.js';
+import { renderAppInfo } from './screens/appInfo.js';
 
 const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
 
@@ -36,6 +37,7 @@ registerRoute('setup', authGuard(renderSetup));
 registerRoute('dashboard', authGuard(renderDashboard));
 registerRoute('account', authGuard(renderAccount));
 registerRoute('settings', authGuard(renderSettings));
+registerRoute('app-info', authGuard(renderAppInfo));
 registerRoute('classes', authGuard(renderClasses));
 registerRoute('class', authGuard(renderClassRoom));
 registerRoute('schedule', authGuard(renderSchedule));
@@ -62,6 +64,7 @@ if (state.settings) applyPreferences(state.settings);
 
 initInstallCapture();
 registerServiceWorker();
+startUpdateWatcher();
 
 async function boot() {
   renderSplash('Menyiapkan KelasKu…');
@@ -145,6 +148,7 @@ function applyRemoteConfig(config) {
   if (!config) return;
   state.remoteConfig = config;
   writeJson('kelasku_app_config_cache', config);
+  checkForAppUpdate({ notify: true }).catch(() => {});
 }
 
 function forceUpdateRequired() {

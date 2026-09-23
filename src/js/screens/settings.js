@@ -4,7 +4,7 @@ import { esc, svg, toast, semverCmp, C } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { applyPreferences, previewPreferences } from '../core/preferences.js';
 import { go } from '../core/router.js';
-import { getAppSetupState, installPWA, enableNotifications, updateApp } from '../core/pwa.js';
+import { getAppSetupState, installPWA, enableNotifications, updateApp, checkForAppUpdate } from '../core/pwa.js';
 
 const SETTINGS_TTL_MS = 120000;
 
@@ -104,7 +104,7 @@ function drawSettings(s) {
 
       ${settingsRoom({
         id: 'application', icon: 'i-gear', title: 'Akun & Aplikasi',
-        copy: 'Identitas, PWA, versi, update, dan akses akun.', count: admin ? '6 Menu' : '5 Menu',
+        copy: 'Identitas, PWA, versi, update, timeline, dan akses akun.', count: admin ? '7 Menu' : '6 Menu',
         keywords: 'akun profil kelasku id username pwa install versi update aplikasi super admin',
         body: `
           <div class="settings-info-grid">
@@ -117,6 +117,7 @@ function drawSettings(s) {
             ${actionCard('i-user', 'Profil Saya', 'Lihat dan edit identitas akun.', 'open-profile')}
             ${actionCard('i-download', 'Install PWA', 'Pasang KelasKu seperti aplikasi.', 'install-from-settings')}
             ${actionCard('i-refresh', 'Cek Update', 'Periksa versi terbaru dan refresh cache.', 'check-update')}
+            ${actionCard('i-info', 'Info Aplikasi', 'Versi, build, dan timeline pembaruan KelasKu.', 'open-app-info')}
             ${admin ? actionCard('i-shield', 'Super Admin', 'Buka pusat administrasi KelasKu.', 'open-admin', true) : ''}
           </div>
           <div id="app-info-status" class="request-status"></div>`
@@ -181,6 +182,7 @@ function bindSettings() {
   document.getElementById('open-profile').onclick = () => go('account');
   document.getElementById('check-update').onclick = checkUpdate;
   document.getElementById('install-from-settings').onclick = installFromSettings;
+  document.getElementById('open-app-info').onclick = () => go('app-info');
   document.getElementById('notif-from-settings').onclick = notificationFromSettings;
   const adminBtn = document.getElementById('open-admin');
   if (adminBtn) adminBtn.onclick = () => go('admin');
@@ -328,9 +330,10 @@ async function checkUpdate() {
     const config = await api('getAppConfig', {}, { auth: false });
     state.remoteConfig = config;
     localStorage.setItem('kelasku_app_config_cache', JSON.stringify(config));
-    const newer = semverCmp(C.APP_VERSION, config.current_version) < 0 || config.update_required === true;
+    const result = await checkForAppUpdate({ notify: false });
+    const newer = result.available || config.update_required === true;
     if (newer) {
-      status.innerHTML = `Update tersedia: v${esc(config.current_version)}. <button type="button" id="run-update-now" class="button-link">Update sekarang</button>`;
+      status.innerHTML = `Update tersedia: v${esc(result.version || config.current_version)}. <button type="button" id="run-update-now" class="button-link">Update sekarang</button>`;
       document.getElementById('run-update-now').onclick = updateApp;
     } else {
       status.textContent = 'KelasKu sudah versi terbaru ✓';

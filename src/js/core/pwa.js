@@ -1,9 +1,12 @@
 import { state } from './state.js';
-import { C, toast, isStandalone } from './utils.js';
+import { C, toast, isStandalone, semverCmp } from './utils.js';
 import { readBool, writeBool } from './storage.js';
 
 const SETUP_DONE_KEY = 'kelasku_app_setup_completed';
 const PWA_INSTALLED_KEY = 'kelasku_pwa_installed';
+const UPDATE_NOTICE_KEY = 'kelasku_update_notice_version';
+let updateTimer = null;
+let updateWatchBound = false;
 
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
@@ -19,35 +22,22 @@ export async function registerServiceWorker() {
 
 export function getAppSetupState() {
   const installed = isStandalone() || readBool(PWA_INSTALLED_KEY);
-  const notificationPermission = 'Notification' in window
-    ? Notification.permission
-    : 'unsupported';
+  const notificationPermission = 'Notification' in window ? Notification.permission : 'unsupported';
   const completed = readBool(SETUP_DONE_KEY);
-
   return { installed, notificationPermission, completed };
 }
 
-/**
- * Setup adalah status PERANGKAT, bukan status login user.
- * Sekali user memilih selesai/lewati, login berikutnya langsung Dashboard.
- */
 export function shouldShowAppSetup() {
   const setup = getAppSetupState();
   if (setup.completed) return false;
-
-  // Recovery untuk user versi lama yang sudah install + izinkan notif,
-  // tetapi flag setup belum sempat tersimpan.
   if (setup.installed && setup.notificationPermission === 'granted') {
     writeBool(SETUP_DONE_KEY, true);
     return false;
   }
-
   return true;
 }
 
-export function completeAppSetup() {
-  writeBool(SETUP_DONE_KEY, true);
-}
+export function completeAppSetup() { writeBool(SETUP_DONE_KEY, true); }
 
 export function initInstallCapture() {
   window.addEventListener('beforeinstallprompt', event => {
@@ -61,12 +51,7 @@ export function initInstallCapture() {
     toast('KelasKu berhasil dipasang.');
     if ('Notification' in window && Notification.permission === 'granted') {
       writeBool(SETUP_DONE_KEY, true);
-      await showSystemNotification(
-        'KelasKu siap digunakan',
-        'Aplikasi sudah terpasang. Informasi kelasmu kini lebih mudah diakses.',
-        '#dashboard',
-        'install-success'
-      );
+      await showSystemNotification('KelasKu siap digunakan','Aplikasi sudah terpasang. Informasi kelasmu kini lebih mudah diakses.','dashboard','install-success');
     }
   });
 }
@@ -77,22 +62,16 @@ export async function installPWA() {
     toast('KelasKu sudah terpasang.');
     return true;
   }
-
   if (!state.installPrompt) {
     toast('Menu install belum tersedia. Gunakan menu browser → Install app / Add to Home Screen.');
     return false;
   }
-
   state.installPrompt.prompt();
   const choice = await state.installPrompt.userChoice;
   state.installPrompt = null;
-
   if (choice.outcome === 'accepted') {
-    // appinstalled biasanya ikut terpanggil, marker ini menjadi fallback cepat.
     writeBool(PWA_INSTALLED_KEY, true);
-    if ('Notification' in window && Notification.permission === 'granted') {
-      writeBool(SETUP_DONE_KEY, true);
-    }
+    if ('Notification' in window && Notification.permission === 'granted') writeBool(SETUP_DONE_KEY, true);
     return true;
   }
   return false;
@@ -103,32 +82,94 @@ export async function enableNotifications() {
     toast('Browser ini belum mendukung notifikasi.');
     return 'unsupported';
   }
-
   const permission = await Notification.requestPermission();
   if (permission === 'granted') {
     toast('Notifikasi KelasKu aktif.');
     const setup = getAppSetupState();
     if (setup.installed) writeBool(SETUP_DONE_KEY, true);
-    await showSystemNotification(
-      'Notifikasi KelasKu aktif',
-      'Pengumuman, jadwal, dan informasi penting siap muncul di perangkat ini.',
-      '#dashboard',
-      'notification-enabled'
-    );
+    await showSystemNotification('Notifikasi KelasKu aktif','Pengumuman, jadwal, dan informasi penting siap muncul di perangkat ini.','dashboard','notification-enabled');
   }
   return permission;
 }
 
-export async function showSystemNotification(title, body, url = '#dashboard', tag = '') {
+function normalizeDeepLink(url='dashboard') {
+  const value=String(url||'dashboard').trim();
+  if (/^https?:\/\//i.test(value)) return value;
+  const route=value.replace(/^\.\/?#/,'').replace(/^#/,'').replace(/^\//,'') || 'dashboard';
+  const target=new URL('./', window.location.href);
+  target.hash=route;
+  return target.href;
+}
+
+export async function showSystemNotification(title, body, url = 'dashboard', tag = '') {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const reg = state.swReg || await navigator.serviceWorker.ready;
   return reg.showNotification(title, {
     body,
     icon: './assets/icons/icon-192.png',
-    badge: './assets/icons/icon-192.png',
+    badge: './assets/icons/favicon-64.png',
     tag: tag || undefined,
-    data: { url }
+    renotify: Boolean(tag),
+    silent: false,
+    vibrate: [120, 60, 120],
+    data: { url: normalizeDeepLink(url) }
   });
+}
+
+export async function checkForAppUpdate({ notify = true } = {}) {
+  let fileConfig = null;
+  try {
+    const response = await fetch(`./app-version.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (response.ok) fileConfig = await response.json();
+  } catch (err) {
+    console.warn('Version check:', err);
+  }
+
+  const configVersion=String(state.remoteConfig?.current_version || C.APP_VERSION);
+  const fileVersion=String(fileConfig?.version || C.APP_VERSION);
+  const remoteVersion=semverCmp(configVersion,fileVersion)>=0?configVersion:fileVersion;
+  const fromFile=remoteVersion===fileVersion && semverCmp(fileVersion,configVersion)>0;
+  const build = String(fromFile ? (fileConfig?.build || '') : (state.remoteConfig?.build || fileConfig?.build || ''));
+  const releaseNote = String(fromFile ? (fileConfig?.release_note || 'Pembaruan KelasKu tersedia.') : (state.remoteConfig?.release_note || fileConfig?.release_note || 'Pembaruan KelasKu tersedia.'));
+  const available = semverCmp(C.APP_VERSION, remoteVersion) < 0;
+
+  if (available) {
+    state.remoteConfig = {
+      ...(state.remoteConfig || {}),
+      current_version: remoteVersion,
+      build: build || state.remoteConfig?.build || '',
+      release_note: releaseNote
+    };
+    localStorage.setItem('kelasku_app_config_cache', JSON.stringify(state.remoteConfig));
+
+    const alreadyNotified = localStorage.getItem(UPDATE_NOTICE_KEY) === remoteVersion;
+    if (notify && !alreadyNotified && 'Notification' in window && Notification.permission === 'granted') {
+      await showSystemNotification(
+        `Update KelasKu v${remoteVersion}`,
+        releaseNote,
+        'app-info',
+        `kelasku-update-${remoteVersion}`
+      );
+      localStorage.setItem(UPDATE_NOTICE_KEY, remoteVersion);
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('kelasku-update-check', { detail: { available, version: remoteVersion, build, releaseNote } }));
+  return { available, version: remoteVersion, build, releaseNote };
+}
+
+export function startUpdateWatcher() {
+  if (updateWatchBound) return;
+  updateWatchBound = true;
+  const run = () => {
+    if (document.visibilityState === 'visible' && navigator.onLine) checkForAppUpdate({ notify: true }).catch(() => {});
+  };
+  window.addEventListener('focus', run);
+  document.addEventListener('visibilitychange', run);
+  window.addEventListener('online', run);
+  window.setTimeout(run, 1600);
+  if (updateTimer) clearInterval(updateTimer);
+  updateTimer = setInterval(run, 15 * 60 * 1000);
 }
 
 export async function updateApp() {

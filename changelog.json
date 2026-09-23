@@ -1,0 +1,130 @@
+{
+  "releases": [
+    {
+      "version": "3.1.0",
+      "build": "20260923.040",
+      "date": "23 September 2026",
+      "title": "Phase 3 Refinement",
+      "description": "Pemolesan alur kelas, dashboard, visual, dan sistem pembaruan.",
+      "groups": [
+        {
+          "label": "Perbaikan",
+          "items": [
+            "Join Code kelas private sekarang diteruskan sampai proses join dan diverifikasi backend.",
+            "Tampilan Light Theme ditata ulang agar kontras dan hierarchy konsisten.",
+            "Favicon dibuat bundar dengan siluet K transparan."
+          ]
+        },
+        {
+          "label": "Peningkatan",
+          "items": [
+            "OWNER dapat menetapkan Ketua Kelas langsung dari ruang Anggota.",
+            "Ringkasan dashboard dipindah di atas carousel dan Pengumuman diganti Notifikasi.",
+            "Info Aplikasi kini memiliki timeline pembaruan.",
+            "PWA memeriksa update saat aplikasi dibuka, kembali fokus, online, dan berkala saat aktif."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "3.0.0",
+      "build": "20260923.030",
+      "date": "23 September 2026",
+      "title": "Academic Core",
+      "description": "Phase 3 membuka modul akademik utama.",
+      "groups": [
+        {
+          "label": "Fitur",
+          "items": [
+            "Carousel dashboard dan fast menu akademik.",
+            "Pengumuman, Jadwal, Tugas, Materi, dan Absensi.",
+            "Ruang kelas terintegrasi dengan Academic Core."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.1.0",
+      "build": "20260923.020",
+      "date": "23 September 2026",
+      "title": "Admin & Settings Refinement",
+      "description": "Super Admin berbasis room dan Settings cache-first.",
+      "groups": [
+        {
+          "label": "Peningkatan",
+          "items": [
+            "Super Admin dibagi menjadi room Pengguna, Kelas, Sistem, dan Audit.",
+            "Edit profil dipisahkan dari onboarding/pendaftaran.",
+            "Settings dan Admin dapat dibuka dari mobile topbar."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "build": "20260923.010",
+      "date": "23 September 2026",
+      "title": "Phase 2 Foundation",
+      "description": "Fondasi kelas, permission, settings, dan Super Admin.",
+      "groups": [
+        {
+          "label": "Fitur",
+          "items": [
+            "Create / Search / Join Class.",
+            "OWNER, COORDINATOR, MODERATOR, MEMBER.",
+            "Settings dan Super Admin foundation."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.3.1",
+      "build": "20260923.002",
+      "date": "23 September 2026",
+      "title": "Navigation Precision",
+      "description": "Pemolesan proporsi bottom navigation mobile.",
+      "groups": [
+        {
+          "label": "Perbaikan",
+          "items": [
+            "Penyelarasan icon, label, divider, dan central CTA."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.3.0",
+      "build": "20260923.001",
+      "date": "23 September 2026",
+      "title": "PWA Navigation Refinement",
+      "description": "Routing bersih dan App Setup tidak berulang.",
+      "groups": [
+        {
+          "label": "Perbaikan",
+          "items": [
+            "Refresh tidak lagi terkunci di #auth.",
+            "PWA setup disimpan sebagai status perangkat.",
+            "Favicon dan navigasi diperbarui."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.2.2",
+      "build": "20260922.005",
+      "date": "22 September 2026",
+      "title": "Foundation LTS Hotfix",
+      "description": "Fondasi custom auth dibuat retry-safe dan respons frontend diperkuat.",
+      "groups": [
+        {
+          "label": "Perbaikan",
+          "items": [
+            "Register retry-safe.",
+            "Apps Script response bridge diperkuat.",
+            "Loading feedback ditambahkan untuk proses penting."
+          ]
+        }
+      ]
+    }
+  ]
+}

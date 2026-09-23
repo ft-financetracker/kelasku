@@ -1,22 +1,17 @@
 <svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="navyBlue" x1="48" y1="205" x2="190" y2="38" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#081C4A"/>
-      <stop offset="0.5" stop-color="#0B3D91"/>
-      <stop offset="1" stop-color="#1976FF"/>
+    <linearGradient id="navyBlue" x1="43" y1="220" x2="187" y2="35" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D3A88"/>
+      <stop offset="0.5" stop-color="#1457B8"/>
+      <stop offset="1" stop-color="#2788FF"/>
     </linearGradient>
     <linearGradient id="tosca" x1="92" y1="121" x2="206" y2="210" gradientUnits="userSpaceOnUse">
       <stop stop-color="#22E0C7"/>
-      <stop offset="0.55" stop-color="#18D5C0"/>
-      <stop offset="1" stop-color="#76F1DF"/>
+      <stop offset="0.58" stop-color="#20DCC8"/>
+      <stop offset="1" stop-color="#78F2E1"/>
     </linearGradient>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#071A3E" flood-opacity="0.22"/>
-    </filter>
   </defs>
-  <g filter="url(#soft)">
-    <rect x="38" y="32" width="48" height="192" rx="24" fill="url(#navyBlue)"/>
-    <rect x="68" y="96" width="48" height="148" rx="24" transform="rotate(-45 68 96)" fill="url(#navyBlue)"/>
-    <rect x="92" y="121" width="48" height="150" rx="24" transform="rotate(-45 92 121)" fill="url(#tosca)"/>
-  </g>
+  <rect x="38" y="32" width="48" height="192" rx="24" fill="url(#navyBlue)"/>
+  <rect x="68" y="96" width="48" height="148" rx="24" transform="rotate(-45 68 96)" fill="url(#navyBlue)"/>
+  <rect x="92" y="121" width="48" height="150" rx="24" transform="rotate(-45 92 121)" fill="url(#tosca)"/>
 </svg>

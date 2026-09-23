@@ -22,7 +22,7 @@ export function appShell(options = {}) {
           ${sideItem('i-check', 'Absensi', 'attendance', active === 'attendance')}
           ${sideItem('i-chat', 'Pesan', 'future:pesan', false)}
           ${sideItem('i-user', 'Profil', 'account', active === 'account')}
-          ${sideItem('i-gear', 'Pengaturan', 'settings', active === 'settings')}
+          ${sideItem('i-gear', 'Pengaturan', 'settings', active === 'settings' || active === 'app-info')}
           ${admin ? sideItem('i-shield', 'Super Admin', 'admin', active === 'admin') : ''}
         </nav>
         <div class="sidebar-foot">@${esc(state.user?.username || '-')}<br>${esc(state.user?.kelasku_id || '-')}<br><br>KelasKu v${esc(window.KELASKU_CONFIG.APP_VERSION)}<br>Belajar Bersama Lebih Mudah.</div>
@@ -47,7 +47,7 @@ export function appShell(options = {}) {
         ${bottomItem('i-task', 'Tugas', 'tasks', active === 'tasks')}
         ${bottomItem('i-home', 'Beranda', 'dashboard', active === 'dashboard', true)}
         ${bottomItem('i-chat', 'Chat', 'future:chat', false)}
-        ${bottomItem('i-user', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'admin')}
+        ${bottomItem('i-user', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'app-info' || String(active).startsWith('admin'))}
       </nav>
     </div>`;
 }

@@ -68,7 +68,7 @@ function drawMyClasses(items) {
 
 function classCard(c) {
   return `<button type="button" class="class-card" data-open-class="${esc(c.class_id)}">
-    <div class="class-card-top"><span class="class-symbol">${svg('i-class')}</span><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(c.role || 'MEMBER')}</span></div>
+    <div class="class-card-top"><span class="class-symbol">${svg('i-class')}</span><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span></div>
     <h3>${esc(c.name)}</h3>
     <p>${esc(c.institution || 'KelasKu')} ${c.cohort ? '· ' + esc(c.cohort) : ''}</p>
     <div class="class-card-foot"><span>${esc(c.class_code || '')}</span><span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
@@ -86,17 +86,17 @@ async function runSearch() {
     const data = await api('searchClasses', { query });
     const items = data.items || [];
     box.innerHTML = items.length ? items.map(searchCard).join('') : '<div class="search-empty">Kelas tidak ditemukan.</div>';
-    box.querySelectorAll('[data-search-class]').forEach(btn => btn.onclick = () => selectSearchClass(items.find(x => x.class_id === btn.dataset.searchClass)));
+    box.querySelectorAll('[data-search-class]').forEach(btn => btn.onclick = () => selectSearchClass(items.find(x => x.class_id === btn.dataset.searchClass), query));
   } catch (err) {
     box.innerHTML = `<div class="search-empty">${esc(err.message)}</div>`;
   }
 }
 
 function searchCard(c) {
-  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon">${svg('i-class')}</span><span><strong>${esc(c.name)}</strong><small>${esc(c.class_code || '')} · ${esc(c.institution || '')}</small></span><b>${c.role ? esc(c.role) : 'Lihat'}</b></button>`;
+  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon">${svg('i-class')}</span><span><strong>${esc(c.name)}</strong><small>${esc(c.class_code || '')} · ${esc(c.institution || '')}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
 }
 
-function selectSearchClass(c) {
+function selectSearchClass(c, query = '') {
   if (!c) return;
   if (c.role) {
     state.selectedClassId = c.class_id;
@@ -104,7 +104,7 @@ function selectSearchClass(c) {
     go('class');
     return;
   }
-  openJoinPreview(c);
+  openJoinPreview(c, c.match_type === 'JOIN_CODE' ? query : c.class_code);
 }
 
 function openCreateClass() {
@@ -168,13 +168,16 @@ async function lookupCode() {
   } catch(err){ status.className='request-status error'; status.textContent=err.message; slot.innerHTML=''; }
 }
 
-function openJoinPreview(c) {
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Gabung Kelas</div><h2>${esc(c.name)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${joinPreviewHtml(c, c.class_code)}`);
-  document.getElementById('confirm-join-btn').onclick = () => submitJoin(c, c.class_code);
+function openJoinPreview(c, code = '') {
+  const effectiveCode = code || c.class_code || '';
+  showModal(`<div class="modal-head"><div><div class="eyebrow">Gabung Kelas</div><h2>${esc(c.name)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${joinPreviewHtml(c, effectiveCode)}`);
+  document.getElementById('confirm-join-btn').onclick = () => submitJoin(c, effectiveCode);
 }
 
 function joinPreviewHtml(c, code) {
-  return `<div class="join-preview panel"><span class="class-symbol">${svg('i-class')}</span><div><h3>${esc(c.name)}</h3><p>${esc(c.institution || '')} ${c.cohort?'· '+esc(c.cohort):''}</p><small>${esc(c.class_code || '')} · ${esc(c.visibility || '')}</small></div></div><div id="join-request-status" class="request-status"></div><button id="confirm-join-btn" class="btn btn-primary btn-block">Ajukan Bergabung</button>`;
+  const viaJoin = String(c.match_type || '').toUpperCase() === 'JOIN_CODE' || (code && code.toUpperCase() !== String(c.class_code || '').toUpperCase());
+  const waiting = String(c.membership_status || '').toUpperCase() === 'PENDING';
+  return `<div class="join-preview panel"><span class="class-symbol">${svg('i-class')}</span><div><h3>${esc(c.name)}</h3><p>${esc(c.institution || '')} ${c.cohort?'· '+esc(c.cohort):''}</p><small>${esc(c.class_code || '')} · ${esc(c.visibility || '')}</small></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Join Code valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><button id="confirm-join-btn" class="btn btn-primary btn-block" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button>`;
 }
 
 async function submitJoin(c, code) {
@@ -201,3 +204,11 @@ function showModal(html) {
 }
 function closeModal(){ document.getElementById('phase-modal')?.remove(); }
 function classSkeleton(){ return [1,2,3].map(()=>'<div class="class-card skeleton class-card-skeleton"></div>').join(''); }
+
+function roleLabel(role) {
+  const key = String(role || 'MEMBER').toUpperCase();
+  if (key === 'COORDINATOR') return 'Ketua Kelas';
+  if (key === 'OWNER') return 'Owner';
+  if (key === 'MODERATOR') return 'Moderator';
+  return 'Member';
+}

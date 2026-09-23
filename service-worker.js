@@ -2,12 +2,14 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v3.0.0-b030';
+const CACHE_NAME = 'kelasku-v3.1.0-b040';
 const APP_SHELL = [
   './',
   './index.html',
   './config.js',
   './manifest.json',
+  './app-version.json',
+  './changelog.json',
   './src/css/app.css',
   './src/js/app.js',
   './src/js/core/state.js',
@@ -30,9 +32,11 @@ const APP_SHELL = [
   './src/js/screens/classes.js',
   './src/js/screens/classRoom.js',
   './src/js/screens/admin.js',
+  './src/js/screens/appInfo.js',
   './assets/brand/logo-mark.svg',
   './assets/icons/favicon.svg',
   './assets/icons/favicon-32.png',
+  './assets/icons/favicon-64.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png'
 ];
@@ -55,6 +59,19 @@ self.addEventListener('fetch', event => {
 
   // Jangan ikut campur request lintas domain / Apps Script.
   if (url.origin !== self.location.origin) return;
+
+  // Version/changelog harus network-first agar PWA lama cepat melihat release baru.
+  if (url.pathname.endsWith('/app-version.json') || url.pathname.endsWith('/changelog.json')) {
+    event.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then(res => {
+          if (res && res.ok) caches.open(CACHE_NAME).then(cache => cache.put(req, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
 
   if (req.mode === 'navigate') {
     event.respondWith(

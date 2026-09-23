@@ -7,6 +7,7 @@ import { appShell, bindAppShell } from '../core/appShell.js';
 
 let carouselTimer = null;
 let carouselIndex = 0;
+let updateEventHandler = null;
 
 export function renderDashboard() {
   const content = `
@@ -31,6 +32,19 @@ export function renderDashboard() {
   const updateBtn = document.getElementById('update-now');
   if (updateBtn) updateBtn.onclick = updateApp;
 
+  if (updateEventHandler) window.removeEventListener('kelasku-update-check', updateEventHandler);
+  updateEventHandler = () => {
+    const updateSlot = document.getElementById('update-slot');
+    if (updateSlot) {
+      updateSlot.innerHTML = updateBanner();
+      const btn = document.getElementById('update-now');
+      if (btn) btn.onclick = updateApp;
+    }
+    refreshNotificationSummary();
+    if (!document.getElementById('notif-drawer')?.classList.contains('hidden')) renderNotificationDrawer();
+  };
+  window.addEventListener('kelasku-update-check', updateEventHandler);
+
   refreshDashboard();
   startNotificationPolling();
 }
@@ -48,7 +62,7 @@ function updateBanner() {
 function drawSkeleton() {
   const slot = document.getElementById('dashboard-slot');
   if (!slot) return;
-  slot.innerHTML = `<div class="hello"><div><h1>Halo! 👋</h1><p>Menyiapkan dashboardmu…</p></div></div><div class="dashboard-carousel skeleton" style="height:180px"></div><section class="stats">${[1,2,3,4].map(() => '<div class="stat skeleton" style="height:82px"></div>').join('')}</section><section class="dash-grid"><div class="panel skeleton" style="height:240px"></div><div class="panel skeleton" style="height:240px"></div></section>`;
+  slot.innerHTML = `<div class="hello"><div><h1>Halo! 👋</h1><p>Menyiapkan dashboardmu…</p></div></div><section class="dashboard-summary-strip">${[1,2,3,4].map(() => '<div class="summary-mini skeleton" style="height:64px"></div>').join('')}</section><div class="dashboard-carousel skeleton" style="height:180px"></div><section class="dashboard-quick-actions">${[1,2,3,4,5].map(() => '<div class="dashboard-quick-action skeleton" style="height:66px"></div>').join('')}</section><section class="dash-grid"><div class="panel skeleton" style="height:240px"></div><div class="panel skeleton" style="height:240px"></div></section>`;
 }
 
 async function refreshDashboard() {
@@ -81,6 +95,13 @@ function drawDashboard(d) {
       <div class="quote">“Belajar lebih rapi, informasi lebih cepat ditemukan.”</div>
     </div>
 
+    <section class="dashboard-summary-strip" aria-label="Ringkasan dashboard">
+      ${summaryMini('i-class', s.active_classes || 0, 'Kelas Aktif', 'classes')}
+      ${summaryMini('i-task', s.open_tasks || 0, 'Tugas Aktif', 'tasks')}
+      ${summaryMini('i-file', s.new_materials || 0, 'Materi Baru', 'materials')}
+      ${summaryMini('i-bell', unreadNotificationCount(), 'Notifikasi', 'notifications')}
+    </section>
+
     ${carouselHtml(d)}
 
     <section class="dashboard-quick-actions" aria-label="Akses cepat akademik">
@@ -91,13 +112,6 @@ function drawDashboard(d) {
       ${quickAction('i-check','Absensi','attendance')}
     </section>
 
-    <section class="stats">
-      ${stat('i-class', s.active_classes || 0, 'Kelas Aktif')}
-      ${stat('i-task', s.open_tasks || 0, 'Tugas Aktif')}
-      ${stat('i-file', s.new_materials || 0, 'Materi Baru')}
-      ${stat('i-mega', s.announcements || 0, 'Pengumuman')}
-    </section>
-
     <section class="dash-grid">
       <div class="panel"><div class="panel-head"><div class="panel-title">Kelas Aktif</div><button class="mini-link button-link" id="open-all-classes">Lihat Semua</button></div>${(d.classes || []).length ? `<div class="list">${d.classes.slice(0,4).map(classRow).join('')}</div>` : empty('Belum ada kelas', 'Buat kelas sendiri atau masuk menggunakan Class Code / Join Code.')}</div>
       <div class="panel"><div class="panel-head"><div class="panel-title">Jadwal Hari Ini</div><button class="mini-link button-link" data-dashboard-route="schedule">Lihat Jadwal</button></div>${(d.schedules || []).length ? `<div class="list">${d.schedules.slice(0,5).map(x => row('i-calendar', x.title, `${x.time || ''}${x.location ? ' • '+x.location : ''}`, x.class_name)).join('')}</div>` : empty('Tidak ada jadwal', 'Jadwal hari ini akan tampil di sini.')}</div>
@@ -106,7 +120,11 @@ function drawDashboard(d) {
     </section>`;
 
   document.getElementById('open-all-classes')?.addEventListener('click', () => go('classes'));
-  slot.querySelectorAll('[data-dashboard-route]').forEach(btn => btn.onclick = () => go(btn.dataset.dashboardRoute));
+  slot.querySelectorAll('[data-dashboard-route]').forEach(btn => btn.onclick = () => {
+    const route = btn.dataset.dashboardRoute;
+    if (route === 'notifications') toggleNotifications();
+    else go(route);
+  });
   slot.querySelectorAll('[data-dashboard-class]').forEach(btn => {
     btn.onclick = () => {
       state.selectedClassId = btn.dataset.dashboardClass;
@@ -185,16 +203,22 @@ function quickAction(icon,label,route) {
   return `<button type="button" class="dashboard-quick-action" data-dashboard-route="${esc(route)}"><span>${svg(icon)}</span><strong>${esc(label)}</strong></button>`;
 }
 
-function stat(icon, value, label) {
-  return `<div class="stat"><div class="status-icon">${svg(icon)}</div><div><strong>${value}</strong><span>${label}</span></div></div>`;
+function summaryMini(icon, value, label, route) {
+  return `<button type="button" class="summary-mini" data-dashboard-route="${esc(route)}"><span class="summary-mini-icon">${svg(icon)}</span><span class="summary-mini-copy"><strong data-summary-value="${esc(route)}">${Number(value||0)}</strong><small>${esc(label)}</small></span></button>`;
+}
+function unreadNotificationCount(){ return (state.notifications || []).filter(n => !n.read_at).length; }
+function refreshNotificationSummary(value = unreadNotificationCount()){
+  const el=document.querySelector('[data-summary-value="notifications"]');
+  if(el) el.textContent=String(Number(value||0));
 }
 function row(icon, title, copy, meta='') {
   return `<div class="list-row"><div class="status-icon">${svg(icon)}</div><div><h4>${esc(title)}</h4><p>${meta ? esc(meta)+' • ' : ''}${esc(copy)}</p></div></div>`;
 }
 function classRow(item) {
   const classId = item.class_id || item.id || '';
-  return `<button type="button" class="list-row list-row-button" data-dashboard-class="${esc(classId)}"><div class="status-icon">${svg('i-class')}</div><div><h4>${esc(item.name)}</h4><p>${esc((item.code || item.class_code || '') + ' • ' + (item.role || 'MEMBER'))}</p></div>${svg('i-arrow')}</button>`;
+  return `<button type="button" class="list-row list-row-button" data-dashboard-class="${esc(classId)}"><div class="status-icon">${svg('i-class')}</div><div><h4>${esc(item.name)}</h4><p>${esc((item.code || item.class_code || '') + ' • ' + roleLabel(item.role || 'MEMBER'))}</p></div>${svg('i-arrow')}</button>`;
 }
+function roleLabel(role){const key=String(role||'MEMBER').toUpperCase();if(key==='COORDINATOR')return 'Ketua Kelas';if(key==='OWNER')return 'Owner';if(key==='MODERATOR')return 'Moderator';return 'Member';}
 function deadlineLabel(value) {
   if (!value) return 'Tanpa deadline';
   try { return 'Deadline ' + new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)); }
@@ -222,6 +246,7 @@ async function fetchNotifications(showSystem) {
       badge.textContent = unread.length;
       badge.classList.toggle('hidden', !unread.length);
     }
+    refreshNotificationSummary(unread.length);
 
     if (showSystem && 'Notification' in window && Notification.permission === 'granted') {
       const fresh = unread.filter(n => !oldIds.has(n.notification_id));
@@ -240,9 +265,13 @@ function renderNotificationDrawer() {
   const drawer = document.getElementById('notif-drawer');
   if (!drawer) return;
 
-  drawer.innerHTML = `<div class="panel-head"><div class="panel-title">Notifikasi</div><button class="icon-btn mini" id="close-notif">${svg('i-close')}</button></div>${state.notifications.length ? `<div class="list">${state.notifications.map(n => `<div class="list-row notif-row" data-notif="${esc(n.notification_id)}"><div class="status-icon">${svg(n.type === 'TASK' ? 'i-task' : n.type === 'SCHEDULE' ? 'i-calendar' : n.type === 'MATERIAL' ? 'i-file' : n.type === 'ANNOUNCEMENT' ? 'i-mega' : 'i-bell')}</div><div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p><p>${fmtDate(n.created_at)}</p></div>${n.read_at ? '' : '<span style="color:var(--tosca)">●</span>'}</div>`).join('')}</div>` : empty('Belum ada notifikasi', 'Informasi penting akan tampil di sini.')}`;
+  const updateAvailable = state.remoteConfig && semverCmp(C.APP_VERSION, state.remoteConfig.current_version) < 0;
+  const updateRow = updateAvailable ? `<button type="button" class="list-row notif-row update-notif-row" id="notif-update-app"><div class="status-icon">${svg('i-refresh')}</div><div><h4>Update KelasKu v${esc(state.remoteConfig.current_version)}</h4><p>${esc(state.remoteConfig.release_note || 'Pembaruan aplikasi tersedia.')}</p><p>Ketuk untuk memperbarui.</p></div><span style="color:var(--tosca)">●</span></button>` : '';
+  const notificationList = state.notifications.length ? state.notifications.map(n => `<div class="list-row notif-row" data-notif="${esc(n.notification_id)}"><div class="status-icon">${svg(n.type === 'TASK' ? 'i-task' : n.type === 'SCHEDULE' ? 'i-calendar' : n.type === 'MATERIAL' ? 'i-file' : n.type === 'ANNOUNCEMENT' ? 'i-mega' : 'i-bell')}</div><div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p><p>${fmtDate(n.created_at)}</p></div>${n.read_at ? '' : '<span style="color:var(--tosca)">●</span>'}</div>`).join('') : '';
+  drawer.innerHTML = `<div class="panel-head"><div class="panel-title">Notifikasi</div><button class="icon-btn mini" id="close-notif">${svg('i-close')}</button></div>${updateRow || notificationList ? `<div class="list">${updateRow}${notificationList}</div>` : empty('Belum ada notifikasi', 'Informasi penting akan tampil di sini.')}`;
 
   document.getElementById('close-notif')?.addEventListener('click', () => drawer.classList.add('hidden'));
+  document.getElementById('notif-update-app')?.addEventListener('click', updateApp);
   drawer.querySelectorAll('[data-notif]').forEach(el => {
     el.onclick = () => markNotification(el.dataset.notif);
   });
@@ -256,6 +285,7 @@ async function markNotification(id) {
     n.read_at = new Date().toISOString();
     localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
     renderNotificationDrawer();
+    refreshNotificationSummary();
   }
   if (n.deep_link) openDeepLink(n.deep_link);
 }
