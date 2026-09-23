@@ -76,7 +76,7 @@ function drawSettings(s) {
         keywords: 'halaman awal startup beranda kelas onboarding tutorial pengalaman navigasi',
         body: `
           <div class="settings-room-grid">
-            ${selectRow('Halaman Awal', 'startup_page', s.startup_page, [['DASHBOARD','Beranda'],['CLASSES','Kelas'],['TASKS','Tugas'],['SCHEDULE','Jadwal'],['MATERIALS','Materi'],['ATTENDANCE','Absensi']], 'Dipakai saat aplikasi dibuka kembali.')}
+            ${selectRow('Halaman Awal', 'startup_page', s.startup_page, [['DASHBOARD','Beranda'],['CLASSES','Kelas'],['TASKS','Tugas'],['SCHEDULE','Jadwal'],['MATERIALS','Materi'],['ATTENDANCE','Absensi'],['MESSAGES','Pesan']], 'Dipakai saat aplikasi dibuka kembali.')}
             ${toggleRow('Onboarding Aktif', 'onboarding_enabled', s.onboarding_enabled, 'Izinkan panduan KelasKu diputar ulang dari akun ini.')}
           </div>
           <div class="settings-inline-actions">
@@ -86,19 +86,34 @@ function drawSettings(s) {
 
       ${settingsRoom({
         id: 'notifications', icon: 'i-bell', title: 'Notifikasi',
-        copy: 'Kontrol jenis informasi yang masuk ke Notification Center.', count: '5 Filter',
-        keywords: 'notifikasi pengumuman jadwal tugas materi sistem notification browser',
+        copy: 'Kontrol jenis informasi yang masuk ke Notification Center.', count: '7 Filter',
+        keywords: 'notifikasi pengumuman jadwal tugas materi pesan chat absensi sistem notification browser',
         body: `
           <div class="settings-room-grid settings-toggle-grid">
             ${toggleRow('Pengumuman', 'notif_announcement', s.notif_announcement, 'Info resmi kelas.')}
             ${toggleRow('Jadwal', 'notif_schedule', s.notif_schedule, 'Perubahan dan pengingat jadwal.')}
             ${toggleRow('Tugas', 'notif_task', s.notif_task, 'Deadline dan pembaruan tugas.')}
             ${toggleRow('Materi', 'notif_material', s.notif_material, 'Materi baru dari kelas.')}
+            ${toggleRow('Pesan', 'notif_message', s.notif_message, 'Pesan dan mention dari room kelas.')}
+            ${toggleRow('Absensi', 'notif_attendance', s.notif_attendance, 'Sesi absensi dibuka atau diubah.')}
             ${toggleRow('Sistem', 'notif_system', s.notif_system, 'Update aplikasi dan pesan sistem.')}
           </div>
           <div class="settings-status-card">
             <div><strong>Notifikasi Browser</strong><small id="notification-browser-status">${esc(notificationStatusText())}</small></div>
             <button type="button" id="notif-from-settings" class="btn btn-secondary">Aktifkan / Cek Izin</button>
+          </div>`
+      })}
+
+
+      ${settingsRoom({
+        id: 'privacy', icon: 'i-shield', title: 'Privasi',
+        copy: 'Kontrol visibilitas profil, identitas pencarian, dan aktivitas.', count: '3 Menu',
+        keywords: 'privasi profile profil visibility pencarian identitas aktivitas',
+        body: `
+          <div class="settings-room-grid">
+            ${selectRow('Visibilitas Profil', 'profile_visibility', s.profile_visibility || 'CLASS', [['PUBLIC','Publik'],['CLASS','Anggota Kelas'],['PRIVATE','Privat']], 'Mengatur siapa yang boleh melihat profil lengkap.')}
+            ${toggleRow('Identitas Akademik Dapat Dicari', 'search_identity', truthy(s.search_identity), 'NIM/NIS/NISN dapat membantu teman menemukan akun. NIK tetap tidak ditampilkan publik.')}
+            ${selectRow('Visibilitas Aktivitas', 'activity_visibility', s.activity_visibility || 'CLASS', [['CLASS','Anggota Kelas'],['PRIVATE','Hanya Saya']], 'Mengatur ringkasan aktivitas profil.')}
           </div>`
       })}
 
@@ -271,7 +286,12 @@ function collectPayload(form) {
     notif_schedule: form.notif_schedule.checked,
     notif_task: form.notif_task.checked,
     notif_material: form.notif_material.checked,
-    notif_system: form.notif_system.checked
+    notif_message: form.notif_message.checked,
+    notif_attendance: form.notif_attendance.checked,
+    notif_system: form.notif_system.checked,
+    profile_visibility: form.profile_visibility.value,
+    search_identity: form.search_identity.checked,
+    activity_visibility: form.activity_visibility.value
   };
 }
 

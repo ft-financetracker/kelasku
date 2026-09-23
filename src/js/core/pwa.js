@@ -97,7 +97,11 @@ function normalizeDeepLink(url='dashboard') {
   if (/^https?:\/\//i.test(value)) return value;
   const route=value.replace(/^\.\/?#/,'').replace(/^#/,'').replace(/^\//,'') || 'dashboard';
   const target=new URL('./', window.location.href);
-  target.hash=route;
+  if (route.includes(':')) {
+    target.searchParams.set('deep', route);
+  } else {
+    target.hash=route;
+  }
   return target.href;
 }
 

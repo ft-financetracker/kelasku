@@ -7,6 +7,7 @@ import { go } from '../core/router.js';
 import { invalidateAcademicClientCache } from './academic.js';
 
 let activeTab = 'overview';
+let timelineCategory = 'ALL';
 let currentClassData = null;
 
 export function renderClassRoom() {
@@ -17,14 +18,16 @@ export function renderClassRoom() {
   currentClassData = cached;
 
   const content = `<div class="class-room-page">
-    <div class="page-head"><div><div class="eyebrow">PHASE 4 • RUANG KELAS</div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${roleLabel(cached.class?.role || 'MEMBER')}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary">${svg('i-back')} Kembali</button></div>
+    <div class="page-head"><div><div class="eyebrow">PHASE 5 • RUANG KELAS</div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${roleLabel(cached.class?.role || 'MEMBER')}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary">${svg('i-back')} Kembali</button></div>
     <div id="class-room-slot">${cached ? '' : roomSkeleton()}</div>
   </div>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'classes', content, hideSearch: true });
   bindAppShell();
   document.getElementById('back-classes').onclick = () => go('classes');
-  activeTab = 'overview';
+  timelineCategory = 'ALL';
+  activeTab = sessionStorage.getItem('kelasku_class_tab') || 'overview';
+  sessionStorage.removeItem('kelasku_class_tab');
   if (cached) drawClass(cached, false);
   loadClassDetail(Boolean(cached));
 }
@@ -53,18 +56,24 @@ function drawClass(data, preserveTab = true) {
   document.getElementById('class-room-subtitle').textContent = `${c.class_code || ''} · ${roleLabel(c.role || 'MEMBER')}${leader && String(leader.user_id) === String(state.user?.user_id) ? ' • Ketua Kelas' : ''}`;
 
   document.getElementById('class-room-slot').innerHTML = `
-    <section class="class-hero panel">
+    <section class="class-hero class-hero-v5 panel">
       <div class="class-hero-icon">${svg('i-class')}</div>
-      <div class="class-hero-main"><div class="class-badge-line"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div><h2>${esc(c.name)}</h2><p>${esc(c.description || 'Belum ada deskripsi kelas.')}</p><div class="class-meta-line"><span>${esc(c.institution || 'KelasKu')}</span>${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}<span>${esc(c.visibility || 'DISCOVERABLE')}</span></div></div>
-      <div class="class-code-stack">
-        <div class="code-card"><span>Class Code</span><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini">${svg('i-copy')}</button></div>
-        ${p.can_manage_class ? `<div class="code-card"><span>Join Code</span><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini">${svg('i-copy')}</button></div>`:''}
+      <div class="class-hero-main">
+        <div class="class-badge-line"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
+        <h2>${esc(c.name)}</h2>
+        <p>${esc(c.description || 'Belum ada deskripsi kelas.')}</p>
+        <div class="class-meta-line"><span>${esc(c.institution || 'KelasKu')}</span>${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}<span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
+        <div class="class-code-inline">
+          <div class="class-code-inline-item"><span>Class Code</span><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div>
+          ${p.can_manage_class ? `<div class="class-code-inline-item"><span>Join Code</span><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini" title="Salin Join Code">${svg('i-copy')}</button></div>`:''}
+        </div>
       </div>
     </section>
 
     <div class="room-tabs" id="room-tabs">
       ${tabButton('overview','Ringkasan')}
       ${tabButton('timeline','Timeline')}
+      ${tabButton('messages','Pesan')}
       ${tabButton('announcements','Pengumuman')}
       ${tabButton('schedule','Jadwal')}
       ${tabButton('tasks','Tugas')}
@@ -89,7 +98,21 @@ function switchTab(tab, data) {
   const slot = document.getElementById('room-content');
   if (!slot) return;
 
-  if (['timeline','announcements','schedule','tasks','materials','attendance'].includes(tab)) {
+  if (tab === 'messages') {
+    sessionStorage.setItem('kelasku_message_class', state.selectedClassId);
+    go('messages');
+    return;
+  }
+
+  if (tab === 'timeline') {
+    const cached = state.classTimeline[state.selectedClassId];
+    if (cached) drawTimeline(cached);
+    else slot.innerHTML = academicRoomSkeleton();
+    loadClassTimeline(Boolean(cached));
+    return;
+  }
+
+  if (['announcements','schedule','tasks','materials','attendance'].includes(tab)) {
     const cached = state.classAcademic[state.selectedClassId];
     if (cached) drawAcademicTab(tab, cached);
     else slot.innerHTML = academicRoomSkeleton();
@@ -108,9 +131,9 @@ async function loadClassAcademic(background = false) {
   try {
     const data = await api('getClassAcademic', { class_id: state.selectedClassId });
     state.classAcademic[state.selectedClassId] = data;
-    if (['timeline','announcements','schedule','tasks','materials','attendance'].includes(activeTab)) drawAcademicTab(activeTab, data);
+    if (['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) drawAcademicTab(activeTab, data);
   } catch (err) {
-    if (!background && ['timeline','announcements','schedule','tasks','materials','attendance'].includes(activeTab)) {
+    if (!background && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) {
       document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
     }
   }
@@ -125,6 +148,7 @@ function overviewHtml(data) {
     </div></div>
     <div class="panel"><div class="panel-head"><div><div class="panel-title">Academic Core</div><p class="panel-copy">Ruang belajar, koordinasi, dan aktivitas kelas.</p></div></div><div class="class-module-grid">
       ${moduleButton('i-timeline','Timeline','Aktivitas kelas','timeline')}
+      ${moduleButton('i-chat','Pesan','Room komunikasi kelas','messages')}
       ${moduleButton('i-mega','Pengumuman','Informasi resmi kelas','announcements')}
       ${moduleButton('i-calendar','Jadwal','Agenda perkuliahan','schedule')}
       ${moduleButton('i-task','Tugas','Deadline & pengumpulan','tasks')}
@@ -141,7 +165,6 @@ function drawAcademicTab(tab, data) {
   const slot = document.getElementById('room-content');
   if (!slot) return;
   const p = data.permissions || {};
-  if (tab === 'timeline') slot.innerHTML = timelineRoom(data, currentClassData || {});
   if (tab === 'announcements') slot.innerHTML = announcementsRoom(data.announcements || [], p);
   if (tab === 'schedule') slot.innerHTML = scheduleRoom(data.schedules || [], p, data.attendance_sessions || []);
   if (tab === 'tasks') slot.innerHTML = tasksRoom(data.tasks || [], p);
@@ -150,19 +173,36 @@ function drawAcademicTab(tab, data) {
   bindAcademicTab(tab, data);
 }
 
-function timelineRoom(data, detailData) {
-  const events=[];
-  (data.announcements||[]).forEach(x=>events.push({at:x.published_at,type:'PENGUMUMAN',icon:'i-mega',title:x.title,copy:x.body||''}));
-  (data.schedules||[]).forEach(x=>events.push({at:x.start_at,type:'JADWAL',icon:'i-calendar',title:x.title,copy:`${timeRange(x.start_at,x.end_at)}${x.location?' · '+x.location:''}`}));
-  (data.tasks||[]).forEach(x=>events.push({at:x.created_at||x.deadline,type:'TUGAS',icon:'i-task',title:x.title,copy:deadlineText(x.deadline)}));
-  (data.materials||[]).forEach(x=>events.push({at:x.published_at,type:'MATERI',icon:'i-file',title:x.title,copy:x.description||'Materi kelas diterbitkan.'}));
-  (data.attendance_sessions||[]).forEach(x=>events.push({at:x.created_at||x.start_at,type:'ABSENSI',icon:'i-check',title:x.title,copy:`${windowLabel(x.window_status)} · ${shortDateTime(x.open_at||x.start_at)}`}));
-  (detailData.leader_elections||[]).forEach(x=>events.push({at:x.created_at||x.start_at,type:'PEMILIHAN',icon:'i-vote',title:x.title,copy:`${pollStatusLabel(x.status)} · ${x.total_votes||0} suara`}));
-  events.sort((a,b)=>dateMs(b.at)-dateMs(a.at));
-  return `<section class="panel class-timeline-panel"><div class="panel-head"><div><div class="panel-title">Timeline Kelas</div><p class="panel-copy">Aktivitas penting kelas dirangkum dalam alur yang lebih mudah dipindai.</p></div><span class="phase-badge">${events.length} AKTIVITAS</span></div>
-    ${events.length?`<div class="class-zigzag-timeline">${events.slice(0,40).map((e,i)=>`<article class="class-timeline-item ${i%2?'right':'left'}"><div class="class-timeline-node">${svg(e.icon)}</div><div class="class-timeline-card"><span>${esc(e.type)} · ${esc(shortDateTime(e.at))}</span><strong>${esc(e.title||'-')}</strong><p>${esc(e.copy||'')}</p></div></article>`).join('')}</div>`:'<div class="search-empty">Belum ada aktivitas kelas.</div>'}
+async function loadClassTimeline(background=false) {
+  try {
+    const data = await api('getClassTimeline',{class_id:state.selectedClassId,category:timelineCategory,limit:60});
+    state.classTimeline[state.selectedClassId] = data;
+    if (activeTab === 'timeline') drawTimeline(data);
+  } catch (err) {
+    if (!background && activeTab === 'timeline') {
+      document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Timeline gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+    }
+  }
+}
+
+function drawTimeline(data) {
+  const slot=document.getElementById('room-content'); if(!slot)return;
+  slot.innerHTML=timelineRoom(data.items||[]);
+  document.querySelectorAll('[data-timeline-filter]').forEach(btn=>btn.onclick=()=>{
+    timelineCategory=btn.dataset.timelineFilter;
+    document.querySelectorAll('[data-timeline-filter]').forEach(x=>x.classList.toggle('active',x.dataset.timelineFilter===timelineCategory));
+    loadClassTimeline(true);
+  });
+}
+
+function timelineRoom(events) {
+  const filters=[['ALL','Semua'],['AKADEMIK','Akademik'],['ANGGOTA','Anggota'],['KEPEMIMPINAN','Kepemimpinan'],['SISTEM','Sistem']];
+  return `<section class="panel class-timeline-panel"><div class="panel-head"><div><div class="panel-title">Timeline Kelas</div><p class="panel-copy">Aktivitas penting saja, dengan filter agar timeline tetap ringan saat kelas sudah berjalan lama.</p></div><span class="phase-badge">${events.length} AKTIVITAS</span></div>
+    <div class="timeline-filter-row">${filters.map(f=>`<button type="button" class="filter-chip ${timelineCategory===f[0]?'active':''}" data-timeline-filter="${f[0]}">${f[1]}</button>`).join('')}</div>
+    ${events.length?`<div class="class-zigzag-timeline">${events.map((e,i)=>`<article class="class-timeline-item ${i%2?'right':'left'}"><div class="class-timeline-node">${svg(timelineIcon(e.event_type))}</div><div class="class-timeline-card"><span>${esc(e.category||'SISTEM')} · ${esc(shortDateTime(e.created_at))}</span><strong>${esc(e.title||'-')}</strong><p>${esc(e.body||'')}</p></div></article>`).join('')}</div>`:'<div class="search-empty">Belum ada aktivitas pada filter ini.</div>'}
   </section>`;
 }
+function timelineIcon(type){const x=String(type||'').toUpperCase();if(x.includes('TASK'))return'i-task';if(x.includes('SCHEDULE'))return'i-calendar';if(x.includes('MATERIAL'))return'i-file';if(x.includes('ATTENDANCE'))return'i-check';if(x.includes('POLL')||x.includes('LEADER'))return'i-vote';if(x.includes('MEMBER'))return'i-users';if(x.includes('ANNOUNCEMENT'))return'i-mega';return'i-timeline';}
 
 function announcementsRoom(items,p) {
   return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Pengumuman Kelas</div><p class="panel-copy">Informasi resmi yang tidak tenggelam di chat.</p></div>${p.can_publish?`<button id="create-announcement" class="btn btn-primary">${svg('i-plus')} Buat</button>`:''}</div><div class="announcement-feed class-feed">${items.length?items.map(x=>`<article class="announcement-card priority-${String(x.priority||'normal').toLowerCase()}"><div class="announcement-marker">${svg('i-mega')}</div><div><div class="academic-meta-line"><span>${esc(shortDateTime(x.published_at))}</span><span>${esc(x.priority||'NORMAL')}</span></div><h3>${esc(x.title)}</h3><p>${esc(x.body||'')}</p></div>${p.can_publish?archiveButton('ANNOUNCEMENT',x.announcement_id):''}</article>`).join(''):'<div class="search-empty">Belum ada pengumuman.</div>'}</div></section>`;
@@ -284,8 +324,13 @@ function leaderElectionHtml(polls,items,p){
 
 function memberRow(m,p) {
   const canEdit=p.can_manage_roles && m.class_role!=='OWNER'; const canRemove=p.can_manage_members && m.class_role!=='OWNER';
-  const badges=`<div class="member-badge-line"><span class="role-pill role-${String(m.class_role||'member').toLowerCase()}">${esc(roleLabel(m.class_role||'MEMBER'))}</span>${m.is_class_leader?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>`;
-  return `<div class="member-row"><div class="member-avatar">${avatarMarkup(m)}</div><div class="member-info"><strong>${esc(m.full_name||m.username)}</strong><span>@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span><small>${esc(m.study_program||'')} ${m.cohort?'· '+esc(m.cohort):''}</small>${badges}</div><div class="member-actions">${canEdit?`<select class="control role-select" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Koordinator</option></select>`:''}${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota">${svg('i-close')}</button>`:''}</div></div>`;
+  const roleText=`${roleLabel(m.class_role||'MEMBER')}${m.is_class_leader?' • Ketua Kelas':''}`;
+  return `<div class="member-row member-row-v5">
+    <div class="member-avatar">${avatarMarkup(m)}</div>
+    <div class="member-info"><strong>${esc(m.full_name||m.username)}</strong><span>@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span><small>${esc(m.study_program||'')} ${m.cohort?'· '+esc(m.cohort):''}</small></div>
+    <div class="member-badge-top"><span class="role-pill role-${String(m.class_role||'member').toLowerCase()}">${esc(roleText)}</span></div>
+    <div class="member-actions">${canEdit?`<select class="control role-select" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Koordinator</option></select>`:''}${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota">${svg('i-close')}</button>`:''}</div>
+  </div>`;
 }
 
 function requestsHtml(data) {

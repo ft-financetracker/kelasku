@@ -31,7 +31,10 @@ export const state = {
   academicHubAt: Number(localStorage.getItem('kelasku_academic_cache_at') || 0),
   classDetails: {},
   classAcademic: {},
-  adminOverview: null
+  adminOverview: null,
+  messageRooms: readJson('kelasku_message_rooms_cache', []),
+  messagesByClass: {},
+  classTimeline: {}
 };
 
 export function setSession(token, user) {
@@ -70,6 +73,10 @@ export function clearSession() {
   state.classDetails = {};
   state.classAcademic = {};
   state.adminOverview = null;
+  state.messageRooms = [];
+  state.messagesByClass = {};
+  state.classTimeline = {};
+  localStorage.removeItem('kelasku_message_rooms_cache');
   localStorage.removeItem('kelasku_academic_cache');
   localStorage.removeItem('kelasku_academic_cache_at');
   if (state.notificationTimer) clearInterval(state.notificationTimer);

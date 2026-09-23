@@ -12,7 +12,7 @@ export function appShell(options = {}) {
   return `
     <div class="dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
       <aside class="sidebar">
-        ${logo()}
+        <button type="button" class="sidebar-brand-toggle" id="sidebar-brand-toggle" aria-label="Ciutkan atau buka menu" title="Ciutkan / buka menu">${logo()}</button>
         <nav class="nav" aria-label="Navigasi utama">
           ${sideItem('i-home', 'Beranda', 'dashboard', active === 'dashboard', true)}
           ${sideItem('i-class', 'Kelas', 'classes', active === 'classes' || active === 'class')}
@@ -21,7 +21,7 @@ export function appShell(options = {}) {
           ${sideItem('i-file', 'Materi', 'materials', active === 'materials')}
           ${sideItem('i-mega', 'Pengumuman', 'announcements', active === 'announcements')}
           ${sideItem('i-check', 'Absensi', 'attendance', active === 'attendance')}
-          ${sideItem('i-chat', 'Pesan', 'future:pesan', false)}
+          ${sideItem('i-chat', 'Pesan', 'messages', active === 'messages')}
           ${sideItem('i-user', 'Profil', 'account', active === 'account')}
           ${sideItem('i-gear', 'Pengaturan', 'settings', active === 'settings' || active === 'app-info')}
           ${admin ? sideItem('i-shield', 'Super Admin', 'admin', active === 'admin') : ''}
@@ -31,8 +31,7 @@ export function appShell(options = {}) {
 
       <main class="main">
         <div class="topbar">
-          <button class="icon-btn shell-desktop-menu" id="shell-menu-toggle" title="Buka/tutup menu" aria-label="Buka atau tutup menu">${svg('i-menu')}</button>
-          ${logo(true)}
+${logo(true)}
           ${options.hideSearch ? '<div class="search-spacer"></div>' : `<button type="button" class="search search-button" id="shell-search">${esc(searchPlaceholder)}</button>`}
           <div class="top-actions">
             <button class="icon-btn shell-mobile-quick" id="shell-settings" title="Pengaturan" aria-label="Pengaturan">${svg('i-gear')}</button>
@@ -48,7 +47,7 @@ export function appShell(options = {}) {
         ${bottomItem('i-class', 'Kelas', 'classes', active === 'classes' || active === 'class')}
         ${bottomItem('i-task', 'Tugas', 'tasks', active === 'tasks')}
         ${bottomItem('i-home', 'Beranda', 'dashboard', active === 'dashboard', true)}
-        ${bottomItem('i-chat', 'Chat', 'future:chat', false)}
+        ${bottomItem('i-chat', 'Chat', 'messages', active === 'messages')}
         ${bottomItem('i-user', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'app-info' || String(active).startsWith('admin'))}
       </nav>
     </div>`;
@@ -59,12 +58,14 @@ export function bindAppShell(options = {}) {
     btn.onclick = () => handleRoute(btn.dataset.route);
   });
 
-  const menuToggle = document.getElementById('shell-menu-toggle');
-  if (menuToggle) menuToggle.onclick = () => {
+  const brandToggle = document.getElementById('sidebar-brand-toggle');
+  if (brandToggle) brandToggle.onclick = () => {
     const shell = document.querySelector('.dashboard');
     if (!shell) return;
     const collapsed = shell.classList.toggle('sidebar-collapsed');
     localStorage.setItem('kelasku_sidebar_collapsed', collapsed ? '1' : '0');
+    brandToggle.setAttribute('aria-label', collapsed ? 'Buka menu' : 'Ciutkan menu');
+    brandToggle.title = collapsed ? 'Buka menu' : 'Ciutkan menu';
   };
 
   const account = document.getElementById('shell-account');
@@ -79,10 +80,7 @@ export function bindAppShell(options = {}) {
   const notif = document.getElementById('shell-notif');
   if (notif) notif.onclick = () => {
     if (typeof options.onNotifications === 'function') options.onNotifications();
-    else {
-      go('dashboard');
-      toast('Notifikasi dibuka dari Beranda.');
-    }
+    else go('notifications');
   };
 
   const search = document.getElementById('shell-search');

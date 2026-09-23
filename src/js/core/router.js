@@ -48,7 +48,25 @@ export function currentRoute() {
 }
 
 export function openDeepLink(link = '') {
-  const route = normalizeRoute(link) || 'dashboard';
+  const raw = String(link || '').trim();
+  if (!raw) return go('dashboard');
+
+  // Deep-link internal tanpa membuat hash URL permanen.
+  // Format: class:<class_id>, messages:<class_id>, route biasa.
+  if (raw.startsWith('class:')) {
+    const classId = raw.split(':')[1] || '';
+    if (classId) {
+      sessionStorage.setItem('kelasku_selected_class', classId);
+      return go('class');
+    }
+  }
+  if (raw.startsWith('messages:')) {
+    const classId = raw.split(':')[1] || '';
+    if (classId) sessionStorage.setItem('kelasku_message_class', classId);
+    return go('messages');
+  }
+
+  const route = normalizeRoute(raw) || 'dashboard';
   go(routes.has(route) ? route : 'dashboard');
 }
 

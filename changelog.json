@@ -1,6 +1,46 @@
 {
   "releases": [
     {
+      "version": "5.0.0",
+      "build": "20260923.060",
+      "date": "23 September 2026",
+      "title": "Refinement, Communication & Experience",
+      "description": "Phase 5 memoles struktur Room Kelas dan membuka komunikasi kelas, Notification Center 2.0, Timeline 2.0, Profile 2.0, serta pengaturan privasi.",
+      "groups": [
+        {
+          "label": "UI & Navigasi",
+          "items": [
+            "Hero Room Kelas disederhanakan; Class Code dan Join Code menjadi metadata compact tanpa card bertumpuk.",
+            "Badge anggota kembali ke kanan atas, sedangkan role/action berada di kanan bawah.",
+            "Hamburger desktop dihapus; logo/brand sidebar menjadi tombol collapse/expand."
+          ]
+        },
+        {
+          "label": "Komunikasi",
+          "items": [
+            "Class Chat aktif per kelas dengan optimistic send, read cursor, unread room count, dan cache-first room list.",
+            "Notification Center 2.0 memiliki kategori Semua, Kelas, Tugas, Jadwal, Absensi, Pesan, dan Sistem.",
+            "Tandai semua dibaca dilakukan satu batch action."
+          ]
+        },
+        {
+          "label": "Timeline & Profil",
+          "items": [
+            "Timeline Kelas 2.0 memiliki filter Akademik, Anggota, Kepemimpinan, dan Sistem dengan layout zig-zag desktop.",
+            "Profile 2.0 menampilkan jumlah kelas, kelas yang dipimpin, tugas aktif, serta ringkasan kehadiran.",
+            "Settings menambahkan notifikasi Pesan/Absensi dan kontrol privasi dasar."
+          ]
+        },
+        {
+          "label": "Performance",
+          "items": [
+            "UI kritis tetap cache-first dan optimistic; chat tidak reload seluruh room setelah mengirim.",
+            "Schema 8 menambah 37_CLASS_MESSAGES, 38_MESSAGE_READS, dan 39_CLASS_TIMELINE."
+          ]
+        }
+      ]
+    },
+    {
       "version": "4.0.0",
       "build": "20260923.050",
       "date": "23 September 2026",

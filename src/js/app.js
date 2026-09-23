@@ -1,5 +1,5 @@
 /**
- * KelasKu — Application Entry Point v3.1.0
+ * KelasKu — Application Entry Point v5.0.0
  * ============================================================
  * Phase 3 membuka Academic Core: Pengumuman, Jadwal, Tugas, Materi, dan Absensi.
  * Bootstrap tetap compound: config + user + settings + dashboard.
@@ -10,7 +10,7 @@ import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
 import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate } from './core/pwa.js';
-import { registerRoute, go, startRouter } from './core/router.js';
+import { registerRoute, go, startRouter, openDeepLink } from './core/router.js';
 import { applyPreferences } from './core/preferences.js';
 
 import { renderSplash } from './screens/splash.js';
@@ -27,6 +27,8 @@ import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, r
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
 import { renderAttendanceLanding } from './screens/attendanceLanding.js';
+import { renderMessages } from './screens/messages.js';
+import { renderNotifications } from './screens/notifications.js';
 
 const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
 
@@ -47,6 +49,8 @@ registerRoute('materials', authGuard(renderMaterials));
 registerRoute('announcements', authGuard(renderAnnouncements));
 registerRoute('attendance', authGuard(renderAttendance));
 registerRoute('attendance-link', authGuard(renderAttendanceLanding));
+registerRoute('messages', authGuard(renderMessages));
+registerRoute('notifications', authGuard(renderNotifications));
 function adminGuard(renderer) {
   return () => {
     if (!state.sessionToken) return go('auth');
@@ -136,7 +140,15 @@ function routeReadyUser() {
   if (!state.user) return;
   if (!state.user.profile_complete) return go('profile');
   if (shouldShowAppSetup()) return go('setup');
-  if (new URL(window.location.href).searchParams.get('attendance')) return go('attendance-link');
+
+  const currentUrl = new URL(window.location.href);
+  if (currentUrl.searchParams.get('attendance')) return go('attendance-link');
+  const deep = currentUrl.searchParams.get('deep');
+  if (deep) {
+    currentUrl.searchParams.delete('deep');
+    try { window.history.replaceState({}, '', currentUrl.pathname + currentUrl.search); } catch {}
+    return openDeepLink(deep);
+  }
 
   const startup = String(state.settings?.startup_page || 'DASHBOARD').toUpperCase();
   if (startup === 'CLASSES') return go('classes');
@@ -144,6 +156,7 @@ function routeReadyUser() {
   if (startup === 'SCHEDULE') return go('schedule');
   if (startup === 'MATERIALS') return go('materials');
   if (startup === 'ATTENDANCE') return go('attendance');
+  if (startup === 'MESSAGES') return go('messages');
   return go('dashboard');
 }
 

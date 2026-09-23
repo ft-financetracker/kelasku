@@ -1,7 +1,7 @@
 {
-  "version": "4.0.0",
-  "build": "20260923.050",
-  "schema": 7,
+  "version": "5.0.0",
+  "build": "20260923.060",
+  "schema": 8,
   "release_date": "2026-09-23",
-  "release_note": "Phase 4: interaction safety, collapsible desktop navigation, avatar upload, class timeline, leader election, auto attendance session/link, dashboard precision, dan App Info refinement."
+  "release_note": "Phase 5: room hero refinement, logo-based desktop collapse, Class Chat, Notification Center 2.0, Timeline 2.0 filters, Profile 2.0, privacy settings, dan performance cache-first."
 }

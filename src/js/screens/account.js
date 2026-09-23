@@ -30,6 +30,17 @@ export function renderAccount() {
       <div class="account-id-box"><span>KelasKu ID</span><strong>${esc(u.kelasku_id || '-')}</strong></div>
     </section>
 
+
+    <section class="profile-overview panel">
+      <div class="panel-head"><div><div class="panel-title">Ringkasan Aktivitas</div><p class="panel-copy">Ringkasan akun dari kelas dan aktivitas akademik.</p></div>${svg('i-timeline')}</div>
+      <div id="profile-overview-grid" class="profile-overview-grid">
+        ${profileStat('i-class','-','Kelas')}
+        ${profileStat('i-shield','-','Ketua Kelas')}
+        ${profileStat('i-task','-','Tugas Aktif')}
+        ${profileStat('i-check','-','Kehadiran')}
+      </div>
+    </section>
+
     <section class="account-quick-panel panel">
       <div class="panel-head"><div><div class="panel-title">Akses Cepat</div><p class="panel-copy">Akses utama akun, terutama untuk tampilan mobile.</p></div>${svg('i-link')}</div>
       <div class="account-quick-grid">
@@ -74,6 +85,7 @@ export function renderAccount() {
   if (adminTop) adminTop.onclick = () => go('admin');
   if (adminQuick) adminQuick.onclick = () => go('admin');
   document.getElementById('logout-account').onclick = logout;
+  loadProfileOverview();
 }
 
 async function logout() {
@@ -101,3 +113,26 @@ function quickCard(icon,title,copy,id,primary=false){
 }
 function detail(label, value) { return `<div class="detail-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`; }
 function initials(name) { return String(name || 'K').trim().split(/\s+/).slice(0,2).map(x => x[0] || '').join('').toUpperCase() || 'K'; }
+
+
+async function loadProfileOverview() {
+  const root = document.getElementById('profile-overview-grid');
+  if (!root) return;
+  try {
+    const data = await api('getProfileOverview');
+    const attendance = Number(data.attendance_total || 0)
+      ? `${Number(data.attendance_present || 0)}/${Number(data.attendance_total || 0)}`
+      : '0';
+    root.innerHTML = [
+      profileStat('i-class', data.classes || 0, 'Kelas'),
+      profileStat('i-shield', data.leader_classes || 0, 'Ketua Kelas'),
+      profileStat('i-task', data.active_tasks || 0, 'Tugas Aktif'),
+      profileStat('i-check', attendance, 'Kehadiran')
+    ].join('');
+  } catch (err) {
+    console.warn('Profile overview:', err);
+  }
+}
+function profileStat(icon,value,label){
+  return `<div class="profile-stat"><span>${svg(icon)}</span><div><strong>${esc(String(value))}</strong><small>${esc(label)}</small></div></div>`;
+}
