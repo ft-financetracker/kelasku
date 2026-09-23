@@ -87,7 +87,9 @@ async function submitProfile(event) {
     localStorage.setItem('kelasku_user_cache', JSON.stringify(data.user));
     status.className = 'request-status ok';
     status.textContent = 'Profil tersimpan.';
-    go(shouldShowAppSetup() ? 'setup' : 'dashboard');
+    const returnRoute = state.profileReturnRoute;
+    state.profileReturnRoute = '';
+    go(returnRoute || (shouldShowAppSetup() ? 'setup' : 'dashboard'));
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = err.message;

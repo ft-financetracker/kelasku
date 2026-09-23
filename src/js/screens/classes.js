@@ -1,0 +1,203 @@
+import { state } from '../core/state.js';
+import { api } from '../core/api.js';
+import { esc, svg, toast } from '../core/utils.js';
+import { appShell, bindAppShell } from '../core/appShell.js';
+import { go } from '../core/router.js';
+
+export function renderClasses() {
+  const content = `
+    <div class="page-head">
+      <div><div class="eyebrow">09–10 • Class Foundation</div><h1>Kelas Saya</h1><p>Buat kelompok kelas, cari kelas, atau masuk dengan Class Code / Join Code.</p></div>
+      <div class="page-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} Masuk dengan Kode</button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} Buat Kelas</button></div>
+    </div>
+
+    <section class="class-search panel">
+      <div class="class-search-box">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off"><button id="class-search-btn" class="btn btn-secondary">Cari</button></div>
+      <div id="class-search-results" class="search-results hidden"></div>
+    </section>
+
+    <section>
+      <div class="section-title-row"><div><h2>Kelas Aktif</h2><p id="class-count">Memuat kelas…</p></div></div>
+      <div id="class-grid" class="class-grid">${classSkeleton()}</div>
+    </section>`;
+
+  document.getElementById('app').innerHTML = appShell({ active: 'classes', content, searchPlaceholder: 'Cari kelas, kode kelas, atau teman…' });
+  bindAppShell({ onSearch: () => document.getElementById('class-search-input')?.focus() });
+
+  document.getElementById('create-class-btn').onclick = openCreateClass;
+  document.getElementById('join-code-btn').onclick = openJoinCode;
+  document.getElementById('class-search-btn').onclick = runSearch;
+  document.getElementById('class-search-input').onkeydown = e => { if (e.key === 'Enter') runSearch(); };
+
+  if (Array.isArray(state.myClasses) && state.myClasses.length) drawMyClasses(state.myClasses);
+  loadMyClasses();
+}
+
+async function loadMyClasses() {
+  try {
+    const data = await api('getMyClasses');
+    state.myClasses = data.items || [];
+    localStorage.setItem('kelasku_classes_cache', JSON.stringify(state.myClasses));
+    drawMyClasses(state.myClasses);
+  } catch (err) {
+    document.getElementById('class-grid').innerHTML = `<div class="panel error-panel"><strong>Daftar kelas gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+  }
+}
+
+function drawMyClasses(items) {
+  const grid = document.getElementById('class-grid');
+  const count = document.getElementById('class-count');
+  if (!grid) return;
+  if (count) count.textContent = `${items.length} kelas aktif`;
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty class-empty"><div><div class="empty-icon">${svg('i-class')}</div><strong>Belum ada kelas</strong><span>Buat kelas sendiri atau masuk menggunakan kode dari ketua kelas.</span><div class="empty-actions"><button id="empty-create" class="btn btn-primary">Buat Kelas</button><button id="empty-join" class="btn btn-secondary">Masuk dengan Kode</button></div></div></div>`;
+    document.getElementById('empty-create').onclick = openCreateClass;
+    document.getElementById('empty-join').onclick = openJoinCode;
+    return;
+  }
+
+  grid.innerHTML = items.map(classCard).join('');
+  grid.querySelectorAll('[data-open-class]').forEach(el => {
+    el.onclick = () => {
+      state.selectedClassId = el.dataset.openClass;
+      sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
+      go('class');
+    };
+  });
+}
+
+function classCard(c) {
+  return `<button type="button" class="class-card" data-open-class="${esc(c.class_id)}">
+    <div class="class-card-top"><span class="class-symbol">${svg('i-class')}</span><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(c.role || 'MEMBER')}</span></div>
+    <h3>${esc(c.name)}</h3>
+    <p>${esc(c.institution || 'KelasKu')} ${c.cohort ? '· ' + esc(c.cohort) : ''}</p>
+    <div class="class-card-foot"><span>${esc(c.class_code || '')}</span><span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
+  </button>`;
+}
+
+async function runSearch() {
+  const input = document.getElementById('class-search-input');
+  const box = document.getElementById('class-search-results');
+  const query = input.value.trim();
+  if (query.length < 2) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  box.innerHTML = '<div class="search-loading"><span class="status-dot"></span>Mencari kelas…</div>';
+  try {
+    const data = await api('searchClasses', { query });
+    const items = data.items || [];
+    box.innerHTML = items.length ? items.map(searchCard).join('') : '<div class="search-empty">Kelas tidak ditemukan.</div>';
+    box.querySelectorAll('[data-search-class]').forEach(btn => btn.onclick = () => selectSearchClass(items.find(x => x.class_id === btn.dataset.searchClass)));
+  } catch (err) {
+    box.innerHTML = `<div class="search-empty">${esc(err.message)}</div>`;
+  }
+}
+
+function searchCard(c) {
+  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon">${svg('i-class')}</span><span><strong>${esc(c.name)}</strong><small>${esc(c.class_code || '')} · ${esc(c.institution || '')}</small></span><b>${c.role ? esc(c.role) : 'Lihat'}</b></button>`;
+}
+
+function selectSearchClass(c) {
+  if (!c) return;
+  if (c.role) {
+    state.selectedClassId = c.class_id;
+    sessionStorage.setItem('kelasku_selected_class', c.class_id);
+    go('class');
+    return;
+  }
+  openJoinPreview(c);
+}
+
+function openCreateClass() {
+  showModal(`
+    <div class="modal-head"><div><div class="eyebrow">Buat Kelas</div><h2>Kelas baru</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
+    <form id="create-class-form">
+      <div class="field"><label>Nama Kelas *</label><input name="name" class="control" placeholder="Ekonomi Syariah — Angkatan 3" required minlength="3"></div>
+      <div class="field"><label>Deskripsi</label><textarea name="description" class="control" rows="3" placeholder="Tujuan / keterangan singkat kelas"></textarea></div>
+      <div class="form-grid"><div class="field"><label>Institusi</label><input name="institution" class="control" value="${esc(state.user?.institution || '')}"></div><div class="field"><label>Angkatan</label><input name="cohort" class="control" value="${esc(state.user?.cohort || '')}"></div></div>
+      <div class="field"><label>Visibilitas</label><select name="visibility" class="control"><option value="DISCOVERABLE">Discoverable — bisa dicari, perlu approval</option><option value="PUBLIC">Public</option><option value="PRIVATE">Private — Join Code</option></select></div>
+      <div id="create-class-status" class="request-status"></div>
+      <button id="create-class-submit" class="btn btn-primary btn-block" type="submit">${svg('i-plus')} Buat Kelas</button>
+    </form>`);
+
+  document.getElementById('create-class-form').onsubmit = submitCreateClass;
+}
+
+async function submitCreateClass(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const btn = document.getElementById('create-class-submit');
+  const status = document.getElementById('create-class-status');
+  const old = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span><span>Membuat kelas…</span>';
+  status.className = 'request-status progress'; status.textContent = 'Membuat kelas, kode, dan role OWNER dalam satu proses…';
+  try {
+    const data = await api('createClass', Object.fromEntries(new FormData(form)), { onSlow: () => status.textContent = 'Masih menyimpan. Jangan klik dua kali.' });
+    closeModal();
+    toast('Kelas berhasil dibuat.');
+    state.selectedClassId = data.class.class_id;
+    sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
+    state.myClasses = [];
+    localStorage.removeItem('kelasku_classes_cache');
+    go('class');
+  } catch (err) { status.className='request-status error'; status.textContent=err.message; }
+  finally { btn.disabled=false; btn.innerHTML=old; }
+}
+
+function openJoinCode() {
+  showModal(`
+    <div class="modal-head"><div><div class="eyebrow">Masuk Kelas</div><h2>Class Code / Join Code</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
+    <p class="copy compact-copy">Masukkan kode kelas seperti <b>KLS-ABC123</b> atau Join Code 6 karakter.</p>
+    <div class="field"><label>Kode</label><input id="join-code-input" class="control code-input" placeholder="KLS-XXXXXX / ABC123" autocomplete="off"></div>
+    <div id="join-code-status" class="request-status"></div>
+    <button id="lookup-code-btn" class="btn btn-primary btn-block">Cari Kelas</button>
+    <div id="join-preview-slot"></div>`);
+  document.getElementById('lookup-code-btn').onclick = lookupCode;
+}
+
+async function lookupCode() {
+  const code = document.getElementById('join-code-input').value.trim();
+  const status = document.getElementById('join-code-status');
+  const slot = document.getElementById('join-preview-slot');
+  if (!code) return;
+  status.className='request-status progress'; status.textContent='Mencari kelas…';
+  try {
+    const data = await api('lookupClass', { code });
+    status.textContent='';
+    slot.innerHTML = joinPreviewHtml(data.class, code);
+    document.getElementById('confirm-join-btn').onclick = () => submitJoin(data.class, code);
+  } catch(err){ status.className='request-status error'; status.textContent=err.message; slot.innerHTML=''; }
+}
+
+function openJoinPreview(c) {
+  showModal(`<div class="modal-head"><div><div class="eyebrow">Gabung Kelas</div><h2>${esc(c.name)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${joinPreviewHtml(c, c.class_code)}`);
+  document.getElementById('confirm-join-btn').onclick = () => submitJoin(c, c.class_code);
+}
+
+function joinPreviewHtml(c, code) {
+  return `<div class="join-preview panel"><span class="class-symbol">${svg('i-class')}</span><div><h3>${esc(c.name)}</h3><p>${esc(c.institution || '')} ${c.cohort?'· '+esc(c.cohort):''}</p><small>${esc(c.class_code || '')} · ${esc(c.visibility || '')}</small></div></div><div id="join-request-status" class="request-status"></div><button id="confirm-join-btn" class="btn btn-primary btn-block">Ajukan Bergabung</button>`;
+}
+
+async function submitJoin(c, code) {
+  const btn = document.getElementById('confirm-join-btn');
+  const status = document.getElementById('join-request-status');
+  const old = btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';
+  try {
+    const data = await api('joinClass', { class_id:c.class_id, code });
+    if (data.status === 'JOINED' || data.status === 'ALREADY_MEMBER') {
+      closeModal(); toast(data.status === 'JOINED' ? 'Berhasil masuk kelas.' : 'Kamu sudah menjadi anggota.'); loadMyClasses();
+    } else {
+      status.className='request-status ok'; status.textContent='Permintaan bergabung sudah dikirim ke pengelola kelas.';
+      btn.textContent='Menunggu Persetujuan'; btn.disabled=true;
+    }
+  } catch(err){ status.className='request-status error'; status.textContent=err.message; btn.disabled=false; btn.innerHTML=old; }
+}
+
+function showModal(html) {
+  closeModal();
+  const el = document.createElement('div'); el.id='phase-modal'; el.className='overlay';
+  el.innerHTML=`<div class="modal glass phase-modal-card">${html}</div>`; document.body.appendChild(el);
+  el.querySelectorAll('[data-close-modal]').forEach(x=>x.onclick=closeModal);
+  el.onclick=e=>{ if(e.target===el) closeModal(); };
+}
+function closeModal(){ document.getElementById('phase-modal')?.remove(); }
+function classSkeleton(){ return [1,2,3].map(()=>'<div class="class-card skeleton class-card-skeleton"></div>').join(''); }

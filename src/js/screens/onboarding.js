@@ -1,5 +1,6 @@
 import { esc, svg, logo } from '../core/utils.js';
 import { writeBool } from '../core/storage.js';
+import { state } from '../core/state.js';
 import { go } from '../core/router.js';
 
 const slides = [
@@ -50,5 +51,9 @@ export function renderOnboarding() {
 
 function finish() {
   writeBool('kelasku_onboarding_completed', true);
-  go('auth');
+  if (state.settings) {
+    state.settings.onboarding_completed = true;
+    localStorage.setItem('kelasku_settings_cache', JSON.stringify(state.settings));
+  }
+  go(state.sessionToken ? 'settings' : 'auth');
 }

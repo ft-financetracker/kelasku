@@ -20,7 +20,11 @@ export const state = {
   installPrompt: null,
   swReg: null,
   notificationTimer: null,
-  authMode: 'login'
+  authMode: 'login',
+  profileReturnRoute: '',
+  selectedClassId: '',
+  myClasses: readJson('kelasku_classes_cache', []),
+  settings: readJson('kelasku_settings_cache', null)
 };
 
 export function setSession(token, user) {

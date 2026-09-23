@@ -1,68 +1,29 @@
 import { state, clearSession } from '../core/state.js';
 import { api } from '../core/api.js';
-import { C, esc, svg, logo, fmtDate, semverCmp, toast } from '../core/utils.js';
+import { C, esc, svg, fmtDate, semverCmp, toast } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
+import { appShell, bindAppShell } from '../core/appShell.js';
 
 export function renderDashboard() {
-  const app = document.getElementById('app');
+  const content = `
+    <div id="update-slot">${updateBanner()}</div>
+    ${navigator.onLine ? '' : '<div class="offline-banner">Mode offline — menampilkan data terakhir di perangkat.</div>'}
+    <div id="dashboard-slot"></div>`;
 
-  app.innerHTML = `
-    <div class="dashboard">
-      <aside class="sidebar">
-        ${logo()}
-        <nav class="nav">
-          ${nav('i-home', 'Beranda', true, true)}
-          ${nav('i-class', 'Kelas')}
-          ${nav('i-calendar', 'Jadwal')}
-          ${nav('i-task', 'Tugas')}
-          ${nav('i-file', 'Materi')}
-          ${nav('i-chat', 'Pesan')}
-          ${nav('i-user', 'Profil')}
-        </nav>
-        <div class="sidebar-foot">@${esc(state.user?.username || '-')}<br>${esc(state.user?.kelasku_id || '-')}<br><br>KelasKu v${C.APP_VERSION}<br>Belajar Bersama Lebih Mudah.</div>
-      </aside>
+  document.getElementById('app').innerHTML = appShell({
+    active: 'dashboard',
+    content,
+    searchPlaceholder: 'Cari kelas, KelasKu ID, NIM/NIS…'
+  }) + '<div id="notif-drawer" class="drawer glass hidden"></div>';
 
-      <main class="main">
-        <div class="topbar">
-          ${logo(true)}
-          <div class="search" id="future-search">Cari nama, KelasKu ID, NIM/NIS…</div>
-          <div class="top-actions">
-            <button class="icon-btn" id="notif-toggle">${svg('i-bell')}<span id="notif-badge" class="badge hidden">0</span></button>
-            <button class="icon-btn" id="logout-btn" title="Keluar">${svg('i-user')}</button>
-          </div>
-        </div>
-
-        <div class="dashboard-body">
-          <div id="update-slot">${updateBanner()}</div>
-          ${navigator.onLine ? '' : '<div class="offline-banner">Mode offline — menampilkan data terakhir di perangkat.</div>'}
-          <div id="dashboard-slot"></div>
-        </div>
-      </main>
-
-      <nav class="bottom-nav">
-        ${bottom('i-class', 'Kelas')}${bottom('i-task', 'Tugas')}${bottom('i-home', 'Beranda', true, true)}${bottom('i-chat', 'Chat')}${bottom('i-user', 'Profil')}
-      </nav>
-    </div>
-    <div id="notif-drawer" class="drawer glass hidden"></div>`;
+  bindAppShell({
+    onSearch: () => go('classes'),
+    onNotifications: toggleNotifications
+  });
 
   if (state.dashboard) drawDashboard(state.dashboard);
   else drawSkeleton();
-
-  document.getElementById('logout-btn').onclick = logout;
-  document.getElementById('notif-toggle').onclick = toggleNotifications;
-  document.getElementById('future-search').onclick = () => toast('Pencarian nama, KelasKu ID, NIM/NIS sudah disiapkan di backend dan akan dibuka pada fase berikutnya.');
-
-  document.querySelectorAll('[data-nav], [data-bottom-nav]').forEach(btn => {
-    btn.onclick = () => {
-      const target = btn.dataset.nav || btn.dataset.bottomNav;
-      if (target === 'beranda') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-      toast(`${target.charAt(0).toUpperCase() + target.slice(1)} akan dibuka pada fase berikutnya.`);
-    };
-  });
 
   const updateBtn = document.getElementById('update-now');
   if (updateBtn) updateBtn.onclick = updateApp;
@@ -71,20 +32,6 @@ export function renderDashboard() {
   startNotificationPolling();
 }
 
-function nav(icon, label, active = false, homeCta = false) {
-  const cls = `nav-item ${active ? 'active' : ''} ${homeCta ? 'nav-home-cta' : ''}`;
-  const iconHtml = homeCta
-    ? `<span class="nav-diamond">${svg(icon)}</span>`
-    : svg(icon);
-  return `<button type="button" class="${cls}" data-nav="${label.toLowerCase()}">${iconHtml}<span>${label}</span></button>`;
-}
-function bottom(icon, label, active = false, homeCta = false) {
-  const cls = `bottom-item ${active ? 'active' : ''} ${homeCta ? 'bottom-home-cta' : ''}`;
-  const iconHtml = homeCta
-    ? `<span class="bottom-diamond">${svg(icon)}</span>`
-    : svg(icon);
-  return `<button type="button" class="${cls}" data-bottom-nav="${label.toLowerCase()}">${iconHtml}<span>${label}</span></button>`;
-}
 function empty(title, copy) {
   return `<div class="empty"><div><strong>${esc(title)}</strong><span>${esc(copy)}</span></div></div>`;
 }
@@ -139,11 +86,20 @@ function drawDashboard(d) {
     </section>
 
     <section class="dash-grid">
-      <div class="panel"><div class="panel-head"><div class="panel-title">Kelas Aktif</div><div class="mini-link">Phase 2</div></div>${(d.classes || []).length ? `<div class="list">${d.classes.slice(0,4).map(x => row('i-class', x.name, `${x.code || ''} • ${x.role || 'MEMBER'}`)).join('')}</div>` : empty('Belum ada kelas', 'Nanti kamu bisa cari kelas, kode kelas, atau masuk dengan Join Code.')}</div>
-      <div class="panel"><div class="panel-head"><div class="panel-title">Jadwal Hari Ini</div><div class="mini-link">Phase 2</div></div>${(d.schedules || []).length ? `<div class="list">${d.schedules.slice(0,5).map(x => row('i-calendar', x.title, x.time || '')).join('')}</div>` : empty('Tidak ada jadwal', 'Jadwal hari ini akan tampil di sini.')}</div>
-      <div class="panel"><div class="panel-head"><div class="panel-title">Pengumuman Terbaru</div><div class="mini-link">Phase 2</div></div>${(d.announcements || []).length ? `<div class="list">${d.announcements.slice(0,4).map(x => row('i-mega', x.title, x.body || '')).join('')}</div>` : empty('Belum ada pengumuman', 'Informasi terbaru kelas akan muncul di sini.')}</div>
-      <div class="panel"><div class="panel-head"><div class="panel-title">Tugas Terdekat</div><div class="mini-link">Phase 2</div></div>${(d.tasks || []).length ? `<div class="list">${d.tasks.slice(0,4).map(x => row('i-task', x.title, x.deadline || '')).join('')}</div>` : empty('Tidak ada tugas aktif', 'Tugas dan deadline terdekat akan tampil di sini.')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Kelas Aktif</div><button class="mini-link button-link" id="open-all-classes">Lihat Semua</button></div>${(d.classes || []).length ? `<div class="list">${d.classes.slice(0,4).map(classRow).join('')}</div>` : empty('Belum ada kelas', 'Buat kelas sendiri atau masuk menggunakan Class Code / Join Code.')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Jadwal Hari Ini</div><div class="mini-link">Phase berikutnya</div></div>${(d.schedules || []).length ? `<div class="list">${d.schedules.slice(0,5).map(x => row('i-calendar', x.title, x.time || '')).join('')}</div>` : empty('Tidak ada jadwal', 'Jadwal hari ini akan tampil di sini.')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Pengumuman Terbaru</div><div class="mini-link">Phase berikutnya</div></div>${(d.announcements || []).length ? `<div class="list">${d.announcements.slice(0,4).map(x => row('i-mega', x.title, x.body || '')).join('')}</div>` : empty('Belum ada pengumuman', 'Informasi terbaru kelas akan muncul di sini.')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Tugas Terdekat</div><div class="mini-link">Phase berikutnya</div></div>${(d.tasks || []).length ? `<div class="list">${d.tasks.slice(0,4).map(x => row('i-task', x.title, x.deadline || '')).join('')}</div>` : empty('Tidak ada tugas aktif', 'Tugas dan deadline terdekat akan tampil di sini.')}</div>
     </section>`;
+
+  document.getElementById('open-all-classes')?.addEventListener('click', () => go('classes'));
+  slot.querySelectorAll('[data-dashboard-class]').forEach(btn => {
+    btn.onclick = () => {
+      state.selectedClassId = btn.dataset.dashboardClass;
+      sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
+      go('class');
+    };
+  });
 }
 
 function stat(icon, value, label) {
@@ -152,9 +108,14 @@ function stat(icon, value, label) {
 function row(icon, title, copy) {
   return `<div class="list-row"><div class="status-icon">${svg(icon)}</div><div><h4>${esc(title)}</h4><p>${esc(copy)}</p></div></div>`;
 }
+function classRow(item) {
+  const classId = item.class_id || item.id || '';
+  return `<button type="button" class="list-row list-row-button" data-dashboard-class="${esc(classId)}"><div class="status-icon">${svg('i-class')}</div><div><h4>${esc(item.name)}</h4><p>${esc((item.code || item.class_code || '') + ' • ' + (item.role || 'MEMBER'))}</p></div>${svg('i-arrow')}</button>`;
+}
 
 async function toggleNotifications() {
   const drawer = document.getElementById('notif-drawer');
+  if (!drawer) return;
   drawer.classList.toggle('hidden');
   if (!drawer.classList.contains('hidden')) await fetchNotifications(false);
 }
@@ -177,7 +138,7 @@ async function fetchNotifications(showSystem) {
     if (showSystem && 'Notification' in window && Notification.permission === 'granted') {
       const fresh = unread.filter(n => !oldIds.has(n.notification_id));
       for (const n of fresh.slice(0, 2)) {
-        await showSystemNotification(n.title, n.body, n.deep_link || '#dashboard', n.notification_id);
+        await showSystemNotification(n.title, n.body, n.deep_link || 'dashboard', n.notification_id);
       }
     }
 
@@ -191,8 +152,9 @@ function renderNotificationDrawer() {
   const drawer = document.getElementById('notif-drawer');
   if (!drawer) return;
 
-  drawer.innerHTML = `<div class="panel-head"><div class="panel-title">Notifikasi</div></div>${state.notifications.length ? `<div class="list">${state.notifications.map(n => `<div class="list-row notif-row" data-notif="${esc(n.notification_id)}"><div class="status-icon">${svg(n.type === 'TASK' ? 'i-task' : n.type === 'SCHEDULE' ? 'i-calendar' : n.type === 'MATERIAL' ? 'i-file' : 'i-bell')}</div><div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p><p>${fmtDate(n.created_at)}</p></div>${n.read_at ? '' : '<span style="color:var(--tosca)">●</span>'}</div>`).join('')}</div>` : empty('Belum ada notifikasi', 'Informasi penting akan tampil di sini.')}`;
+  drawer.innerHTML = `<div class="panel-head"><div class="panel-title">Notifikasi</div><button class="icon-btn mini" id="close-notif">${svg('i-close')}</button></div>${state.notifications.length ? `<div class="list">${state.notifications.map(n => `<div class="list-row notif-row" data-notif="${esc(n.notification_id)}"><div class="status-icon">${svg(n.type === 'TASK' ? 'i-task' : n.type === 'SCHEDULE' ? 'i-calendar' : n.type === 'MATERIAL' ? 'i-file' : 'i-bell')}</div><div><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p><p>${fmtDate(n.created_at)}</p></div>${n.read_at ? '' : '<span style="color:var(--tosca)">●</span>'}</div>`).join('')}</div>` : empty('Belum ada notifikasi', 'Informasi penting akan tampil di sini.')}`;
 
+  document.getElementById('close-notif')?.addEventListener('click', () => drawer.classList.add('hidden'));
   drawer.querySelectorAll('[data-notif]').forEach(el => {
     el.onclick = () => markNotification(el.dataset.notif);
   });
@@ -218,13 +180,9 @@ function startNotificationPolling() {
   }, Number(state.remoteConfig?.notification_poll_ms || C.NOTIFICATION_POLL_MS || 60000));
 }
 
-async function logout() {
-  const token = state.sessionToken;
-  try {
-    await api('logout');
-  } catch {}
+export async function logoutFromDashboard() {
+  try { await api('logout'); } catch {}
   clearSession();
-  if (token) localStorage.removeItem('kelasku_session_token');
   go('auth');
   toast('Kamu telah keluar.');
 }

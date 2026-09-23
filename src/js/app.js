@@ -1,11 +1,8 @@
 /**
- * KelasKu — Application Entry Point
+ * KelasKu — Application Entry Point v2.0.0
  * ============================================================
- * Urutan baca yang disarankan untuk belajar:
- * 1. app.js
- * 2. core/state.js
- * 3. core/api.js
- * 4. masing-masing file di screens/
+ * Phase 2 menambahkan Settings, Super Admin, dan Class Foundation.
+ * Bootstrap tetap compound: config + user + settings + dashboard.
  */
 
 import { state, setSession, clearSession } from './core/state.js';
@@ -14,6 +11,7 @@ import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
 import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup } from './core/pwa.js';
 import { registerRoute, go, startRouter } from './core/router.js';
+import { applyPreferences } from './core/preferences.js';
 
 import { renderSplash } from './screens/splash.js';
 import { renderOnboarding } from './screens/onboarding.js';
@@ -21,13 +19,32 @@ import { renderAuth } from './screens/auth.js';
 import { renderProfile } from './screens/profile.js';
 import { renderSetup } from './screens/setup.js';
 import { renderDashboard } from './screens/dashboard.js';
+import { renderAccount } from './screens/account.js';
+import { renderSettings } from './screens/settings.js';
+import { renderClasses } from './screens/classes.js';
+import { renderClassRoom } from './screens/classRoom.js';
+import { renderAdmin } from './screens/admin.js';
+
+const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
 
 registerRoute('splash', () => renderSplash());
 registerRoute('onboarding', renderOnboarding);
 registerRoute('auth', renderAuth);
-registerRoute('profile', () => state.sessionToken ? renderProfile() : go('auth'));
-registerRoute('setup', () => state.sessionToken ? renderSetup() : go('auth'));
-registerRoute('dashboard', () => state.sessionToken ? renderDashboard() : go('auth'));
+registerRoute('profile', authGuard(renderProfile));
+registerRoute('setup', authGuard(renderSetup));
+registerRoute('dashboard', authGuard(renderDashboard));
+registerRoute('account', authGuard(renderAccount));
+registerRoute('settings', authGuard(renderSettings));
+registerRoute('classes', authGuard(renderClasses));
+registerRoute('class', authGuard(renderClassRoom));
+registerRoute('admin', () => {
+  if (!state.sessionToken) return go('auth');
+  if (String(state.user?.global_role || '') !== 'SUPER_ADMIN') return go('dashboard');
+  renderAdmin();
+});
+
+// Terapkan cache preference seawal mungkin agar tema/font tidak berkedip.
+if (state.settings) applyPreferences(state.settings);
 
 initInstallCapture();
 registerServiceWorker();
@@ -41,12 +58,10 @@ async function boot() {
       return null;
     });
 
-  // Splash terasa halus tapi tidak dibuat menunggu lama.
   await sleep(420);
 
   if (!state.sessionToken) {
     go(readBool('kelasku_onboarding_completed') ? 'auth' : 'onboarding');
-    // Cek versi berjalan di background tanpa membuat user menunggu layar login.
     bootstrapPromise.then(data => {
       if (!data) return;
       applyRemoteConfig(data.config);
@@ -55,17 +70,13 @@ async function boot() {
     return;
   }
 
-  // Cache lokal dipakai dulu agar aplikasi terasa cepat.
-  if (state.user) {
-    if (!state.user.profile_complete) go('profile');
-    else if (shouldShowAppSetup()) go('setup');
-    else go('dashboard');
-  }
+  // Fast cached route: jangan menahan user di splash sambil server merespons.
+  if (state.user) routeReadyUser();
 
   const data = await bootstrapPromise;
   if (!data) {
     if (!navigator.onLine && state.dashboard) {
-      go('dashboard');
+      routeReadyUser();
       return;
     }
     if (!state.user) {
@@ -85,14 +96,30 @@ async function boot() {
   }
 
   setSession(state.sessionToken, data.user);
+
+  if (data.settings) {
+    state.settings = data.settings;
+    applyPreferences(data.settings);
+  }
+
   if (data.dashboard) {
     state.dashboard = data.dashboard;
     writeJson('kelasku_dashboard_cache', data.dashboard);
   }
 
-  if (!data.user.profile_complete) go('profile');
-  else if (shouldShowAppSetup()) go('setup');
-  else go('dashboard');
+  routeReadyUser();
+}
+
+function routeReadyUser() {
+  if (!state.user) return;
+  if (!state.user.profile_complete) return go('profile');
+  if (shouldShowAppSetup()) return go('setup');
+
+  const startup = String(state.settings?.startup_page || 'DASHBOARD').toUpperCase();
+  if (startup === 'CLASSES') return go('classes');
+
+  // TASKS/SCHEDULE disiapkan schema-nya tetapi belum dibuka pada Phase 2.
+  return go('dashboard');
 }
 
 function applyRemoteConfig(config) {
