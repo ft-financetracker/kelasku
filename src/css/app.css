@@ -757,3 +757,168 @@ html[data-theme="light"] .carousel-action{background:rgba(255,255,255,.82);color
 html[data-theme="light"] .carousel-action .icon{color:#07877D}
 html[data-theme="light"] .carousel-dot{background:#B9CBDB}
 html[data-theme="light"] .carousel-dot.active{background:#16AFA3}
+
+/* ============================================================
+   KelasKu v4.0.0 — PHASE 4 • INTERACTION & PRESENCE
+   Precision layout • safe actions • class timeline • avatar
+   NOTE: Mobile Diamond Home CTA geometry is intentionally LOCKED.
+   ============================================================ */
+
+/* Desktop: collapsible sidebar / hamburger. */
+.shell-desktop-menu{display:grid;flex:0 0 auto}.shell-mobile-quick{display:none}
+@media(min-width:901px){
+  .dashboard,.sidebar,.main{transition:grid-template-columns .22s var(--ease),width .22s var(--ease),padding .22s var(--ease)}
+  .dashboard.sidebar-collapsed{grid-template-columns:88px minmax(0,1fr)}
+  .dashboard.sidebar-collapsed .sidebar{padding-inline:13px;align-items:stretch}
+  .dashboard.sidebar-collapsed .sidebar .brand{justify-content:center}.dashboard.sidebar-collapsed .sidebar .brand-word,.dashboard.sidebar-collapsed .sidebar .brand-sub{display:none}
+  .dashboard.sidebar-collapsed .nav-item{justify-content:center;padding-inline:0}.dashboard.sidebar-collapsed .nav-item>span:last-child{display:none}
+  .dashboard.sidebar-collapsed .sidebar-foot{display:none}
+  .dashboard.sidebar-collapsed .nav-home-cta .nav-diamond{margin-inline:auto}
+}
+@media(max-width:900px){.shell-desktop-menu{display:none}.shell-mobile-quick{display:grid}}
+
+/* Dashboard summary: exactly 2 x 2. */
+.dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.summary-mini{min-height:68px}.summary-mini .icon{pointer-events:none}
+.list-row-button{width:100%;appearance:none;color:var(--text);text-align:left;cursor:pointer;border:1px solid rgba(80,160,255,.16);transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.list-row-button:hover{transform:translateY(-1px);border-color:rgba(34,224,199,.28);background:rgba(34,224,199,.055)}.list-row-button>.icon{margin-left:auto;align-self:center;color:var(--tosca);width:18px;height:18px}
+@media(max-width:900px){.dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.summary-mini{min-height:64px;display:flex;justify-items:initial;text-align:left;padding:9px 11px}.summary-mini-icon{width:35px;height:35px;flex:0 0 35px}.summary-mini-copy{justify-items:start}.summary-mini-copy strong{font-size:18px}.summary-mini-copy small{font-size:8px}}
+@media(max-width:420px){.dashboard-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.summary-mini{padding:8px 9px}.summary-mini-copy small{font-size:7.4px}}
+
+/* Class room has a deliberate reading width instead of stretching across every desktop pixel. */
+.class-room-page{width:min(1120px,100%);margin-inline:auto}.class-room-page .page-head{margin-inline:auto}
+.class-room-page .class-hero{grid-template-columns:auto minmax(0,1fr) minmax(155px,188px);padding:20px}.class-room-page .class-hero-icon{width:60px;height:60px;border-radius:18px}.class-room-page .class-hero-icon .icon{width:31px;height:31px}
+.class-badge-line,.member-badge-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.leader-role-pill{color:#07263A;background:linear-gradient(100deg,#90F5CF,#31E4D0);border-color:transparent}
+.room-tabs{padding:5px;gap:4px}.room-tab{padding:9px 11px;font-size:9.5px}
+.member-avatar{overflow:hidden}.member-avatar img,.profile-avatar img,.shell-avatar-img{width:100%;height:100%;object-fit:cover;display:block}.shell-avatar-img{border-radius:10px}
+
+/* Leader election. */
+.leader-election-box{margin:0 0 15px;padding:14px;border:1px solid rgba(91,160,240,.14);border-radius:17px;background:rgba(5,25,57,.42)}
+.leader-election-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.leader-election-head>div{display:grid;gap:2px}.leader-election-head strong{font-size:12px}.leader-election-head small{font-size:8.5px;color:var(--muted)}
+.leader-poll-card{margin-top:12px;padding:13px;border-radius:15px;border:1px solid rgba(34,224,199,.14);background:linear-gradient(110deg,rgba(34,224,199,.055),rgba(25,118,255,.045))}.leader-poll-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.leader-poll-title strong{font-size:12px}.leader-poll-title p{margin:3px 0 0;color:var(--muted);font-size:9px}.poll-time{margin:8px 0;color:#7E9AB9;font-size:8.5px}.poll-candidates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.poll-candidate{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:8px;padding:9px;border:1px solid rgba(87,155,238,.12);border-radius:13px;background:rgba(8,31,67,.44);cursor:pointer}.poll-candidate.selected{border-color:rgba(34,224,199,.3);background:rgba(34,224,199,.065)}.poll-candidate input{accent-color:var(--tosca)}.poll-candidate .member-avatar{width:34px;height:34px;border-radius:10px;font-size:9px}.poll-candidate>span:last-child{display:grid;gap:1px}.poll-candidate strong{font-size:9.5px}.poll-candidate small{font-size:7.8px;color:var(--muted)}
+.inline-request-status{display:block;margin-top:4px;font-size:8px}.inline-request-status.progress{color:#9CF4E8}.inline-request-status.ok{color:#75E8BA}.inline-request-status.error{color:#FDA4AF}
+
+/* Class zig-zag timeline. */
+.class-timeline-panel{overflow:hidden}.class-zigzag-timeline{position:relative;display:grid;gap:8px;padding:8px 0}.class-zigzag-timeline::before{content:"";position:absolute;left:50%;top:8px;bottom:8px;width:1px;background:linear-gradient(var(--tosca),rgba(91,160,240,.2),transparent);opacity:.55}.class-timeline-item{position:relative;width:50%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;align-items:start}.class-timeline-item.left{padding-right:23px}.class-timeline-item.right{margin-left:50%;padding-left:23px}.class-timeline-item.right .class-timeline-node{position:absolute;left:-13px}.class-timeline-item.left .class-timeline-node{position:absolute;right:-13px}.class-timeline-node{z-index:2;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(145deg,#1C79F7,#2BE2CE);color:#041B30;box-shadow:0 0 0 4px #082451}.class-timeline-node .icon{width:14px;height:14px}.class-timeline-card{padding:11px 12px;border:1px solid rgba(90,159,239,.13);border-radius:14px;background:rgba(7,29,63,.52)}.class-timeline-card>span{font-size:7px;color:var(--tosca);font-weight:800;letter-spacing:.08em}.class-timeline-card strong{display:block;margin-top:3px;font-size:10.5px}.class-timeline-card p{margin:4px 0 0;color:var(--muted);font-size:8.5px;line-height:1.5}
+
+/* Attendance auto/link surfaces. */
+.auto-attendance-chip,.attendance-window-chip{display:inline-flex;align-items:center;width:max-content;min-height:20px;padding:3px 7px;border-radius:999px;font-size:7px;font-weight:800;letter-spacing:.05em}.auto-attendance-chip{color:#8CF4E8;background:rgba(34,224,199,.08);border:1px solid rgba(34,224,199,.18)}.attendance-window-chip.window-open{color:#7BF0C2;background:rgba(45,212,191,.09);border:1px solid rgba(45,212,191,.2)}.attendance-window-chip.window-upcoming{color:#F9D980;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.17)}.attendance-window-chip.window-closed{color:#99AFC7;background:rgba(115,145,182,.08);border:1px solid rgba(115,145,182,.16)}
+.academic-row-open{appearance:none;border:0;background:transparent;color:inherit;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;min-width:0;flex:1;text-align:left;cursor:pointer;padding:0}.attendance-link-button{flex:0 0 auto}.inline-actions{display:flex;gap:9px;margin-top:6px}.input-suffix{position:relative}.input-suffix .control{padding-right:54px}.input-suffix>span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:8px}.schedule-auto-settings{padding:12px;border:1px solid rgba(34,224,199,.13);border-radius:14px;background:rgba(34,224,199,.04)}.attendance-link-box{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px;margin:0 0 14px;border:1px solid rgba(34,224,199,.15);border-radius:14px;background:rgba(34,224,199,.05)}.attendance-link-box>div{display:grid;gap:2px;min-width:0}.attendance-link-box small{color:var(--muted);font-size:8px}.attendance-link-box strong{font-size:8.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#A6F8ED}
+.attendance-landing-page{width:min(860px,100%);margin-inline:auto}.attendance-landing-card{padding:22px}.attendance-landing-hero{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:15px}.attendance-landing-hero h2{margin:3px 0 2px;font-size:20px}.attendance-landing-hero p{margin:0;color:var(--muted);font-size:10px}.attendance-window-info{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:18px 0}.attendance-window-info>div{padding:12px;border-radius:13px;border:1px solid rgba(91,160,240,.13);background:rgba(8,31,67,.43);display:grid;gap:3px}.attendance-window-info small{font-size:7.5px;color:var(--muted)}.attendance-window-info strong{font-size:9.5px}.attendance-upcoming-panel{margin-top:14px}
+
+/* Profile picture upload. */
+.avatar-editor{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:15px;padding:14px;margin:0 0 17px;border:1px solid rgba(91,160,240,.14);border-radius:17px;background:rgba(7,29,63,.46)}.avatar-preview{width:78px;height:78px;border-radius:24px;overflow:hidden;display:grid;place-items:center;background:linear-gradient(145deg,#1A65D0,#27E0C9);color:#04213B;font-size:23px;font-weight:900;box-shadow:0 12px 26px rgba(0,12,40,.25)}.avatar-preview img{width:100%;height:100%;object-fit:cover}.avatar-editor-copy{display:grid;gap:3px}.avatar-editor-copy>strong{font-size:12px}.avatar-editor-copy>small{font-size:8.5px;color:var(--muted)}.avatar-actions{margin-top:7px}.profile-avatar{overflow:hidden}
+
+/* KelasKu confirmation dialog — replaces browser confirm(). */
+.app-dialog-backdrop{position:fixed;inset:0;z-index:240;background:rgba(1,8,21,.72);backdrop-filter:blur(9px);display:grid;place-items:center;padding:18px}.app-dialog{width:min(430px,100%);padding:22px;border-radius:22px;border:1px solid rgba(87,166,255,.23);background:linear-gradient(160deg,#0C2D60,#071B3D);box-shadow:0 28px 80px rgba(0,0,0,.38);display:grid;grid-template-columns:auto minmax(0,1fr);gap:13px}.app-dialog-icon{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;color:var(--tosca);background:rgba(34,224,199,.08)}.app-dialog-icon.danger{color:#FDA4AF;background:rgba(251,113,133,.08)}.app-dialog-copy h2{margin:0;font-size:16px}.app-dialog-copy p{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.6}.app-dialog-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px;margin-top:5px}.btn-danger-solid{color:#FFF;background:linear-gradient(100deg,#E34E68,#FB7185);box-shadow:0 10px 25px rgba(251,113,133,.16)}
+
+/* App Info: useful about section + larger update history with hidden scrollbar. */
+.app-info-page{width:min(1080px,100%);margin-inline:auto}.about-kelasku{margin-top:14px}.about-kelasku>.panel-head>.icon{color:var(--tosca)}.about-kelasku-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.about-kelasku-grid article{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:13px;border-radius:15px;border:1px solid rgba(91,160,240,.12);background:rgba(7,29,63,.42)}.about-kelasku-grid article>span{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--tosca);background:rgba(34,224,199,.07)}.about-kelasku-grid .icon{width:19px;height:19px}.about-kelasku-grid strong{font-size:10.5px}.about-kelasku-grid p{margin:3px 0 0;color:var(--muted);font-size:8.5px;line-height:1.55}
+.app-release-scroll{max-height:680px;overflow-y:auto;overscroll-behavior:contain;padding-right:3px;scrollbar-width:none}.app-release-scroll::-webkit-scrollbar{width:0;height:0;display:none}.app-release-card{grid-template-columns:31px minmax(0,1fr);gap:12px;padding-bottom:18px}.app-release-rail span{width:13px;height:13px;margin-top:10px}.app-release-body{padding:15px 17px;border-radius:17px}.app-release-version{font-size:9px}.app-release-body header strong{font-size:13px}.app-release-body header small{font-size:8.5px}.app-release-body header>b{font-size:7.5px}.app-release-body>p{font-size:9.8px;line-height:1.6;margin:9px 0}.app-release-group>strong{font-size:9px}.app-release-group ul{font-size:9.2px;line-height:1.65}.release-load-sentinel{height:2px}
+
+/* Light mode parity for new Phase 4 surfaces. */
+html[data-theme="light"] .leader-election-box,html[data-theme="light"] .leader-poll-card,html[data-theme="light"] .poll-candidate,html[data-theme="light"] .class-timeline-card,html[data-theme="light"] .attendance-window-info>div,html[data-theme="light"] .avatar-editor,html[data-theme="light"] .about-kelasku-grid article,html[data-theme="light"] .attendance-link-box{background:#FFFFFF;color:#102744;border-color:#DCE8F3;box-shadow:0 7px 20px rgba(47,84,122,.04)}
+html[data-theme="light"] .class-timeline-node{box-shadow:0 0 0 4px #F3F8FE}html[data-theme="light"] .class-zigzag-timeline::before{background:linear-gradient(#1BB8AB,#C8DAEC,transparent)}
+html[data-theme="light"] .app-dialog{background:#FFFFFF;color:#102744;border-color:#D7E6F2;box-shadow:0 28px 70px rgba(40,75,112,.18)}html[data-theme="light"] .app-dialog-copy p{color:#617A94}
+
+@media(max-width:760px){
+  .class-room-page{width:100%}.class-room-page .class-hero{grid-template-columns:auto minmax(0,1fr);gap:12px}.class-room-page .class-code-stack{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}.room-overview{grid-template-columns:1fr}.poll-candidates{grid-template-columns:1fr}
+  .class-zigzag-timeline::before{left:13px}.class-timeline-item,.class-timeline-item.right{width:100%;margin-left:0;padding:0 0 0 38px}.class-timeline-item.left .class-timeline-node,.class-timeline-item.right .class-timeline-node{left:0;right:auto}.class-timeline-card{width:100%}
+  .attendance-landing-hero{grid-template-columns:auto 1fr}.attendance-landing-hero>.attendance-window-chip{grid-column:1/-1}.attendance-window-info{grid-template-columns:1fr}.about-kelasku-grid{grid-template-columns:1fr}.app-release-scroll{max-height:620px}
+}
+@media(max-width:520px){.class-room-page .class-hero{padding:15px}.class-room-page .class-hero-icon{width:48px;height:48px;border-radius:15px}.class-room-page .class-hero-icon .icon{width:25px;height:25px}.class-code-stack{grid-template-columns:1fr 1fr!important}.member-row{grid-template-columns:auto minmax(0,1fr)}.member-actions{grid-column:1/-1;justify-content:flex-end}.role-select{width:min(180px,100%)}.leader-election-head{align-items:flex-start}.leader-election-head .btn{font-size:8.5px;padding:9px}.avatar-editor{grid-template-columns:1fr;justify-items:center;text-align:center}.avatar-actions{justify-content:center}.app-release-scroll{max-height:570px}.app-info-hero{padding:15px}.app-info-logo{width:58px;height:58px}.app-info-logo img{width:46px;height:46px}}
+.default-profile-icon{display:grid;place-items:center;width:100%;height:100%;color:#06253D}.default-profile-icon .icon{width:34px;height:34px;stroke-width:1.8}.profile-avatar .default-profile-icon .icon{width:28px;height:28px}
+.default-avatar-icon{display:grid;place-items:center;width:100%;height:100%;color:#06253D}.default-avatar-icon .icon{width:28px;height:28px;stroke-width:1.9}.member-avatar .default-avatar-icon .icon{width:19px;height:19px}.avatar-preview .default-avatar-icon .icon{width:36px;height:36px}
+
+/* ============================================================
+   KelasKu v4.0.0 — FINAL PRECISION PATCH
+   ============================================================ */
+
+/* Room menu: desktop tidak lagi menjadi satu bar super lebar. */
+@media(min-width:761px){
+  .class-room-page .room-tabs{
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:6px;
+    overflow:visible;
+    padding:6px;
+  }
+  .class-room-page .room-tab{
+    width:100%;
+    min-height:38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    padding:8px 9px;
+    text-align:center;
+    white-space:normal;
+    line-height:1.25;
+  }
+}
+@media(max-width:760px){
+  .class-room-page .room-tabs{
+    display:flex;
+    overflow-x:auto;
+    overscroll-behavior-inline:contain;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .class-room-page .room-tabs::-webkit-scrollbar{display:none}
+  .class-room-page .room-tab{flex:0 0 auto;white-space:nowrap}
+}
+
+/* Request actions: visual state selesai tanpa menunggu fetch kedua. */
+.join-request-row{transition:opacity .18s ease,transform .18s ease,max-height .2s ease,padding .2s ease,margin .2s ease}
+.join-request-row[data-busy="1"]{opacity:.78}
+.join-request-row.is-resolved{opacity:0;transform:translateX(8px);pointer-events:none}
+
+/* Default profile picture = icon, bukan inisial acak. */
+.default-avatar-icon{display:grid;place-items:center;width:100%;height:100%;color:#BDF9EF}
+.default-avatar-icon .icon{width:45%;height:45%;stroke-width:1.8}
+.member-avatar .default-avatar-icon,.profile-avatar .default-avatar-icon{background:linear-gradient(145deg,rgba(25,118,255,.28),rgba(34,224,199,.16))}
+html[data-theme="light"] .default-avatar-icon{color:#087E78}
+html[data-theme="light"] .member-avatar .default-avatar-icon,html[data-theme="light"] .profile-avatar .default-avatar-icon{background:linear-gradient(145deg,#E6F2FF,#E5FBF6)}
+
+/* Desktop hamburger lebih terasa sebagai control layout. */
+@media(min-width:901px){
+  .shell-desktop-menu{order:-2;background:rgba(13,48,98,.74);border-color:rgba(93,166,247,.2)}
+  .dashboard.sidebar-collapsed .shell-desktop-menu{color:var(--tosca);border-color:rgba(34,224,199,.28)}
+}
+
+/* Carousel tetap loop 1 → 2 → 3 → 1; cegah selection saat swipe. */
+.dashboard-carousel,.dashboard-carousel-track,.dashboard-carousel-slide{-webkit-user-select:none;user-select:none}
+.dashboard-carousel-track{touch-action:pan-y}
+
+/* Timeline aplikasi: nyaman dibaca, kira-kira 5 release terlihat lalu scroll internal. */
+.app-release-scroll{max-height:min(72vh,760px);scrollbar-width:none;-ms-overflow-style:none}
+.app-release-scroll::-webkit-scrollbar{display:none;width:0;height:0}
+.app-release-body header strong{font-size:14px;line-height:1.35}
+.app-release-body header small{font-size:9.4px}
+.app-release-version{font-size:9.5px}
+.app-release-body>p{font-size:10.4px;line-height:1.65}
+.app-release-group>strong{font-size:9.6px}
+.app-release-group ul{font-size:9.8px;line-height:1.68}
+@media(max-width:760px){
+  .app-release-scroll{max-height:min(68vh,640px)}
+  .app-release-body{padding:14px 15px}
+  .app-release-body header strong{font-size:12.5px}
+  .app-release-body>p{font-size:9.5px}
+  .app-release-group ul{font-size:9.1px}
+}
+
+/* Class list dashboard: benar-benar terlihat clickable. */
+.list-row-button{position:relative;padding-right:38px}
+.list-row-button>svg.icon:last-child{position:absolute;right:13px;top:50%;transform:translateY(-50%)}
+.list-row-button:focus-visible{outline:2px solid rgba(34,224,199,.52);outline-offset:2px}
+
+/* Attendance landing dibatasi agar tidak terlalu melebar. */
+.attendance-landing-page .academic-row-card{min-height:74px}
+
+/* Icon navbar selain CTA diperbesar tanpa mengubah Diamond CTA LOCK. */
+@media(max-width:900px){
+  .bottom-item:not(.bottom-home-cta) .bottom-icon-wrap .icon{width:25px;height:25px}
+}
+@media(max-width:370px){
+  .bottom-item:not(.bottom-home-cta) .bottom-icon-wrap .icon{width:23px;height:23px}
+}

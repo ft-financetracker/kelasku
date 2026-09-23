@@ -7,9 +7,10 @@ export function appShell(options = {}) {
   const content = options.content || '';
   const searchPlaceholder = options.searchPlaceholder || 'Cari di KelasKu…';
   const admin = String(state.user?.global_role || '') === 'SUPER_ADMIN';
+  const sidebarCollapsed = localStorage.getItem('kelasku_sidebar_collapsed') === '1';
 
   return `
-    <div class="dashboard">
+    <div class="dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
       <aside class="sidebar">
         ${logo()}
         <nav class="nav" aria-label="Navigasi utama">
@@ -30,13 +31,14 @@ export function appShell(options = {}) {
 
       <main class="main">
         <div class="topbar">
+          <button class="icon-btn shell-desktop-menu" id="shell-menu-toggle" title="Buka/tutup menu" aria-label="Buka atau tutup menu">${svg('i-menu')}</button>
           ${logo(true)}
           ${options.hideSearch ? '<div class="search-spacer"></div>' : `<button type="button" class="search search-button" id="shell-search">${esc(searchPlaceholder)}</button>`}
           <div class="top-actions">
             <button class="icon-btn shell-mobile-quick" id="shell-settings" title="Pengaturan" aria-label="Pengaturan">${svg('i-gear')}</button>
             ${admin ? `<button class="icon-btn shell-mobile-quick" id="shell-admin" title="Super Admin" aria-label="Super Admin">${svg('i-shield')}</button>` : ''}
             <button class="icon-btn" id="shell-notif" title="Notifikasi" aria-label="Notifikasi">${svg('i-bell')}<span id="notif-badge" class="badge hidden">0</span></button>
-            <button class="icon-btn" id="shell-account" title="Profil" aria-label="Profil">${svg('i-user')}</button>
+            <button class="icon-btn shell-account-btn" id="shell-account" title="Profil" aria-label="Profil">${state.user?.avatar_url ? `<img class="shell-avatar-img" src="${esc(state.user.avatar_url)}" alt="">` : svg('i-user')}</button>
           </div>
         </div>
         <div class="dashboard-body">${content}</div>
@@ -56,6 +58,14 @@ export function bindAppShell(options = {}) {
   document.querySelectorAll('[data-route]').forEach(btn => {
     btn.onclick = () => handleRoute(btn.dataset.route);
   });
+
+  const menuToggle = document.getElementById('shell-menu-toggle');
+  if (menuToggle) menuToggle.onclick = () => {
+    const shell = document.querySelector('.dashboard');
+    if (!shell) return;
+    const collapsed = shell.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('kelasku_sidebar_collapsed', collapsed ? '1' : '0');
+  };
 
   const account = document.getElementById('shell-account');
   if (account) account.onclick = () => go('account');
@@ -95,7 +105,7 @@ function handleRoute(route) {
 function sideItem(icon, label, route, active, homeCta = false) {
   const cls = `nav-item ${active ? 'active' : ''} ${homeCta ? 'nav-home-cta' : ''}`;
   const iconHtml = homeCta ? `<span class="nav-diamond">${svg(icon)}</span>` : svg(icon);
-  return `<button type="button" class="${cls}" data-route="${esc(route)}">${iconHtml}<span>${esc(label)}</span></button>`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span></button>`;
 }
 
 function bottomItem(icon, label, route, active, homeCta = false) {

@@ -55,7 +55,7 @@ export function toast(message) {
 
 export function logo(compact = false) {
   return `<div class="brand">
-    <img src="assets/brand/logo-mark.svg" alt="KelasKu">
+    <img src="assets/brand/logo-mark.svg?v=400" alt="KelasKu">
     <div>
       <div class="brand-word">Kelas<span class="ku">Ku</span></div>
       ${compact ? '' : '<div class="brand-sub">Sistem Komunikasi & Informasi Kelas</div>'}

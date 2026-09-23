@@ -7,7 +7,7 @@ export function renderSetup() {
 
   // Jangan ganggu user lama: setup cukup sekali per perangkat.
   if (!shouldShowAppSetup()) {
-    go('dashboard');
+    go(new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard');
     return;
   }
 
@@ -73,6 +73,6 @@ export function renderSetup() {
 
   document.getElementById('finish-setup').onclick = () => {
     completeAppSetup();
-    go('dashboard');
+    go(new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard');
   };
 }

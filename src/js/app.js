@@ -26,6 +26,7 @@ import { renderClassRoom } from './screens/classRoom.js';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
+import { renderAttendanceLanding } from './screens/attendanceLanding.js';
 
 const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
 
@@ -45,6 +46,7 @@ registerRoute('tasks', authGuard(renderTasks));
 registerRoute('materials', authGuard(renderMaterials));
 registerRoute('announcements', authGuard(renderAnnouncements));
 registerRoute('attendance', authGuard(renderAttendance));
+registerRoute('attendance-link', authGuard(renderAttendanceLanding));
 function adminGuard(renderer) {
   return () => {
     if (!state.sessionToken) return go('auth');
@@ -134,6 +136,7 @@ function routeReadyUser() {
   if (!state.user) return;
   if (!state.user.profile_complete) return go('profile');
   if (shouldShowAppSetup()) return go('setup');
+  if (new URL(window.location.href).searchParams.get('attendance')) return go('attendance-link');
 
   const startup = String(state.settings?.startup_page || 'DASHBOARD').toUpperCase();
   if (startup === 'CLASSES') return go('classes');

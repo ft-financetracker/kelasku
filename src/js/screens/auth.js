@@ -97,7 +97,7 @@ async function submitAuth(event) {
     status.className = 'request-status ok';
     status.textContent = data.recovered ? 'Akun ditemukan. Session dipulihkan.' : 'Berhasil.';
     if (!data.user.profile_complete) go('profile');
-    else go(shouldShowAppSetup() ? 'setup' : 'dashboard');
+    else go(shouldShowAppSetup() ? 'setup' : (new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard'));
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = esc(err.message);

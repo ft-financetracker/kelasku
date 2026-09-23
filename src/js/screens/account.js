@@ -3,6 +3,7 @@ import { api } from '../core/api.js';
 import { esc, svg, toast } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { go } from '../core/router.js';
+import { confirmDialog } from '../core/dialog.js';
 
 export function renderAccount() {
   const u = state.user || {};
@@ -20,7 +21,7 @@ export function renderAccount() {
     </div>
 
     <section class="profile-card panel">
-      <div class="profile-avatar">${initials(u.full_name || u.username)}</div>
+      <div class="profile-avatar">${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="Foto profil">` : `<span class="default-avatar-icon" aria-hidden="true">${svg('i-user')}</span>`}</div>
       <div class="profile-main">
         <h2>${esc(u.full_name || u.username || 'Pengguna KelasKu')}</h2>
         <p>@${esc(u.username || '-')}</p>
@@ -76,6 +77,15 @@ export function renderAccount() {
 }
 
 async function logout() {
+  const ok = await confirmDialog({
+    title: 'Keluar dari KelasKu?',
+    message: 'Session pada perangkat ini akan dihentikan. Data akun dan kelas tetap tersimpan.',
+    confirmLabel: 'Ya, Keluar',
+    cancelLabel: 'Tetap Masuk',
+    danger: true
+  });
+  if (!ok) return;
+
   const btn = document.getElementById('logout-account');
   const old = btn.innerHTML;
   btn.disabled = true;
@@ -84,7 +94,6 @@ async function logout() {
   clearSession();
   toast('Session perangkat dihentikan.');
   go('auth');
-  if (btn) { btn.disabled = false; btn.innerHTML = old; }
 }
 
 function quickCard(icon,title,copy,id,primary=false){

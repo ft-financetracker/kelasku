@@ -7,6 +7,8 @@ import { appShell, bindAppShell } from '../core/appShell.js';
 
 let carouselTimer = null;
 let carouselIndex = 0;
+let carouselPhysicalIndex = 1;
+let carouselMoving = false;
 let updateEventHandler = null;
 
 export function renderDashboard() {
@@ -140,63 +142,38 @@ function carouselHtml(d) {
   const nextTask = (d.tasks || [])[0];
   const classCount = Number(d.summary?.active_classes || 0);
   const slides = [
-    {
-      icon:'i-class', eyebrow:'KELASKU • PHASE 3', title:`${classCount} kelas dalam satu ruang belajar`,
-      copy:classCount ? 'Jadwal, tugas, materi, dan pengumuman sekarang terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.',
-      action:'Buka Kelas', route:'classes', tone:'a'
-    },
-    {
-      icon:'i-calendar', eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar',
-      copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.',
-      action:'Lihat Jadwal', route:'schedule', tone:'b'
-    },
-    {
-      icon:'i-task', eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak',
-      copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.',
-      action:'Buka Tugas', route:'tasks', tone:'c'
-    }
+    { icon:'i-class', eyebrow:'KELASKU • PHASE 4', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, materi, absensi, dan timeline sekarang terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', tone:'a' },
+    { icon:'i-calendar', eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', tone:'b' },
+    { icon:'i-task', eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', tone:'c' }
   ];
+  const physical=[slides[slides.length-1],...slides,slides[0]];
   return `<section class="dashboard-carousel" id="dashboard-carousel" aria-label="Informasi utama">
-    <div class="dashboard-carousel-track" id="dashboard-carousel-track">${slides.map((x,i)=>carouselSlide(x,i)).join('')}</div>
+    <div class="dashboard-carousel-track" id="dashboard-carousel-track">${physical.map((x,i)=>carouselSlide(x,i)).join('')}</div>
     <div class="dashboard-carousel-dots">${slides.map((_,i)=>`<button type="button" class="carousel-dot ${i===0?'active':''}" data-carousel-dot="${i}" aria-label="Banner ${i+1}"></button>`).join('')}</div>
   </section>`;
 }
 
 function carouselSlide(x, index) {
-  return `<article class="dashboard-carousel-slide tone-${x.tone}" data-carousel-index="${index}">
-    <div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div>
-    <div class="carousel-art"><span class="carousel-diamond">${svg(x.icon)}</span><span class="carousel-orbit orbit-one"></span><span class="carousel-orbit orbit-two"></span></div>
-  </article>`;
+  return `<article class="dashboard-carousel-slide tone-${x.tone}" data-carousel-index="${index}"><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div><div class="carousel-art"><span class="carousel-diamond">${svg(x.icon)}</span><span class="carousel-orbit orbit-one"></span><span class="carousel-orbit orbit-two"></span></div></article>`;
 }
 
 function bindCarousel() {
-  const track = document.getElementById('dashboard-carousel-track');
-  if (!track) return;
-  carouselIndex = 0;
-  const dots = [...document.querySelectorAll('[data-carousel-dot]')];
-  const slides = [...track.children];
-  const show = index => {
-    carouselIndex = (index + slides.length) % slides.length;
-    track.style.transform = `translateX(-${carouselIndex * 100}%)`;
-    dots.forEach((d,i)=>d.classList.toggle('active',i===carouselIndex));
-  };
-  dots.forEach(dot => dot.onclick = () => { show(Number(dot.dataset.carouselDot)); restartCarousel(show, slides.length); });
-
-  let startX = 0;
-  track.addEventListener('pointerdown', e => { startX = e.clientX; });
-  track.addEventListener('pointerup', e => {
-    const delta = e.clientX - startX;
-    if (Math.abs(delta) > 45) { show(carouselIndex + (delta < 0 ? 1 : -1)); restartCarousel(show, slides.length); }
-  });
-  restartCarousel(show, slides.length);
+  const track=document.getElementById('dashboard-carousel-track'); if(!track)return;
+  const dots=[...document.querySelectorAll('[data-carousel-dot]')]; const realTotal=3;
+  carouselIndex=0; carouselPhysicalIndex=1; carouselMoving=false;
+  track.style.transition='none'; track.style.transform='translateX(-100%)'; requestAnimationFrame(()=>{track.style.transition='transform .42s cubic-bezier(.22,.75,.2,1)';});
+  const updateDots=()=>dots.forEach((d,i)=>d.classList.toggle('active',i===carouselIndex));
+  const moveToPhysical=(physical,animate=true)=>{ if(carouselMoving&&animate)return; carouselMoving=animate; carouselPhysicalIndex=physical; track.style.transition=animate?'transform .42s cubic-bezier(.22,.75,.2,1)':'none'; track.style.transform=`translateX(-${physical*100}%)`; if(!animate){void track.offsetWidth;track.style.transition='transform .42s cubic-bezier(.22,.75,.2,1)';carouselMoving=false;} };
+  const moveLogical=index=>{carouselIndex=(index+realTotal)%realTotal;updateDots();if(index>=realTotal){moveToPhysical(realTotal+1,true);}else if(index<0){moveToPhysical(0,true);}else{moveToPhysical(carouselIndex+1,true);}};
+  track.addEventListener('transitionend',()=>{carouselMoving=false;if(carouselPhysicalIndex===realTotal+1){carouselIndex=0;moveToPhysical(1,false);}else if(carouselPhysicalIndex===0){carouselIndex=realTotal-1;moveToPhysical(realTotal,false);}updateDots();});
+  dots.forEach(dot=>dot.onclick=()=>{const target=Number(dot.dataset.carouselDot);carouselIndex=target;updateDots();moveToPhysical(target+1,true);restartCarousel(moveLogical);});
+  let startX=0;track.addEventListener('pointerdown',e=>{startX=e.clientX;});track.addEventListener('pointerup',e=>{const delta=e.clientX-startX;if(Math.abs(delta)>45){moveLogical(carouselIndex+(delta<0?1:-1));restartCarousel(moveLogical);}});
+  restartCarousel(moveLogical);
 }
 
-function restartCarousel(show, total) {
+function restartCarousel(show) {
   if (carouselTimer) clearInterval(carouselTimer);
-  carouselTimer = setInterval(() => {
-    if (!document.getElementById('dashboard-carousel-track')) { clearInterval(carouselTimer); carouselTimer = null; return; }
-    if (document.visibilityState === 'visible') show(carouselIndex + 1);
-  }, 5200);
+  carouselTimer=setInterval(()=>{if(!document.getElementById('dashboard-carousel-track')){clearInterval(carouselTimer);carouselTimer=null;return;}if(document.visibilityState==='visible'&&!carouselMoving)show(carouselIndex+1);},5200);
 }
 
 function quickAction(icon,label,route) {
@@ -216,9 +193,10 @@ function row(icon, title, copy, meta='') {
 }
 function classRow(item) {
   const classId = item.class_id || item.id || '';
-  return `<button type="button" class="list-row list-row-button" data-dashboard-class="${esc(classId)}"><div class="status-icon">${svg('i-class')}</div><div><h4>${esc(item.name)}</h4><p>${esc((item.code || item.class_code || '') + ' • ' + roleLabel(item.role || 'MEMBER'))}</p></div>${svg('i-arrow')}</button>`;
+  const role = roleLabel(item.role || 'MEMBER') + (item.is_class_leader ? ' • Ketua Kelas' : '');
+  return `<button type="button" class="list-row list-row-button" data-dashboard-class="${esc(classId)}"><div class="status-icon">${svg('i-class')}</div><div><h4>${esc(item.name)}</h4><p>${esc((item.code || item.class_code || '') + ' • ' + role)}</p></div>${svg('i-arrow')}</button>`;
 }
-function roleLabel(role){const key=String(role||'MEMBER').toUpperCase();if(key==='COORDINATOR')return 'Ketua Kelas';if(key==='OWNER')return 'Owner';if(key==='MODERATOR')return 'Moderator';return 'Member';}
+function roleLabel(role){const key=String(role||'MEMBER').toUpperCase();if(key==='COORDINATOR')return 'Koordinator';if(key==='OWNER')return 'Owner';if(key==='MODERATOR')return 'Moderator';return 'Member';}
 function deadlineLabel(value) {
   if (!value) return 'Tanpa deadline';
   try { return 'Deadline ' + new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)); }
@@ -228,8 +206,13 @@ function deadlineLabel(value) {
 async function toggleNotifications() {
   const drawer = document.getElementById('notif-drawer');
   if (!drawer) return;
+  const opening = drawer.classList.contains('hidden');
   drawer.classList.toggle('hidden');
-  if (!drawer.classList.contains('hidden')) await fetchNotifications(false);
+  if (!opening) return;
+
+  // Cache-first: drawer harus langsung berisi sesuatu, jangan terlihat stuck.
+  renderNotificationDrawer();
+  fetchNotifications(false).catch(err => console.warn('Notification refresh:', err));
 }
 
 async function fetchNotifications(showSystem) {
@@ -280,14 +263,21 @@ function renderNotificationDrawer() {
 async function markNotification(id) {
   const n = state.notifications.find(x => x.notification_id === id);
   if (!n) return;
-  if (!n.read_at) {
-    await api('markNotificationRead', { notification_id: id });
-    n.read_at = new Date().toISOString();
-    localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
+  const wasUnread=!n.read_at;
+  if(wasUnread){
+    n.read_at=new Date().toISOString();
+    localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));
     renderNotificationDrawer();
     refreshNotificationSummary();
   }
-  if (n.deep_link) openDeepLink(n.deep_link);
+  if(n.deep_link) openDeepLink(n.deep_link);
+  if(wasUnread){
+    api('markNotificationRead',{notification_id:id},{onSlow:()=>{}}).catch(err=>{
+      console.warn('Mark notification:',err);
+      const current=state.notifications.find(x=>x.notification_id===id);
+      if(current){current.read_at='';localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));refreshNotificationSummary();}
+    });
+  }
 }
 
 function startNotificationPolling() {

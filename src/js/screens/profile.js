@@ -1,11 +1,16 @@
 import { state, setIdentity } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, logo, svg } from '../core/utils.js';
+import { esc, logo, svg, toast } from '../core/utils.js';
 import { go } from '../core/router.js';
 import { shouldShowAppSetup } from '../core/pwa.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 
+let pendingAvatarDataUrl = '';
+let avatarRemove = false;
+
 export function renderProfile() {
+  pendingAvatarDataUrl = '';
+  avatarRemove = false;
   const user = state.user || {};
   const editing = Boolean(user.profile_complete);
   const identity = state.identity || {};
@@ -45,10 +50,21 @@ export function renderProfile() {
   document.getElementById('identity-type').value = identity.identity_type || 'NONE';
   document.getElementById('identity-number').value = identity.identity_number || '';
   document.getElementById('profile-form').onsubmit = submitProfile;
+  bindAvatarEditor(user);
 }
 
 function profileForm(user, identity, editing) {
   return `<form id="profile-form" class="${editing ? 'edit-profile-form' : ''}">
+    <section class="avatar-editor">
+      <div id="avatar-preview" class="avatar-preview">${avatarMarkup(user)}</div>
+      <div class="avatar-editor-copy"><strong>Foto Profil</strong><small>Foto otomatis dipotong persegi dan dikompresi agar tetap cepat.</small>
+        <div class="page-actions avatar-actions">
+          <label class="btn btn-secondary small-btn" for="avatar-input">${svg('i-camera')} Pilih Foto</label>
+          ${user.avatar_url ? '<button type="button" id="avatar-remove" class="btn btn-ghost small-btn">Gunakan Default</button>' : ''}
+        </div>
+      </div>
+      <input id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+    </section>
     <div class="field"><label>Nama Lengkap *</label><input id="full-name" class="control" value="${esc(user.full_name || '')}" required></div>
 
     <div class="form-grid">
@@ -85,7 +101,9 @@ async function submitProfile(event) {
     identity_type: document.getElementById('identity-type').value,
     identity_number: document.getElementById('identity-number').value,
     identity_searchable: true,
-    bio: document.getElementById('bio').value
+    bio: document.getElementById('bio').value,
+    avatar_data_url: pendingAvatarDataUrl,
+    avatar_remove: avatarRemove
   };
 
   const originalButtonHtml = button.innerHTML;
@@ -99,7 +117,7 @@ async function submitProfile(event) {
     const data = await api('saveProfile', payload, {
       onSlow: () => {
         status.className = 'request-status slow';
-        status.innerHTML = '<span class="status-dot"></span>Masih menyimpan. Jangan klik ulang.';
+        status.innerHTML = '<span class="status-dot"></span>Masih menyimpan profil/foto. Jangan klik ulang.';
       }
     });
     state.user = data.user;
@@ -116,7 +134,7 @@ async function submitProfile(event) {
 
     const returnRoute = state.profileReturnRoute;
     state.profileReturnRoute = '';
-    go(returnRoute || (shouldShowAppSetup() ? 'setup' : 'dashboard'));
+    go(returnRoute || (shouldShowAppSetup() ? 'setup' : (new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard')));
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = err.message;
@@ -125,4 +143,88 @@ async function submitProfile(event) {
     button.classList.remove('is-loading');
     button.innerHTML = originalButtonHtml;
   }
+}
+
+
+function avatarMarkup(user) {
+  if (user?.avatar_url && !avatarRemove) return `<img src="${esc(user.avatar_url)}" alt="Foto profil">`;
+  return `<span class="default-avatar-icon" aria-hidden="true">${svg('i-user')}</span>`;
+}
+
+function bindAvatarEditor(user) {
+  const input = document.getElementById('avatar-input');
+  const preview = document.getElementById('avatar-preview');
+  const remove = document.getElementById('avatar-remove');
+  if (!input || !preview) return;
+
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      pendingAvatarDataUrl = await prepareAvatar(file);
+      avatarRemove = false;
+      preview.innerHTML = `<img src="${pendingAvatarDataUrl}" alt="Preview foto profil">`;
+      toast('Foto siap. Klik Simpan Perubahan untuk memasang.');
+    } catch (err) {
+      input.value = '';
+      toast(err.message || 'Foto tidak dapat diproses.');
+    }
+  };
+
+  if (remove) remove.onclick = () => {
+    pendingAvatarDataUrl = '';
+    avatarRemove = true;
+    preview.innerHTML = avatarMarkup({ ...user, avatar_url: '' });
+    toast('Foto akan dikembalikan ke icon default setelah disimpan.');
+  };
+}
+
+export async function prepareAvatar(file) {
+  if (!/^image\/(png|jpeg|webp)$/i.test(file.type || '')) throw new Error('Gunakan JPG, PNG, atau WebP.');
+  if (file.size > 6 * 1024 * 1024) throw new Error('File awal maksimal 6 MB.');
+
+  const bitmap = await loadImageBitmap(file);
+  const size = Math.min(bitmap.width, bitmap.height);
+  if (!size) throw new Error('Ukuran gambar tidak valid.');
+  const sx = Math.max(0, Math.floor((bitmap.width - size) / 2));
+  const sy = Math.max(0, Math.floor((bitmap.height - size) / 2));
+
+  const canvas = document.createElement('canvas');
+  const target = 192;
+  canvas.width = target;
+  canvas.height = target;
+  const ctx = canvas.getContext('2d', { alpha: false });
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0,0,target,target);
+  ctx.drawImage(bitmap, sx, sy, size, size, 0, 0, target, target);
+  if (bitmap.close) bitmap.close();
+
+  let quality = .82;
+  let data = canvas.toDataURL('image/webp', quality);
+  if (!data.startsWith('data:image/webp')) data = canvas.toDataURL('image/jpeg', .84);
+  while (data.length > 32000 && quality > .48) {
+    quality -= .08;
+    data = data.startsWith('data:image/webp')
+      ? canvas.toDataURL('image/webp', quality)
+      : canvas.toDataURL('image/jpeg', quality);
+  }
+  if (data.length > 36000) throw new Error('Foto masih terlalu kompleks. Coba gambar lain.');
+  return data;
+}
+
+async function loadImageBitmap(file) {
+  if ('createImageBitmap' in window) return createImageBitmap(file);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Gambar tidak dapat dibaca.'));
+    };
+    img.src = url;
+  });
 }

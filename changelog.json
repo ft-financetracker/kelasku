@@ -1,6 +1,49 @@
 {
   "releases": [
     {
+      "version": "4.0.0",
+      "build": "20260923.050",
+      "date": "23 September 2026",
+      "title": "Interaction & Presence",
+      "description": "Phase 4 memoles interaksi agar tidak terasa stuck dan membuka avatar, pemilihan Ketua Kelas, timeline kelas, serta absensi berbasis link.",
+      "groups": [
+        {
+          "label": "Interaksi & Presisi",
+          "items": [
+            "Tindakan approve/reject anggota, simpan absensi, dan aksi penting memiliki loading/lock agar tidak terkirim dua kali.",
+            "Notifikasi dibaca secara optimistic agar navigasi terasa langsung.",
+            "Ruang Kelas dipersempit ke reading width yang lebih proporsional dan desktop memiliki sidebar hamburger/collapse.",
+            "Ringkasan dashboard kembali 2 × 2 dan card Kelas Aktif memiliki affordance klik yang jelas.",
+            "Carousel dashboard looping mulus 1 → 2 → 3 → 1."
+          ]
+        },
+        {
+          "label": "Kelas & Ketua Kelas",
+          "items": [
+            "Owner dapat sekaligus menjadi Ketua Kelas dengan badge Owner • Ketua Kelas.",
+            "Polling Ketua Kelas mendukung satu suara per akun, waktu selesai, dan auto-apply pemenang non-seri.",
+            "Timeline kelas memakai layout zig-zag untuk merangkum pengumuman, jadwal, tugas, materi, absensi, dan pemilihan."
+          ]
+        },
+        {
+          "label": "Absensi & Profil",
+          "items": [
+            "Jadwal dapat memakai absensi MANUAL atau AUTO; mode AUTO membuat sesi dan window check-in tanpa otomatis menandai hadir.",
+            "Setiap sesi memiliki link landing absensi ringkas yang tetap mewajibkan login KelasKu dan menampilkan jadwal mendatang.",
+            "Foto profil dapat dipilih, center-crop 192×192, dikompresi client, lalu disimpan ke Google Drive/fallback ringan."
+          ]
+        },
+        {
+          "label": "UI & Informasi Aplikasi",
+          "items": [
+            "Browser confirm/alert untuk aksi destruktif diganti dialog KelasKu.",
+            "Favicon menjadi lingkaran putih dengan K transparan dan logo mark dibuat lebih terang di background navy.",
+            "Info Aplikasi memiliki penjelasan KelasKu dan timeline lebih besar; sekitar lima rilis terlihat sekaligus, scrollbar browser disembunyikan, dan rilis berikutnya dimuat bertahap."
+          ]
+        }
+      ]
+    },
+    {
       "version": "3.1.0",
       "build": "20260923.040",
       "date": "23 September 2026",

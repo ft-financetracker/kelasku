@@ -1,22 +1,18 @@
 <svg width="820" height="220" viewBox="0 0 820 220" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="navyBlue" x1="28" y1="188" x2="174" y2="24" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0D3A88"/>
-      <stop offset="0.5" stop-color="#1457B8"/>
-      <stop offset="1" stop-color="#2788FF"/>
+    <linearGradient id="kkBlue" x1="28" y1="188" x2="174" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1767E8"/><stop offset="0.5" stop-color="#3194FF"/><stop offset="1" stop-color="#86D3FF"/>
     </linearGradient>
-    <linearGradient id="tosca" x1="95" y1="98" x2="675" y2="164" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#22E0C7"/>
-      <stop offset="0.45" stop-color="#13CBB7"/>
-      <stop offset="1" stop-color="#74F3DF"/>
+    <linearGradient id="kkTosca" x1="95" y1="98" x2="675" y2="164" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22E0C7"/><stop offset="0.5" stop-color="#2BE9D3"/><stop offset="1" stop-color="#8BFAE9"/>
     </linearGradient>
   </defs>
   <g transform="translate(10,4)">
-    <rect x="38" y="28" width="42" height="164" rx="21" fill="url(#navyBlue)"/>
-    <rect x="65" y="82" width="42" height="127" rx="21" transform="rotate(-45 65 82)" fill="url(#navyBlue)"/>
-    <rect x="88" y="104" width="42" height="129" rx="21" transform="rotate(-45 88 104)" fill="url(#tosca)"/>
+    <rect x="38" y="28" width="42" height="164" rx="21" fill="url(#kkBlue)" stroke="#BFE8FF" stroke-opacity=".3" stroke-width="2"/>
+    <rect x="65" y="82" width="42" height="127" rx="21" transform="rotate(-45 65 82)" fill="url(#kkBlue)" stroke="#BFE8FF" stroke-opacity=".25" stroke-width="2"/>
+    <rect x="88" y="104" width="42" height="129" rx="21" transform="rotate(-45 88 104)" fill="url(#kkTosca)" stroke="#D2FFF8" stroke-opacity=".3" stroke-width="2"/>
   </g>
-  <text x="210" y="117" font-family="Poppins, Arial, sans-serif" font-size="78" font-weight="800" fill="#0B132B">Kelas</text>
-  <text x="419" y="117" font-family="Poppins, Arial, sans-serif" font-size="78" font-style="italic" font-weight="800" fill="url(#tosca)">Ku</text>
-  <text x="214" y="159" font-family="Poppins, Arial, sans-serif" font-size="25" font-weight="600" fill="#0B132B">Sistem Komunikasi &amp; Informasi Kelas</text>
+  <text x="210" y="117" font-family="Poppins, Arial, sans-serif" font-size="78" font-style="italic" font-weight="800" fill="#F7FBFF">Kelas</text>
+  <text x="419" y="117" font-family="Poppins, Arial, sans-serif" font-size="78" font-style="italic" font-weight="800" fill="url(#kkTosca)">Ku</text>
+  <text x="214" y="159" font-family="Poppins, Arial, sans-serif" font-size="25" font-weight="600" fill="#A9BED7">Sistem Komunikasi &amp; Informasi Kelas</text>
 </svg>

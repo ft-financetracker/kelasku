@@ -1,7 +1,7 @@
 {
-  "version": "3.1.0",
-  "build": "20260923.040",
-  "schema": 6,
+  "version": "4.0.0",
+  "build": "20260923.050",
+  "schema": 7,
   "release_date": "2026-09-23",
-  "release_note": "Join Code diperbaiki, Ketua Kelas lebih jelas, dashboard dirapikan, Light Theme dipoles, update notification foundation, dan Info Aplikasi timeline."
+  "release_note": "Phase 4: interaction safety, collapsible desktop navigation, avatar upload, class timeline, leader election, auto attendance session/link, dashboard precision, dan App Info refinement."
 }
