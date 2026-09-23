@@ -25,7 +25,13 @@ export const state = {
   profileReturnRoute: '',
   selectedClassId: '',
   myClasses: readJson('kelasku_classes_cache', []),
-  settings: readJson('kelasku_settings_cache', null)
+  settings: readJson('kelasku_settings_cache', null),
+  settingsAt: Number(localStorage.getItem('kelasku_settings_cache_at') || 0),
+  academicHub: readJson('kelasku_academic_cache', null),
+  academicHubAt: Number(localStorage.getItem('kelasku_academic_cache_at') || 0),
+  classDetails: {},
+  classAcademic: {},
+  adminOverview: null
 };
 
 export function setSession(token, user) {
@@ -49,8 +55,23 @@ export function clearSession() {
   setSession('', null);
   state.dashboard = null;
   state.identity = null;
+  state.settings = null;
+  state.settingsAt = 0;
+  state.myClasses = [];
+  state.notifications = [];
   localStorage.removeItem('kelasku_identity_cache');
   localStorage.removeItem('kelasku_dashboard_cache');
+  localStorage.removeItem('kelasku_settings_cache');
+  localStorage.removeItem('kelasku_settings_cache_at');
+  localStorage.removeItem('kelasku_classes_cache');
+  localStorage.removeItem('kelasku_notification_cache');
+  state.academicHub = null;
+  state.academicHubAt = 0;
+  state.classDetails = {};
+  state.classAcademic = {};
+  state.adminOverview = null;
+  localStorage.removeItem('kelasku_academic_cache');
+  localStorage.removeItem('kelasku_academic_cache_at');
   if (state.notificationTimer) clearInterval(state.notificationTimer);
   state.notificationTimer = null;
 }

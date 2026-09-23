@@ -1,7 +1,7 @@
 /**
- * KelasKu — Application Entry Point v2.1.0
+ * KelasKu — Application Entry Point v3.0.0
  * ============================================================
- * Phase 2 menambahkan Settings, Super Admin, dan Class Foundation.
+ * Phase 3 membuka Academic Core: Pengumuman, Jadwal, Tugas, Materi, dan Absensi.
  * Bootstrap tetap compound: config + user + settings + dashboard.
  */
 
@@ -24,6 +24,7 @@ import { renderSettings } from './screens/settings.js';
 import { renderClasses } from './screens/classes.js';
 import { renderClassRoom } from './screens/classRoom.js';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
+import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance } from './screens/academic.js';
 
 const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
 
@@ -37,6 +38,11 @@ registerRoute('account', authGuard(renderAccount));
 registerRoute('settings', authGuard(renderSettings));
 registerRoute('classes', authGuard(renderClasses));
 registerRoute('class', authGuard(renderClassRoom));
+registerRoute('schedule', authGuard(renderSchedule));
+registerRoute('tasks', authGuard(renderTasks));
+registerRoute('materials', authGuard(renderMaterials));
+registerRoute('announcements', authGuard(renderAnnouncements));
+registerRoute('attendance', authGuard(renderAttendance));
 function adminGuard(renderer) {
   return () => {
     if (!state.sessionToken) return go('auth');
@@ -108,6 +114,8 @@ async function boot() {
 
   if (data.settings) {
     state.settings = data.settings;
+    state.settingsAt = Date.now();
+    localStorage.setItem('kelasku_settings_cache_at', String(state.settingsAt));
     applyPreferences(data.settings);
   }
 
@@ -126,8 +134,10 @@ function routeReadyUser() {
 
   const startup = String(state.settings?.startup_page || 'DASHBOARD').toUpperCase();
   if (startup === 'CLASSES') return go('classes');
-
-  // TASKS/SCHEDULE disiapkan schema-nya tetapi belum dibuka pada Phase 2.
+  if (startup === 'TASKS') return go('tasks');
+  if (startup === 'SCHEDULE') return go('schedule');
+  if (startup === 'MATERIALS') return go('materials');
+  if (startup === 'ATTENDANCE') return go('attendance');
   return go('dashboard');
 }
 

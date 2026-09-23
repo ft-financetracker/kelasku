@@ -4,7 +4,9 @@ import { esc, svg, toast, fmtDate } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { go } from '../core/router.js';
 
-let overview = null;
+let overview = state.adminOverview || null;
+let overviewAt = overview ? Date.now() : 0;
+const ADMIN_OVERVIEW_TTL_MS = 60000;
 let userQuery = { query:'', role:'ALL', status:'ALL', page:1, page_size:20 };
 let classQuery = { query:'', visibility:'ALL', status:'ALL', page:1, page_size:20 };
 let auditQuery = { query:'', entity_type:'ALL', page:1, page_size:20 };
@@ -15,19 +17,26 @@ export function renderAdmin() {
       <div><div class="eyebrow">08 • Super Admin</div><h1>Super Admin</h1><p>Pusat kendali KelasKu dibagi menjadi room agar tetap nyaman saat data tumbuh puluhan, ratusan, atau lebih.</p></div>
       <span class="phase-badge">SUPER ADMIN</span>
     </div>
-    <div id="admin-slot">${adminSkeleton()}</div>`;
+    <div id="admin-slot">${overview ? '' : adminSkeleton()}</div>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'admin', content, hideSearch: true });
   bindAppShell();
-  loadAdminOverview();
+  if (overview) drawAdminHub(overview);
+  const cacheFresh = overview && (Date.now() - overviewAt < ADMIN_OVERVIEW_TTL_MS);
+  if (!cacheFresh) loadAdminOverview(Boolean(overview));
 }
 
-async function loadAdminOverview() {
+async function loadAdminOverview(background = false) {
   try {
     overview = await api('getAdminOverview');
+    overviewAt = Date.now();
+    state.adminOverview = overview;
     drawAdminHub(overview);
   } catch (err) {
-    document.getElementById('admin-slot').innerHTML = errorBox(err.message);
+    if (!background && !overview) {
+      const slot = document.getElementById('admin-slot');
+      if (slot) slot.innerHTML = errorBox(err.message);
+    }
   }
 }
 
@@ -52,7 +61,7 @@ function drawAdminHub(data) {
     </section>
 
     <section class="panel admin-health-strip">
-      <div><strong>Admin Console v2.1</strong><span>Data besar tidak lagi ditampilkan dalam tabel kecil di halaman utama. Gunakan pencarian, filter, pagination, dan room khusus.</span></div>
+      <div><strong>Admin Console v3.0</strong><span>Data besar tidak lagi ditampilkan dalam tabel kecil di halaman utama. Gunakan pencarian, filter, pagination, dan room khusus.</span></div>
       <button type="button" class="btn btn-secondary" data-route="admin-system">Cek Status Sistem</button>
     </section>`;
 

@@ -15,9 +15,11 @@ export function appShell(options = {}) {
         <nav class="nav" aria-label="Navigasi utama">
           ${sideItem('i-home', 'Beranda', 'dashboard', active === 'dashboard', true)}
           ${sideItem('i-class', 'Kelas', 'classes', active === 'classes' || active === 'class')}
-          ${sideItem('i-calendar', 'Jadwal', 'future:jadwal', false)}
-          ${sideItem('i-task', 'Tugas', 'future:tugas', false)}
-          ${sideItem('i-file', 'Materi', 'future:materi', false)}
+          ${sideItem('i-calendar', 'Jadwal', 'schedule', active === 'schedule')}
+          ${sideItem('i-task', 'Tugas', 'tasks', active === 'tasks')}
+          ${sideItem('i-file', 'Materi', 'materials', active === 'materials')}
+          ${sideItem('i-mega', 'Pengumuman', 'announcements', active === 'announcements')}
+          ${sideItem('i-check', 'Absensi', 'attendance', active === 'attendance')}
           ${sideItem('i-chat', 'Pesan', 'future:pesan', false)}
           ${sideItem('i-user', 'Profil', 'account', active === 'account')}
           ${sideItem('i-gear', 'Pengaturan', 'settings', active === 'settings')}
@@ -42,7 +44,7 @@ export function appShell(options = {}) {
 
       <nav class="bottom-nav" aria-label="Navigasi bawah">
         ${bottomItem('i-class', 'Kelas', 'classes', active === 'classes' || active === 'class')}
-        ${bottomItem('i-task', 'Tugas', 'future:tugas', false)}
+        ${bottomItem('i-task', 'Tugas', 'tasks', active === 'tasks')}
         ${bottomItem('i-home', 'Beranda', 'dashboard', active === 'dashboard', true)}
         ${bottomItem('i-chat', 'Chat', 'future:chat', false)}
         ${bottomItem('i-user', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'admin')}

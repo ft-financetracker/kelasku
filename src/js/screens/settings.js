@@ -6,6 +6,8 @@ import { applyPreferences, previewPreferences } from '../core/preferences.js';
 import { go } from '../core/router.js';
 import { getAppSetupState, installPWA, enableNotifications, updateApp } from '../core/pwa.js';
 
+const SETTINGS_TTL_MS = 120000;
+
 export function renderSettings() {
   const content = `
     <div class="page-head">
@@ -17,21 +19,32 @@ export function renderSettings() {
       <input id="settings-search" class="settings-search-input" placeholder="Cari pengaturan: tema, notifikasi, update…" autocomplete="off">
       <button type="button" id="settings-clear-search" class="icon-btn mini" title="Bersihkan">${svg('i-close')}</button>
     </div>
-    <div id="settings-slot">${settingsSkeleton()}</div>`;
+    <div id="settings-slot">${state.settings ? '' : settingsSkeleton()}</div>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'settings', content, hideSearch: true });
   bindAppShell();
-  loadSettings();
+  // Cache-first: saat kembali dari Super Admin/halaman lain, Settings langsung tampil tanpa skeleton.
+  if (state.settings) {
+    applyPreferences(state.settings);
+    drawSettings(state.settings);
+  }
+  const cacheFresh = state.settings && (Date.now() - Number(state.settingsAt || 0) < SETTINGS_TTL_MS);
+  if (!cacheFresh) loadSettings(Boolean(state.settings));
 }
 
-async function loadSettings() {
+async function loadSettings(background = false) {
   try {
     const data = await api('getSettings');
     state.settings = data.settings;
+    state.settingsAt = Date.now();
+    localStorage.setItem('kelasku_settings_cache_at', String(state.settingsAt));
     applyPreferences(data.settings);
     drawSettings(data.settings);
   } catch (err) {
-    document.getElementById('settings-slot').innerHTML = errorBox(err.message);
+    if (!background && !state.settings) {
+      const slot = document.getElementById('settings-slot');
+      if (slot) slot.innerHTML = errorBox(err.message);
+    }
   }
 }
 
@@ -52,18 +65,18 @@ function drawSettings(s) {
           </div>
           <div class="settings-preview-strip">
             <span id="theme-preview-dot" class="theme-preview-dot"></span>
-            <div><strong id="theme-preview-title">Preview aktif</strong><small>Perubahan tampilan dapat dilihat langsung. Klik Simpan agar tersimpan ke akun.</small></div>
+            <div><strong id="theme-preview-title">Tema ${String(document.documentElement.dataset.theme || 'dark').toUpperCase()} aktif</strong><small>Perubahan tampil langsung. Simpan agar preference ikut akun di perangkat lain.</small></div>
             <button type="button" id="reset-appearance" class="btn btn-secondary">Reset Tampilan</button>
           </div>`
       })}
 
       ${settingsRoom({
         id: 'experience', icon: 'i-home', title: 'Navigasi & Pengalaman',
-        copy: 'Halaman awal dan onboarding pengguna.', count: '3 Menu',
+        copy: 'Halaman awal dan onboarding pengguna.', count: '2 Menu',
         keywords: 'halaman awal startup beranda kelas onboarding tutorial pengalaman navigasi',
         body: `
           <div class="settings-room-grid">
-            ${selectRow('Halaman Awal', 'startup_page', s.startup_page, [['DASHBOARD','Beranda'],['CLASSES','Kelas']], 'Dipakai saat aplikasi dibuka kembali.')}
+            ${selectRow('Halaman Awal', 'startup_page', s.startup_page, [['DASHBOARD','Beranda'],['CLASSES','Kelas'],['TASKS','Tugas'],['SCHEDULE','Jadwal'],['MATERIALS','Materi'],['ATTENDANCE','Absensi']], 'Dipakai saat aplikasi dibuka kembali.')}
             ${toggleRow('Onboarding Aktif', 'onboarding_enabled', s.onboarding_enabled, 'Izinkan panduan KelasKu diputar ulang dari akun ini.')}
           </div>
           <div class="settings-inline-actions">
@@ -188,6 +201,8 @@ async function replayOnboarding() {
   try {
     const data = await api('saveSettings', payload);
     state.settings = data.settings;
+    state.settingsAt = Date.now();
+    localStorage.setItem('kelasku_settings_cache_at', String(state.settingsAt));
     applyPreferences(data.settings);
     localStorage.removeItem('kelasku_onboarding_completed');
     go('onboarding');
@@ -227,6 +242,8 @@ async function saveSettings(event) {
   try {
     const data = await api('saveSettings', payload, { onSlow: () => status.textContent = 'Masih memproses. Jangan klik dua kali.' });
     state.settings = data.settings;
+    state.settingsAt = Date.now();
+    localStorage.setItem('kelasku_settings_cache_at', String(state.settingsAt));
     applyPreferences(data.settings);
     status.textContent = 'Semua pengaturan tersimpan ✓';
     toast('Pengaturan tersimpan.');
