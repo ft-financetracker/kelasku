@@ -31,6 +31,8 @@ export function appShell(options = {}) {
           ${logo(true)}
           ${options.hideSearch ? '<div class="search-spacer"></div>' : `<button type="button" class="search search-button" id="shell-search">${esc(searchPlaceholder)}</button>`}
           <div class="top-actions">
+            <button class="icon-btn shell-mobile-quick" id="shell-settings" title="Pengaturan" aria-label="Pengaturan">${svg('i-gear')}</button>
+            ${admin ? `<button class="icon-btn shell-mobile-quick" id="shell-admin" title="Super Admin" aria-label="Super Admin">${svg('i-shield')}</button>` : ''}
             <button class="icon-btn" id="shell-notif" title="Notifikasi" aria-label="Notifikasi">${svg('i-bell')}<span id="notif-badge" class="badge hidden">0</span></button>
             <button class="icon-btn" id="shell-account" title="Profil" aria-label="Profil">${svg('i-user')}</button>
           </div>
@@ -55,6 +57,12 @@ export function bindAppShell(options = {}) {
 
   const account = document.getElementById('shell-account');
   if (account) account.onclick = () => go('account');
+
+  const settings = document.getElementById('shell-settings');
+  if (settings) settings.onclick = () => go('settings');
+
+  const admin = document.getElementById('shell-admin');
+  if (admin) admin.onclick = () => go('admin');
 
   const notif = document.getElementById('shell-notif');
   if (notif) notif.onclick = () => {

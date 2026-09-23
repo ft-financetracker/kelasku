@@ -1,11 +1,11 @@
 /**
- * KelasKu — Application Entry Point v2.0.0
+ * KelasKu — Application Entry Point v2.1.0
  * ============================================================
  * Phase 2 menambahkan Settings, Super Admin, dan Class Foundation.
  * Bootstrap tetap compound: config + user + settings + dashboard.
  */
 
-import { state, setSession, clearSession } from './core/state.js';
+import { state, setSession, setIdentity, clearSession } from './core/state.js';
 import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
@@ -23,7 +23,7 @@ import { renderAccount } from './screens/account.js';
 import { renderSettings } from './screens/settings.js';
 import { renderClasses } from './screens/classes.js';
 import { renderClassRoom } from './screens/classRoom.js';
-import { renderAdmin } from './screens/admin.js';
+import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 
 const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
 
@@ -37,11 +37,19 @@ registerRoute('account', authGuard(renderAccount));
 registerRoute('settings', authGuard(renderSettings));
 registerRoute('classes', authGuard(renderClasses));
 registerRoute('class', authGuard(renderClassRoom));
-registerRoute('admin', () => {
-  if (!state.sessionToken) return go('auth');
-  if (String(state.user?.global_role || '') !== 'SUPER_ADMIN') return go('dashboard');
-  renderAdmin();
-});
+function adminGuard(renderer) {
+  return () => {
+    if (!state.sessionToken) return go('auth');
+    if (String(state.user?.global_role || '') !== 'SUPER_ADMIN') return go('dashboard');
+    renderer();
+  };
+}
+
+registerRoute('admin', adminGuard(renderAdmin));
+registerRoute('admin-users', adminGuard(renderAdminUsers));
+registerRoute('admin-classes', adminGuard(renderAdminClasses));
+registerRoute('admin-system', adminGuard(renderAdminSystem));
+registerRoute('admin-audit', adminGuard(renderAdminAudit));
 
 // Terapkan cache preference seawal mungkin agar tema/font tidak berkedip.
 if (state.settings) applyPreferences(state.settings);
@@ -96,6 +104,7 @@ async function boot() {
   }
 
   setSession(state.sessionToken, data.user);
+  setIdentity(data.identity || null);
 
   if (data.settings) {
     state.settings = data.settings;

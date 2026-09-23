@@ -2,6 +2,8 @@ import { esc, svg, logo } from '../core/utils.js';
 import { writeBool } from '../core/storage.js';
 import { state } from '../core/state.js';
 import { go } from '../core/router.js';
+import { api } from '../core/api.js';
+import { applyPreferences } from '../core/preferences.js';
 
 const slides = [
   { icon: 'i-mega', eyebrow: 'Informasi', title: 'Semua Informasi dalam <span class="accent">Satu Tempat</span>', copy: 'Jadwal, pengumuman, materi, dan informasi kelas lebih mudah ditemukan.' },
@@ -49,11 +51,20 @@ export function renderOnboarding() {
   };
 }
 
-function finish() {
+async function finish() {
   writeBool('kelasku_onboarding_completed', true);
   if (state.settings) {
     state.settings.onboarding_completed = true;
     localStorage.setItem('kelasku_settings_cache', JSON.stringify(state.settings));
+    if (state.sessionToken) {
+      try {
+        const data = await api('saveSettings', { ...state.settings, onboarding_completed: true });
+        state.settings = data.settings;
+        applyPreferences(data.settings);
+      } catch (err) {
+        console.warn('Onboarding sync:', err);
+      }
+    }
   }
   go(state.sessionToken ? 'settings' : 'auth');
 }

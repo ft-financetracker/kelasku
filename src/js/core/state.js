@@ -14,6 +14,7 @@ export const state = {
   sessionToken: localStorage.getItem('kelasku_session_token') || '',
   deviceId: getDeviceId(),
   user: readJson('kelasku_user_cache'),
+  identity: readJson('kelasku_identity_cache', null),
   remoteConfig: readJson('kelasku_app_config_cache'),
   dashboard: readJson('kelasku_dashboard_cache'),
   notifications: readJson('kelasku_notification_cache', []),
@@ -38,9 +39,17 @@ export function setSession(token, user) {
   else localStorage.removeItem('kelasku_user_cache');
 }
 
+export function setIdentity(identity) {
+  state.identity = identity || null;
+  if (identity) localStorage.setItem('kelasku_identity_cache', JSON.stringify(identity));
+  else localStorage.removeItem('kelasku_identity_cache');
+}
+
 export function clearSession() {
   setSession('', null);
   state.dashboard = null;
+  state.identity = null;
+  localStorage.removeItem('kelasku_identity_cache');
   localStorage.removeItem('kelasku_dashboard_cache');
   if (state.notificationTimer) clearInterval(state.notificationTimer);
   state.notificationTimer = null;
