@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v5.1.0-b070';
+const CACHE_NAME = 'kelasku-v5.1.1-b071';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const APP_SHELL = [
   './manifest.json',
   './app-version.json',
   './changelog.json',
+  './update-recovery.html',
   './src/css/app.css',
   './src/js/app.js',
   './src/js/core/state.js',
@@ -63,6 +64,12 @@ self.addEventListener('fetch', event => {
 
   // Jangan ikut campur request lintas domain / Apps Script.
   if (url.origin !== self.location.origin) return;
+
+  // Recovery update harus selalu dari network agar dapat memutus cache/SW lama.
+  if (url.pathname.endsWith('/update-recovery.html')) {
+    event.respondWith(fetch(req, { cache: 'no-store' }));
+    return;
+  }
 
   // Version/changelog harus network-first agar PWA lama cepat melihat release baru.
   if (url.pathname.endsWith('/app-version.json') || url.pathname.endsWith('/changelog.json')) {

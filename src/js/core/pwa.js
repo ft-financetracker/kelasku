@@ -5,6 +5,7 @@ import { readBool, writeBool } from './storage.js';
 const SETUP_DONE_KEY = 'kelasku_app_setup_completed';
 const PWA_INSTALLED_KEY = 'kelasku_pwa_installed';
 const UPDATE_NOTICE_KEY = 'kelasku_update_notice_version';
+const UPDATE_PENDING_KEY = 'kelasku_pending_update';
 let updateTimer = null;
 let updateWatchBound = false;
 
@@ -177,13 +178,65 @@ export function startUpdateWatcher() {
 }
 
 export async function updateApp() {
+  // Jangan sekadar reload: pada PWA, reload bisa masih dikontrol Service Worker lama.
+  // Arahkan ke recovery page yang melepas SW/cache lama sebelum memuat build baru.
+  let meta = null;
+  try { meta = await checkForAppUpdate({ notify: false }); } catch {}
+
+  const targetVersion = String(meta?.version || state.remoteConfig?.current_version || C.APP_VERSION);
+  const targetBuild = String(meta?.build || state.remoteConfig?.build || C.BUILD || '');
   try {
-    const reg = state.swReg || await navigator.serviceWorker.getRegistration();
-    if (reg) await reg.update();
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k.startsWith('kelasku-')).map(k => caches.delete(k)));
-  } catch (err) {
-    console.warn('Update app:', err);
+    localStorage.setItem(UPDATE_PENDING_KEY, JSON.stringify({
+      version: targetVersion,
+      build: targetBuild,
+      started_at: Date.now()
+    }));
+  } catch {}
+
+  showUpdateOverlay(targetVersion);
+
+  const recovery = new URL('./update-recovery.html', window.location.href);
+  recovery.searchParams.set('v', targetVersion);
+  if (targetBuild) recovery.searchParams.set('b', targetBuild);
+  recovery.searchParams.set('t', String(Date.now()));
+  window.location.replace(recovery.href);
+}
+
+function showUpdateOverlay(version) {
+  let overlay = document.getElementById('kelasku-update-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'kelasku-update-overlay';
+    overlay.className = 'update-progress-overlay';
+    document.body.appendChild(overlay);
   }
-  window.location.reload();
+  overlay.innerHTML = `
+    <div class="update-progress-card">
+      <span class="update-progress-spinner"></span>
+      <strong>Memperbarui KelasKu${version ? ` ke v${version}` : ''}…</strong>
+      <p>Membersihkan cache lama dan memuat versi terbaru. Jangan tutup aplikasi.</p>
+    </div>`;
+}
+
+export function consumeUpdateResult() {
+  let pending = null;
+  try { pending = JSON.parse(localStorage.getItem(UPDATE_PENDING_KEY) || 'null'); } catch {}
+
+  const url = new URL(window.location.href);
+  const hadRecoveryParams = url.searchParams.has('_kkv') || url.searchParams.has('_kkb') || url.searchParams.has('_fresh');
+  if (hadRecoveryParams) {
+    url.searchParams.delete('_kkv');
+    url.searchParams.delete('_kkb');
+    url.searchParams.delete('_fresh');
+    try { window.history.replaceState(window.history.state || {}, '', url.pathname + url.search); } catch {}
+  }
+
+  if (!pending) return false;
+  const target = String(pending.version || '0.0.0');
+  if (semverCmp(C.APP_VERSION, target) >= 0) {
+    try { localStorage.removeItem(UPDATE_PENDING_KEY); } catch {}
+    window.setTimeout(() => toast(`KelasKu berhasil diperbarui ke v${C.APP_VERSION} ✓`), 500);
+    return true;
+  }
+  return false;
 }

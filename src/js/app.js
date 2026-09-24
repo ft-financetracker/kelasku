@@ -9,7 +9,7 @@ import { state, setSession, setIdentity, clearSession } from './core/state.js';
 import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
-import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate } from './core/pwa.js';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js';
 import { registerRoute, go, startRouter, openDeepLink } from './core/router.js';
 import { applyPreferences } from './core/preferences.js';
 
@@ -171,7 +171,9 @@ function forceUpdateRequired() {
   const rc = state.remoteConfig;
   if (!rc) return false;
 
-  const required = semverCmp(C.APP_VERSION, rc.min_version) < 0 || rc.update_required === true;
+  const belowMin = semverCmp(C.APP_VERSION, rc.min_version) < 0;
+  const behindCurrent = semverCmp(C.APP_VERSION, rc.current_version) < 0;
+  const required = belowMin || (rc.update_required === true && behindCurrent);
   if (!required) return false;
 
   document.getElementById('app').innerHTML = `
@@ -189,3 +191,4 @@ function forceUpdateRequired() {
 
 startRouter();
 boot();
+window.setTimeout(() => consumeUpdateResult(), 900);
