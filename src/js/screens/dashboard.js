@@ -1,6 +1,6 @@
 import { state, clearSession } from '../core/state.js';
 import { api } from '../core/api.js';
-import { C, esc, svg, fmtDate, semverCmp, toast } from '../core/utils.js';
+import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
@@ -70,11 +70,12 @@ function drawSkeleton() {
 async function refreshDashboard() {
   try {
     const data = await api('getDashboard', {}, { onSlow: () => {} });
+    const changed = !sameData(state.dashboard, data);
     state.dashboard = data;
     state.user = data.user || state.user;
     localStorage.setItem('kelasku_dashboard_cache', JSON.stringify(data));
     localStorage.setItem('kelasku_user_cache', JSON.stringify(state.user));
-    if (currentRoute() === 'dashboard') drawDashboard(data);
+    if (changed && currentRoute() === 'dashboard') drawDashboard(data);
   } catch (err) {
     if (!state.dashboard) {
       const slot = document.getElementById('dashboard-slot');

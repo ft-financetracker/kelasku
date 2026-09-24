@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast } from '../core/utils.js';
+import { esc, svg, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
@@ -36,9 +36,11 @@ async function loadClassDetail(background = false) {
   const slot = document.getElementById('class-room-slot');
   try {
     const data = await api('getClassDetail', { class_id: state.selectedClassId });
+    const previous = state.classDetails[state.selectedClassId];
+    const changed = !sameData(previous, data);
     state.classDetails[state.selectedClassId] = data;
     currentClassData = data;
-    drawClass(data, true);
+    if (changed || !background) drawClass(data, true);
   } catch (err) {
     if (!background && slot) {
       slot.innerHTML = `<div class="panel error-panel"><strong>Kelas gagal dimuat.</strong><p>${esc(err.message)}</p><button class="btn btn-secondary" id="back-error">Kembali ke Kelas</button></div>`;
@@ -161,8 +163,10 @@ function switchTab(tab, data) {
 async function loadClassAcademic(background = false) {
   try {
     const data = await api('getClassAcademic', { class_id: state.selectedClassId });
+    const previous = state.classAcademic[state.selectedClassId];
+    const changed = !sameData(previous, data);
     state.classAcademic[state.selectedClassId] = data;
-    if (['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) drawAcademicTab(activeTab, data);
+    if (changed && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) drawAcademicTab(activeTab, data);
   } catch (err) {
     if (!background && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) {
       document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
@@ -207,8 +211,10 @@ function drawAcademicTab(tab, data) {
 async function loadClassTimeline(background=false) {
   try {
     const data = await api('getClassTimeline',{class_id:state.selectedClassId,category:timelineCategory,limit:60});
+    const previous = state.classTimeline[state.selectedClassId];
+    const changed = !sameData(previous, data);
     state.classTimeline[state.selectedClassId] = data;
-    if (activeTab === 'timeline') drawTimeline(data);
+    if ((changed || !background) && activeTab === 'timeline') drawTimeline(data);
   } catch (err) {
     if (!background && activeTab === 'timeline') {
       document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Timeline gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;

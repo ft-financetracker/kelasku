@@ -1,7 +1,7 @@
 {
-  "version": "5.1.1",
-  "build": "20260924.071",
+  "version": "5.2.0",
+  "build": "20260924.080",
   "schema": 9,
   "release_date": "2026-09-24",
-  "release_note": "Hotfix update PWA: tombol Update kini memakai recovery flow yang benar-benar memuat aset baru; desktop Class Timeline dirapikan."
+  "release_note": "Instant UX refinement: silent revalidation tanpa kedip ulang, cache chat per session, balas pesan ala WhatsApp, dan hapus pesan dengan tombstone."
 }

@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast, fmtDate } from '../core/utils.js';
+import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { go } from '../core/router.js';
 
@@ -28,10 +28,12 @@ export function renderAdmin() {
 
 async function loadAdminOverview(background = false) {
   try {
-    overview = await api('getAdminOverview');
+    const next = await api('getAdminOverview');
+    const changed = !sameData(overview, next);
+    overview = next;
     overviewAt = Date.now();
     state.adminOverview = overview;
-    drawAdminHub(overview);
+    if (changed || !background) drawAdminHub(overview);
   } catch (err) {
     if (!background && !overview) {
       const slot = document.getElementById('admin-slot');

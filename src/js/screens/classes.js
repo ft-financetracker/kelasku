@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast } from '../core/utils.js';
+import { esc, svg, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { go } from '../core/router.js';
 
@@ -36,9 +36,11 @@ export function renderClasses() {
 async function loadMyClasses() {
   try {
     const data = await api('getMyClasses');
-    state.myClasses = data.items || [];
+    const next = data.items || [];
+    const changed = !sameData(state.myClasses, next);
+    state.myClasses = next;
     localStorage.setItem('kelasku_classes_cache', JSON.stringify(state.myClasses));
-    drawMyClasses(state.myClasses);
+    if (changed || !document.querySelector('#class-grid .class-card')) drawMyClasses(state.myClasses);
   } catch (err) {
     document.getElementById('class-grid').innerHTML = `<div class="panel error-panel"><strong>Daftar kelas gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
   }

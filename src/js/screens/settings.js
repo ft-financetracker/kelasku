@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast, semverCmp, C } from '../core/utils.js';
+import { esc, svg, toast, semverCmp, C, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { applyPreferences, previewPreferences } from '../core/preferences.js';
 import { go } from '../core/router.js';
@@ -35,11 +35,13 @@ export function renderSettings() {
 async function loadSettings(background = false) {
   try {
     const data = await api('getSettings');
+    const changed = !sameData(state.settings, data.settings);
     state.settings = data.settings;
     state.settingsAt = Date.now();
     localStorage.setItem('kelasku_settings_cache_at', String(state.settingsAt));
+    localStorage.setItem('kelasku_settings_cache', JSON.stringify(data.settings));
     applyPreferences(data.settings);
-    drawSettings(data.settings);
+    if (changed || !background) drawSettings(data.settings);
   } catch (err) {
     if (!background && !state.settings) {
       const slot = document.getElementById('settings-slot');

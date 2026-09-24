@@ -1,6 +1,32 @@
 {
   "releases": [
     {
+      "version": "5.2.0",
+      "build": "20260924.080",
+      "date": "24 September 2026",
+      "title": "Instant Interaction & Chat Reply",
+      "description": "Patch performa untuk menghilangkan kedip/re-render setelah cache selesai tampil, sekaligus menambah balas pesan dan penghapusan pesan pada Class Chat.",
+      "groups": [
+        {
+          "label": "Instant UX",
+          "items": [
+            "Settings, Info Aplikasi, Dashboard, Kelas, Room Kelas, Academic Hub, Notification Center, dan Super Admin tidak merender ulang bila hasil revalidation sama dengan cache yang sedang tampil.",
+            "Class Chat menyimpan conversation cache per session; kembali ke room yang sama langsung tampil lalu sinkronisasi berjalan tanpa mengganti composer atau seluruh halaman.",
+            "Background refresh hanya mengubah DOM bila data benar-benar berubah sehingga efek kedip beberapa detik setelah halaman terbuka berkurang drastis."
+          ]
+        },
+        {
+          "label": "Class Chat",
+          "items": [
+            "Balas pesan ala WhatsApp: pilih Reply, preview pesan muncul di atas composer, dan bubble baru menampilkan kutipan pesan asal.",
+            "Klik kutipan untuk melompat ke pesan asal jika masih berada pada history yang sudah dimuat.",
+            "Pesan milik sendiri dapat dihapus; Moderator/Koordinator/Owner juga dapat menghapus pesan untuk moderasi. Pesan diubah menjadi tombstone 'Pesan telah dihapus' agar alur balasan tetap konsisten.",
+            "Composer tidak dibangun ulang saat sinkronisasi biasa; send/delete tetap optimistic dengan rollback bila server gagal."
+          ]
+        }
+      ]
+    },
+    {
       "version": "5.1.1",
       "build": "20260924.071",
       "date": "24 September 2026",

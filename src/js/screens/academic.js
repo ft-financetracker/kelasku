@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast, fmtDate } from '../core/utils.js';
+import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { go } from '../core/router.js';
 
@@ -70,12 +70,14 @@ export async function loadAcademicHub(force = false) {
   }
 
   try {
+    const hadCache = Boolean(state.academicHub);
     const data = await api('getAcademicHub');
+    const changed = !sameData(state.academicHub, data);
     state.academicHub = data;
     state.academicHubAt = Date.now();
     localStorage.setItem('kelasku_academic_cache', JSON.stringify(data));
     localStorage.setItem('kelasku_academic_cache_at', String(state.academicHubAt));
-    drawAcademicScreen(data);
+    if (changed || !hadCache) drawAcademicScreen(data);
     return data;
   } catch (err) {
     if (!state.academicHub) {

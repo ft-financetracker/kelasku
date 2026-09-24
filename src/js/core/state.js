@@ -77,6 +77,10 @@ export function clearSession() {
   state.messagesByClass = {};
   state.classTimeline = {};
   localStorage.removeItem('kelasku_message_rooms_cache');
+  try {
+    Object.keys(sessionStorage).filter(key => key.startsWith('kelasku_message_cache_')).forEach(key => sessionStorage.removeItem(key));
+    sessionStorage.removeItem('kelasku_message_class');
+  } catch {}
   localStorage.removeItem('kelasku_academic_cache');
   localStorage.removeItem('kelasku_academic_cache_at');
   if (state.notificationTimer) clearInterval(state.notificationTimer);

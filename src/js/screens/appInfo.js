@@ -1,4 +1,4 @@
-import { C, esc, svg, toast } from '../core/utils.js';
+import { C, esc, svg, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { getAppSetupState, checkForAppUpdate, updateApp } from '../core/pwa.js';
 import { go } from '../core/router.js';
@@ -31,15 +31,24 @@ function timelineSkeleton(){return `<div class="app-release-list">${[1,2,3,4].ma
 function readCache(){try{return JSON.parse(localStorage.getItem(CHANGELOG_CACHE_KEY)||'null');}catch{return null;}}
 
 async function loadTimeline(background=false){
-  try{const res=await fetch(`./changelog.json?t=${Date.now()}`,{cache:'no-store'});if(!res.ok)throw new Error('Changelog tidak dapat dimuat.');const data=await res.json();localStorage.setItem(CHANGELOG_CACHE_KEY,JSON.stringify(data));drawTimeline(data);}catch(err){if(!background){document.getElementById('release-timeline').innerHTML=`<div class="alert danger">${esc(err.message)}</div>`;}}
+  try{
+    const cached=readCache();
+    const res=await fetch(`./changelog.json?t=${Date.now()}`,{cache:'no-store'});
+    if(!res.ok)throw new Error('Changelog tidak dapat dimuat.');
+    const data=await res.json();
+    localStorage.setItem(CHANGELOG_CACHE_KEY,JSON.stringify(data));
+    if(!sameData(cached,data) || !background) drawTimeline(data);
+  }catch(err){if(!background){document.getElementById('release-timeline').innerHTML=`<div class="alert danger">${esc(err.message)}</div>`;}}
 }
 
 function drawTimeline(data){
   allReleases=Array.isArray(data?.releases)?data.releases:[]; renderedCount=0;
   const slot=document.getElementById('release-timeline'),count=document.getElementById('release-count'); if(count)count.textContent=`${allReleases.length} RILIS`; if(!slot)return;
+  const previousScroll=slot.scrollTop;
   if(!allReleases.length){slot.innerHTML='<div class="search-empty">Belum ada riwayat pembaruan.</div>';return;}
   slot.innerHTML='<div class="app-release-list" id="app-release-list"></div><div id="release-load-sentinel" class="release-load-sentinel"></div>';
   appendReleaseBatch();
+  if(previousScroll) requestAnimationFrame(()=>{slot.scrollTop=previousScroll;});
   slot.onscroll=()=>{if(slot.scrollTop+slot.clientHeight>=slot.scrollHeight-180)appendReleaseBatch();};
 }
 

@@ -1,5 +1,5 @@
 /**
- * KelasKu — Application Entry Point v5.1.0
+ * KelasKu — Application Entry Point v5.2.0
  * ============================================================
  * Phase 3 membuka Academic Core: Pengumuman, Jadwal, Tugas, Materi, dan Absensi.
  * Bootstrap tetap compound: config + user + settings + dashboard.
@@ -10,7 +10,7 @@ import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
 import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js';
-import { registerRoute, go, startRouter, openDeepLink } from './core/router.js';
+import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js';
 import { applyPreferences } from './core/preferences.js';
 
 import { renderSplash } from './screens/splash.js';
@@ -133,7 +133,10 @@ async function boot() {
     writeJson('kelasku_dashboard_cache', data.dashboard);
   }
 
-  routeReadyUser();
+  // Jangan paksa route ulang setelah bootstrap selesai bila user sudah berpindah
+  // ke halaman lain dari cache. Ini mencegah efek 'kedip lalu balik/refresh sendiri'.
+  const active = currentRoute();
+  if (['splash','auth','profile','setup'].includes(active)) routeReadyUser();
 }
 
 function routeReadyUser() {

@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, fmtDate, toast } from '../core/utils.js';
+import { esc, svg, fmtDate, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { openDeepLink } from '../core/router.js';
 
@@ -28,7 +28,7 @@ function switchCategory(next){
   load(true).finally(()=>panel?.removeAttribute('aria-busy'));
 }
 
-async function load(background=false){try{const data=await api('getNotifications',{limit:50,category});if(category==='ALL'){state.notifications=data.items||[];localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));}draw(data.items||[]);}catch(err){if(!background)document.getElementById('notification-center-list').innerHTML=`<div class="alert danger">${esc(err.message)}</div>`;}}
+async function load(background=false){try{const data=await api('getNotifications',{limit:50,category});const next=data.items||[];const previous=category==='ALL'?(state.notifications||[]):currentItems;const changed=!sameData(previous,next);if(category==='ALL'){state.notifications=next;localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));}if(changed||!background)draw(next);}catch(err){if(!background)document.getElementById('notification-center-list').innerHTML=`<div class="alert danger">${esc(err.message)}</div>`;}}
 function draw(items){currentItems=items||[];const root=document.getElementById('notification-center-list');if(!root)return;root.innerHTML=items.length?`<div class="notification-list">${items.map(row).join('')}</div>`:'<div class="message-empty">Belum ada notifikasi pada kategori ini.</div>';root.querySelectorAll('[data-notification]').forEach(el=>el.onclick=()=>openItem(el.dataset.notification));}
 function row(n){return `<button type="button" class="notification-center-row ${n.read_at?'':'unread'}" data-notification="${esc(n.notification_id)}"><span class="notification-center-icon">${svg(iconFor(n.type))}</span><span><small>${esc(labelFor(n.type))} • ${esc(fmtDate(n.created_at))}</small><strong>${esc(n.title)}</strong><p>${esc(n.body)}</p></span>${n.read_at?'':'<b></b>'}</button>`;}
 async function openItem(id){const target=currentItems.find(x=>x.notification_id===id)||state.notifications.find(x=>x.notification_id===id);if(!target)return;if(!target.read_at){target.read_at=new Date().toISOString();if(category==='ALL')localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));api('markNotificationRead',{notification_id:id},{onSlow:()=>{}}).catch(()=>{});}if(target.deep_link)openDeepLink(target.deep_link);else{draw(currentItems);toast('Notifikasi dibaca.');}}

@@ -14,6 +14,15 @@ export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+export function sameData(a, b) {
+  if (a === b) return true;
+  try { return JSON.stringify(a) === JSON.stringify(b); } catch { return false; }
+}
+
+export function dataSignature(value) {
+  try { return JSON.stringify(value); } catch { return String(value ?? ''); }
+}
+
 export function randomId(prefix = 'ID', len = 18) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = new Uint8Array(len);
@@ -55,7 +64,7 @@ export function toast(message) {
 
 export function logo(compact = false) {
   return `<div class="brand">
-    <img src="assets/brand/logo-mark.svg?v=500" alt="KelasKu">
+    <img src="assets/brand/logo-mark.svg?v=520" alt="KelasKu">
     <div>
       <div class="brand-word">Kelas<span class="ku">Ku</span></div>
       ${compact ? '' : '<div class="brand-sub">Sistem Komunikasi & Informasi Kelas</div>'}
