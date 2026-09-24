@@ -1,6 +1,39 @@
 {
   "releases": [
     {
+      "version": "5.1.0",
+      "build": "20260923.070",
+      "date": "23 September 2026",
+      "title": "Class Room Precision",
+      "description": "Patch fokus Room Kelas: hero lebih presisi, navigasi room lebih jelas, member badge terpisah, pemilihan Ketua Kelas memiliki kandidat eksplisit dan room riwayat, serta Class Chat dipoles seperti aplikasi chat modern.",
+      "groups": [
+        {
+          "label": "Ruang Kelas",
+          "items": [
+            "Class Code dan Join Code dipindahkan ke rail kanan dalam dua baris compact tanpa menambah tinggi hero.",
+            "Navigasi room diganti menjadi primary room + secondary submenu Akademik/Kelola sehingga tidak lagi berupa banyak tombol kecil membingungkan.",
+            "Daftar anggota dirapikan: identitas di kiri, badge independen dan kontrol di kanan."
+          ]
+        },
+        {
+          "label": "Kepemimpinan",
+          "items": [
+            "Badge jabatan dipisahkan: Owner + Ketua Kelas, Member + Moderator/Koordinator, atau Member.",
+            "Pemilihan Ketua Kelas memiliki room sendiri dan riwayat hasil, sehingga polling selesai tidak memenuhi room Anggota.",
+            "Owner memilih kandidat secara eksplisit saat membuat pemilihan; anggota lain tidak otomatis menjadi kandidat."
+          ]
+        },
+        {
+          "label": "Chat",
+          "items": [
+            "Composer chat memakai icon Material Symbols tipis, tombol kirim bulat compact, emoji picker, Enter untuk kirim dan Shift+Enter untuk baris baru.",
+            "Bubble chat diperbesar dan proporsinya disesuaikan dengan ruang percakapan.",
+            "Optimistic send tidak lagi merender ulang seluruh composer saat pesan dikirim."
+          ]
+        }
+      ]
+    },
+    {
       "version": "5.0.0",
       "build": "20260923.060",
       "date": "23 September 2026",

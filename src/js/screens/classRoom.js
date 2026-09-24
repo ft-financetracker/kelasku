@@ -56,45 +56,75 @@ function drawClass(data, preserveTab = true) {
   document.getElementById('class-room-subtitle').textContent = `${c.class_code || ''} · ${roleLabel(c.role || 'MEMBER')}${leader && String(leader.user_id) === String(state.user?.user_id) ? ' • Ketua Kelas' : ''}`;
 
   document.getElementById('class-room-slot').innerHTML = `
-    <section class="class-hero class-hero-v5 panel">
+    <section class="class-hero class-hero-v51 panel">
       <div class="class-hero-icon">${svg('i-class')}</div>
       <div class="class-hero-main">
         <div class="class-badge-line"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
         <h2>${esc(c.name)}</h2>
         <p>${esc(c.description || 'Belum ada deskripsi kelas.')}</p>
         <div class="class-meta-line"><span>${esc(c.institution || 'KelasKu')}</span>${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}<span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
-        <div class="class-code-inline">
-          <div class="class-code-inline-item"><span>Class Code</span><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div>
-          ${p.can_manage_class ? `<div class="class-code-inline-item"><span>Join Code</span><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini" title="Salin Join Code">${svg('i-copy')}</button></div>`:''}
-        </div>
       </div>
+      <aside class="class-hero-code-rail" aria-label="Kode kelas">
+        <div class="class-code-rail-item"><span>Class Code</span><div><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div></div>
+        ${p.can_manage_class ? `<div class="class-code-rail-item"><span>Join Code</span><div><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini" title="Salin Join Code">${svg('i-copy')}</button></div></div>`:''}
+      </aside>
     </section>
 
-    <div class="room-tabs" id="room-tabs">
-      ${tabButton('overview','Ringkasan')}
-      ${tabButton('timeline','Timeline')}
-      ${tabButton('messages','Pesan')}
-      ${tabButton('announcements','Pengumuman')}
-      ${tabButton('schedule','Jadwal')}
-      ${tabButton('tasks','Tugas')}
-      ${tabButton('materials','Materi')}
-      ${tabButton('attendance','Absensi')}
-      ${tabButton('members',`Anggota <span>${(data.members||[]).length}</span>`)}
-      ${p.can_manage_members ? tabButton('requests',`Permintaan <span>${(data.pending_requests||[]).length}</span>`) : ''}
-      ${p.can_manage_class ? tabButton('settings','Pengaturan Kelas') : ''}
-    </div>
+    <section class="room-navigation-shell" aria-label="Navigasi Ruang Kelas">
+      <nav class="room-main-nav" id="room-main-nav">
+        ${roomMainButton('overview','i-home','Ringkasan')}
+        ${roomMainButton('timeline','i-timeline','Timeline')}
+        ${roomMainButton('messages','i-chat','Pesan')}
+        ${roomMainButton('academic','i-class','Akademik')}
+        ${roomMainButton('members','i-users',`Anggota`,(data.members||[]).length)}
+        ${roomMainButton('elections','i-vote','Pemilihan',(data.leader_elections||[]).filter(x=>x.status==='ACTIVE').length)}
+        ${(p.can_manage_members||p.can_manage_class) ? roomMainButton('manage','i-gear','Kelola',(data.pending_requests||[]).length) : ''}
+      </nav>
+      <div class="room-subnav" id="room-subnav"></div>
+    </section>
     <div id="room-content"></div>`;
 
   document.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = () => copyText(btn.dataset.copy));
-  document.querySelectorAll('.room-tab').forEach(btn => btn.onclick = () => switchTab(btn.dataset.tab, data));
+  bindRoomNavigation(data);
   switchTab(desiredTab, data);
 }
 
-function tabButton(tab,label){ return `<button class="room-tab ${activeTab===tab?'active':''}" data-tab="${tab}">${label}</button>`; }
+function roomMainButton(key,icon,label,count=0){
+  const badge=Number(count||0)>0?`<b>${Number(count)}</b>`:'';
+  return `<button type="button" class="room-main-item" data-room-main="${key}"><span class="room-main-icon">${svg(icon)}</span><span>${label}</span>${badge}</button>`;
+}
+function roomMainKey(tab){
+  if(['announcements','schedule','tasks','materials','attendance'].includes(tab))return 'academic';
+  if(['requests','settings'].includes(tab))return 'manage';
+  return tab;
+}
+function bindRoomNavigation(data){
+  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.onclick=()=>{
+    const key=btn.dataset.roomMain;
+    if(key==='academic')return switchTab('announcements',data);
+    if(key==='manage')return switchTab((data.pending_requests||[]).length?'requests':'settings',data);
+    switchTab(key,data);
+  });
+}
+function refreshRoomNavigation(tab,data){
+  const main=roomMainKey(tab);
+  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('active',btn.dataset.roomMain===main));
+  const sub=document.getElementById('room-subnav'); if(!sub)return;
+  if(main==='academic'){
+    sub.innerHTML=[['announcements','i-mega','Pengumuman'],['schedule','i-calendar','Jadwal'],['tasks','i-task','Tugas'],['materials','i-file','Materi'],['attendance','i-check','Absensi']].map(([key,icon,label])=>`<button type="button" class="room-sub-item ${tab===key?'active':''}" data-room-sub="${key}">${svg(icon)}<span>${label}</span></button>`).join('');
+  }else if(main==='manage'){
+    const parts=[];
+    if(data.permissions?.can_manage_members)parts.push(['requests','i-users',`Permintaan ${(data.pending_requests||[]).length}`]);
+    if(data.permissions?.can_manage_class)parts.push(['settings','i-gear','Pengaturan Kelas']);
+    sub.innerHTML=parts.map(([key,icon,label])=>`<button type="button" class="room-sub-item ${tab===key?'active':''}" data-room-sub="${key}">${svg(icon)}<span>${label}</span></button>`).join('');
+  }else sub.innerHTML='';
+  sub.hidden=!sub.innerHTML;
+  sub.querySelectorAll('[data-room-sub]').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.roomSub,data));
+}
 
 function switchTab(tab, data) {
   activeTab = tab;
-  document.querySelectorAll('.room-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+  refreshRoomNavigation(tab,data);
   const slot = document.getElementById('room-content');
   if (!slot) return;
 
@@ -121,6 +151,7 @@ function switchTab(tab, data) {
   }
 
   if (tab === 'members') slot.innerHTML = membersHtml(data);
+  else if (tab === 'elections') slot.innerHTML = electionsHtml(data);
   else if (tab === 'requests') slot.innerHTML = requestsHtml(data);
   else if (tab === 'settings') slot.innerHTML = settingsHtml(data);
   else slot.innerHTML = overviewHtml(data);
@@ -308,28 +339,54 @@ async function saveAttendance(event,attendanceId){event.preventDefault();const b
 
 function membersHtml(data) {
   const p=data.permissions||{}; const items=data.members||[]; const leader=items.find(m=>m.is_class_leader)||null; const candidates=items;
-  const leaderText=leader?`${roleLabel(leader.class_role)}${String(leader.class_role)==='OWNER'?' • Ketua Kelas':' • Ketua Kelas'}`:'Belum ditetapkan';
-  const leaderCard=`<div class="class-leader-card"><div class="class-leader-icon">${svg('i-shield')}</div><div class="class-leader-copy"><span>KETUA KELAS</span><strong>${leader?esc(leader.full_name||leader.username):'Belum ditetapkan'}</strong><small>${leader?`${esc(leaderText)} · @${esc(leader.username||'-')}`:'Owner dapat menunjuk dirinya sendiri atau anggota aktif sebagai Ketua Kelas.'}</small></div>${p.is_owner?`<div class="class-leader-control"><select id="class-leader-select" class="control"><option value="">Pilih anggota…</option>${candidates.map(m=>`<option value="${esc(m.user_id)}" ${leader&&String(leader.user_id)===String(m.user_id)?'selected':''}>${esc(m.full_name||m.username)} · ${esc(roleLabel(m.class_role))}</option>`).join('')}</select><button type="button" id="save-class-leader" class="btn btn-primary">Tetapkan</button></div>`:''}</div>`;
-  const electionSection=leaderElectionHtml(data.leader_elections||[],items,p);
-  return `<section class="panel"><div class="panel-head"><div><div class="panel-title">Anggota & Ketua Kelas</div><p class="panel-copy">Role teknis dan jabatan Ketua Kelas dipisahkan. Owner dapat sekaligus menjadi Ketua Kelas.</p></div></div>${leaderCard}${electionSection}<div class="member-list">${items.length?items.map(m=>memberRow(m,p)).join(''):'<div class="search-empty">Belum ada anggota.</div>'}</div></section>`;
+  const leaderCard=`<div class="class-leader-card"><div class="class-leader-icon">${svg('i-shield')}</div><div class="class-leader-copy"><span>KETUA KELAS</span><strong>${leader?esc(leader.full_name||leader.username):'Belum ditetapkan'}</strong><small>${leader?`@${esc(leader.username||'-')} · ${esc(roleLabel(leader.class_role))}`:'Owner dapat menunjuk dirinya sendiri atau anggota aktif sebagai Ketua Kelas.'}</small></div>${p.is_owner?`<div class="class-leader-control"><select id="class-leader-select" class="control"><option value="">Pilih anggota…</option>${candidates.map(m=>`<option value="${esc(m.user_id)}" ${leader&&String(leader.user_id)===String(m.user_id)?'selected':''}>${esc(m.full_name||m.username)} · ${esc(roleLabel(m.class_role))}</option>`).join('')}</select><button type="button" id="save-class-leader" class="btn btn-primary">Tetapkan</button></div>`:''}</div>`;
+  return `<section class="panel members-room-panel"><div class="panel-head"><div><div class="panel-title">Anggota & Ketua Kelas</div><p class="panel-copy">Kelola jabatan Ketua Kelas dan hak akses anggota. Pemilihan memiliki room terpisah agar daftar anggota tetap bersih.</p></div><span class="soft-chip">${items.length} anggota</span></div>${leaderCard}<div class="member-list member-list-v51">${items.length?items.map(m=>memberRow(m,p)).join(''):'<div class="search-empty">Belum ada anggota.</div>'}</div></section>`;
 }
 
-function leaderElectionHtml(polls,items,p){
-  const latest=polls[0]||null;
-  const header=`<div class="leader-election-head"><div><span class="eyebrow">PEMILIHAN KETUA KELAS</span><strong>Polling kelas</strong><small>Satu akun satu suara. Hasil dapat otomatis menetapkan pemenang.</small></div>${p.is_owner&&!polls.some(x=>x.status==='ACTIVE')?`<button type="button" id="create-leader-election" class="btn btn-secondary">${svg('i-vote')} Buat Polling</button>`:''}</div>`;
-  if(!latest)return `<div class="leader-election-box">${header}<div class="search-empty compact-empty">Belum ada polling Ketua Kelas.</div></div>`;
-  const candidateRows=(latest.candidates||[]).map(c=>`<label class="poll-candidate ${String(latest.my_vote)===String(c.user_id)?'selected':''}"><input type="radio" name="leader-vote" value="${esc(c.user_id)}" ${String(latest.my_vote)===String(c.user_id)?'checked':''} ${latest.can_vote?'':'disabled'}><span class="member-avatar">${avatarMarkup(c)}</span><span><strong>${esc(c.full_name||c.username)}</strong><small>${esc(roleLabel(c.class_role))}${c.votes!==null&&c.votes!==undefined?` · ${c.votes} suara`:''}</small></span></label>`).join('');
-  return `<div class="leader-election-box">${header}<div class="leader-poll-card"><div class="leader-poll-title"><div><strong>${esc(latest.title)}</strong><p>${esc(latest.description||'')}</p></div><span class="phase-badge poll-${String(latest.status).toLowerCase()}">${esc(pollStatusLabel(latest.status))}</span></div><div class="poll-time">${esc(shortDateTime(latest.start_at))} → ${esc(shortDateTime(latest.end_at))} · ${latest.total_votes||0} suara</div><div class="poll-candidates">${candidateRows}</div><div class="page-actions">${latest.can_vote?'<button type="button" id="submit-leader-vote" class="btn btn-primary">Kirim / Ubah Suara</button>':''}${p.is_owner&&latest.status==='ACTIVE'?'<button type="button" id="close-leader-election" class="btn btn-secondary">Tutup Sekarang</button>':''}</div></div></div>`;
+function electionsHtml(data){
+  const p=data.permissions||{}; const polls=data.leader_elections||[];
+  const active=polls.find(x=>x.status==='ACTIVE')||null;
+  const history=polls.filter(x=>x.status!=='ACTIVE');
+  const createButton=p.is_owner&&!active?`<button type="button" id="create-leader-election" class="btn btn-secondary">${svg('i-vote')} Buat Pemilihan</button>`:'';
+  return `<section class="panel election-room-panel"><div class="panel-head election-room-head"><div><div class="eyebrow">KEPEMIMPINAN KELAS</div><div class="panel-title">Pemilihan Ketua Kelas</div><p class="panel-copy">Owner menentukan kandidat. Anggota hanya memilih dari kandidat yang ditetapkan, sehingga kelas besar tetap rapi.</p></div>${createButton}</div>${active?activeElectionHtml(active,p):`<div class="election-idle"><span class="election-idle-icon">${svg('i-vote')}</span><div><strong>Tidak ada pemilihan aktif</strong><p>Riwayat hasil tetap tersimpan di bawah. Buat pemilihan baru saat dibutuhkan.</p></div></div>`}<div class="election-history-head"><div><strong>Riwayat Pemilihan</strong><small>${history.length} riwayat terbaru</small></div></div><div class="election-history-list">${history.length?history.map(historyElectionCard).join(''):'<div class="search-empty compact-empty">Belum ada riwayat pemilihan.</div>'}</div></section>`;
 }
 
+function activeElectionHtml(poll,p){
+  const candidateRows=(poll.candidates||[]).map(c=>`<label class="poll-candidate ${String(poll.my_vote)===String(c.user_id)?'selected':''}"><input type="radio" name="leader-vote" value="${esc(c.user_id)}" ${String(poll.my_vote)===String(c.user_id)?'checked':''} ${poll.can_vote?'':'disabled'}><span class="member-avatar">${avatarMarkup(c)}</span><span><strong>${esc(c.full_name||c.username)}</strong><small>${memberRoleText(c)}${c.votes!==null&&c.votes!==undefined?` · ${c.votes} suara`:''}</small></span></label>`).join('');
+  return `<div class="leader-poll-card active-poll-card"><div class="leader-poll-title"><div><span class="eyebrow">SEDANG BERLANGSUNG</span><strong>${esc(poll.title)}</strong><p>${esc(poll.description||'')}</p></div><span class="phase-badge poll-${String(poll.status).toLowerCase()}">${esc(pollStatusLabel(poll.status))}</span></div><div class="poll-time">${esc(shortDateTime(poll.start_at))} → ${esc(shortDateTime(poll.end_at))} · ${poll.total_votes||0} suara · ${(poll.candidates||[]).length} kandidat</div><div class="poll-candidates">${candidateRows}</div><div class="page-actions election-actions">${poll.can_vote?`<button type="button" id="submit-leader-vote" class="btn btn-primary">${svg('i-vote')} Simpan Suara</button>`:''}${p.is_owner&&poll.status==='ACTIVE'?'<button type="button" id="close-leader-election" class="btn btn-secondary">Tutup Pemilihan</button>':''}</div></div>`;
+}
+
+function historyElectionCard(poll){
+  const winner=(poll.candidates||[]).find(c=>String(c.user_id)===String(poll.winner_user_id));
+  const ranked=[...(poll.candidates||[])].sort((a,b)=>Number(b.votes||0)-Number(a.votes||0));
+  return `<article class="election-history-card"><div class="election-history-top"><div><strong>${esc(poll.title||'Pemilihan Ketua Kelas')}</strong><small>${esc(shortDateTime(poll.start_at))}</small></div><span class="phase-badge poll-${String(poll.status).toLowerCase()}">${esc(pollStatusLabel(poll.status))}</span></div><div class="election-result-main"><span class="election-result-icon">${svg('i-vote')}</span><div><small>${winner?'Pemenang':'Hasil'}</small><strong>${winner?esc(winner.full_name||winner.username):(String(poll.status)==='TIED'?'Seri':'Tidak ada pemenang')}</strong><span>${poll.total_votes||0} suara · ${(poll.candidates||[]).length} kandidat</span></div></div>${ranked.length?`<div class="election-result-strip">${ranked.slice(0,5).map(c=>`<span class="result-chip ${winner&&String(winner.user_id)===String(c.user_id)?'winner':''}">${esc(c.full_name||c.username)} <b>${Number(c.votes||0)}</b></span>`).join('')}</div>`:''}</article>`;
+}
+
+function memberRoleText(m){
+  const base=String(m.class_role||'MEMBER').toUpperCase();
+  if(base==='OWNER')return 'Owner'+(m.is_class_leader?' · Ketua Kelas':'');
+  if(base==='MODERATOR')return 'Member · Moderator'+(m.is_class_leader?' · Ketua Kelas':'');
+  if(base==='COORDINATOR')return 'Member · Koordinator'+(m.is_class_leader?' · Ketua Kelas':'');
+  return 'Member'+(m.is_class_leader?' · Ketua Kelas':'');
+}
+function memberBadgesHtml(m){
+  const role=String(m.class_role||'MEMBER').toUpperCase();
+  const badges=[];
+  if(role==='OWNER') badges.push('<span class="role-pill role-owner">Owner</span>');
+  else {
+    badges.push('<span class="role-pill role-member">Member</span>');
+    if(role==='MODERATOR')badges.push('<span class="role-pill role-moderator">Moderator</span>');
+    if(role==='COORDINATOR')badges.push('<span class="role-pill role-coordinator">Koordinator</span>');
+  }
+  if(m.is_class_leader)badges.push('<span class="role-pill leader-role-pill">Ketua Kelas</span>');
+  return badges.join('');
+}
 function memberRow(m,p) {
   const canEdit=p.can_manage_roles && m.class_role!=='OWNER'; const canRemove=p.can_manage_members && m.class_role!=='OWNER';
-  const roleText=`${roleLabel(m.class_role||'MEMBER')}${m.is_class_leader?' • Ketua Kelas':''}`;
-  return `<div class="member-row member-row-v5">
+  return `<div class="member-row member-row-v51">
     <div class="member-avatar">${avatarMarkup(m)}</div>
     <div class="member-info"><strong>${esc(m.full_name||m.username)}</strong><span>@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span><small>${esc(m.study_program||'')} ${m.cohort?'· '+esc(m.cohort):''}</small></div>
-    <div class="member-badge-top"><span class="role-pill role-${String(m.class_role||'member').toLowerCase()}">${esc(roleText)}</span></div>
-    <div class="member-actions">${canEdit?`<select class="control role-select" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Koordinator</option></select>`:''}${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota">${svg('i-close')}</button>`:''}</div>
+    <div class="member-side"><div class="member-badges">${memberBadgesHtml(m)}</div><div class="member-actions">${canEdit?`<select class="control role-select" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Koordinator</option></select>`:''}${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota">${svg('i-close')}</button>`:''}</div></div>
   </div>`;
 }
 
@@ -353,6 +410,8 @@ function bindTab(tab,data) {
     document.querySelectorAll('[data-role-user]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleUser,sel.value,sel));
     document.querySelectorAll('[data-remove-user]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.removeUser,btn));
     document.getElementById('save-class-leader')?.addEventListener('click',setClassLeader);
+  }
+  if(tab==='elections'){
     document.getElementById('create-leader-election')?.addEventListener('click',openCreateLeaderElection);
     document.getElementById('submit-leader-vote')?.addEventListener('click',submitLeaderVote);
     document.getElementById('close-leader-election')?.addEventListener('click',closeLeaderElection);
@@ -386,8 +445,10 @@ async function decideRequest(requestId,decision,button){
       state.classDetails[state.selectedClassId]=currentClassData;
     }
     if(row){row.classList.add('is-resolved');setTimeout(()=>row.remove(),180);}
-    const tab=document.querySelector('.room-tab[data-tab="requests"] span');
-    if(tab)tab.textContent=String((currentClassData?.pending_requests||[]).length);
+    const manageBadge=document.querySelector('[data-room-main="manage"] b');
+    const pendingCount=(currentClassData?.pending_requests||[]).length;
+    if(manageBadge)manageBadge.textContent=String(pendingCount);
+    if(currentClassData)refreshRoomNavigation(activeTab,currentClassData);
     loadClassDetail(true);
   }catch(err){
     if(row) row.dataset.busy='0';
@@ -441,17 +502,30 @@ async function setClassLeader(){
   finally{if(document.body.contains(btn)){btn.disabled=false;select.disabled=false;btn.innerHTML=old;}}
 }
 
-function openCreateLeaderElection(){const end=new Date(Date.now()+3*24*3600000);showModal(`<div class="modal-head"><div><div class="eyebrow">POLLING KELAS</div><h2>Pemilihan Ketua Kelas</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="leader-election-form"><div class="field"><label>Judul</label><input name="title" class="control" value="Pemilihan Ketua Kelas" required></div><div class="field"><label>Deskripsi</label><textarea name="description" class="control" rows="3">Pilih satu kandidat Ketua Kelas.</textarea></div><div class="field"><label>Berakhir</label><input name="end_at" type="datetime-local" class="control" value="${esc(toLocalInput(end))}" required></div><label class="setting-card"><span class="setting-card-copy"><strong>Auto tetapkan pemenang</strong><small>Jika tidak seri, pemenang otomatis menjadi Ketua Kelas saat polling selesai.</small></span><span class="switch"><input name="auto_apply" type="checkbox" checked><span></span></span></label><div id="leader-election-status" class="request-status"></div><button id="leader-election-submit" class="btn btn-primary btn-block" type="submit">Buka Polling</button></form>`);document.getElementById('leader-election-form').onsubmit=createLeaderElection;}
+function openCreateLeaderElection(){
+  const end=new Date(Date.now()+3*24*3600000);
+  const items=currentClassData?.members||[];
+  const candidateCards=items.map(m=>`<label class="candidate-picker-row" data-candidate-name="${esc(String(m.full_name||m.username||'').toLowerCase())}"><input type="checkbox" name="candidate_user_ids" value="${esc(m.user_id)}"><span class="member-avatar">${avatarMarkup(m)}</span><span><strong>${esc(m.full_name||m.username)}</strong><small>${esc(memberRoleText(m))} · @${esc(m.username||'-')}</small></span><span class="material-symbols-rounded candidate-check-icon">check_circle</span></label>`).join('');
+  showModal(`<div class="modal-head"><div><div class="eyebrow">POLLING KELAS</div><h2>Pemilihan Ketua Kelas</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="leader-election-form"><div class="field"><label>Judul</label><input name="title" class="control" value="Pemilihan Ketua Kelas" required></div><div class="field"><label>Deskripsi</label><textarea name="description" class="control" rows="2">Pilih satu kandidat Ketua Kelas.</textarea></div><div class="candidate-picker"><div class="candidate-picker-head"><div><strong>Pilih Kandidat</strong><small>Minimal 2 kandidat. Tidak semua anggota otomatis menjadi kandidat.</small></div><span id="candidate-count" class="soft-chip">0 dipilih</span></div><label class="candidate-search"><span class="material-symbols-rounded">search</span><input id="candidate-search-input" type="search" placeholder="Cari nama anggota…"></label><div class="candidate-picker-list" id="candidate-picker-list">${candidateCards}</div></div><div class="field"><label>Berakhir</label><input name="end_at" type="datetime-local" class="control" value="${esc(toLocalInput(end))}" required></div><label class="setting-card"><span class="setting-card-copy"><strong>Auto tetapkan pemenang</strong><small>Jika tidak seri, pemenang otomatis menjadi Ketua Kelas saat polling selesai.</small></span><span class="switch"><input name="auto_apply" type="checkbox" checked><span></span></span></label><div id="leader-election-status" class="request-status"></div><button id="leader-election-submit" class="btn btn-primary btn-block" type="submit">Buka Pemilihan</button></form>`);
+  const list=document.getElementById('candidate-picker-list');
+  const search=document.getElementById('candidate-search-input');
+  const updateCount=()=>{const n=list?.querySelectorAll('input[name="candidate_user_ids"]:checked').length||0;const out=document.getElementById('candidate-count');if(out)out.textContent=`${n} dipilih`;};
+  list?.querySelectorAll('input[name="candidate_user_ids"]').forEach(x=>x.addEventListener('change',updateCount));
+  search?.addEventListener('input',()=>{const q=String(search.value||'').trim().toLowerCase();list?.querySelectorAll('[data-candidate-name]').forEach(row=>row.hidden=Boolean(q)&&!String(row.dataset.candidateName||'').includes(q));});
+  document.getElementById('leader-election-form').onsubmit=createLeaderElection;
+}
 async function createLeaderElection(e){
   e.preventDefault();
   const f=e.currentTarget,b=document.getElementById('leader-election-submit'),status=document.getElementById('leader-election-status'),old=b.innerHTML;
+  const candidateIds=[...f.querySelectorAll('input[name="candidate_user_ids"]:checked')].map(x=>x.value);
+  if(candidateIds.length<2){status.className='request-status error';status.textContent='Pilih minimal 2 kandidat Ketua Kelas.';return;}
   if(b.disabled)return;
-  b.disabled=true;b.innerHTML='<span class="btn-spinner"></span><span>Membuka…</span>';status.className='request-status progress';status.textContent='Membuat polling…';
+  b.disabled=true;b.innerHTML='<span class="btn-spinner"></span><span>Membuka…</span>';status.className='request-status progress';status.textContent='Membuat pemilihan dan menyimpan kandidat…';
   try{
-    const result=await api('createLeaderElection',{class_id:state.selectedClassId,title:f.title.value,description:f.description.value,end_at:new Date(f.end_at.value).toISOString(),auto_apply:f.auto_apply.checked},{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});
+    const result=await api('createLeaderElection',{class_id:state.selectedClassId,title:f.title.value,description:f.description.value,end_at:new Date(f.end_at.value).toISOString(),auto_apply:f.auto_apply.checked,candidate_user_ids:candidateIds},{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});
     closeModal();
-    if(currentClassData&&result?.poll){currentClassData.leader_elections=[result.poll,...(currentClassData.leader_elections||[])];state.classDetails[state.selectedClassId]=currentClassData;if(activeTab==='members'){document.getElementById('room-content').innerHTML=membersHtml(currentClassData);bindTab('members',currentClassData);}}
-    toast('Polling Ketua Kelas dibuka.');
+    if(currentClassData&&result?.poll){currentClassData.leader_elections=[result.poll,...(currentClassData.leader_elections||[])];state.classDetails[state.selectedClassId]=currentClassData;if(activeTab==='elections'){document.getElementById('room-content').innerHTML=electionsHtml(currentClassData);bindTab('elections',currentClassData);}}
+    toast('Pemilihan Ketua Kelas dibuka.');
     loadClassDetail(true);
   }catch(err){status.className='request-status error';status.textContent=err.message;}
   finally{if(document.body.contains(b)){b.disabled=false;b.innerHTML=old;}}
@@ -467,7 +541,7 @@ async function submitLeaderVote(){
   const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mengirim…</span>';
   try{
     const result=await api('voteLeaderElection',{poll_id:poll.poll_id,candidate_user_id:selected.value},{onSlow:()=>toast('Suara masih disimpan. Tombol tetap dikunci.')});
-    if(currentClassData&&result?.poll){const i=currentClassData.leader_elections.findIndex(x=>String(x.poll_id)===String(result.poll.poll_id));if(i>=0)currentClassData.leader_elections[i]=result.poll;state.classDetails[state.selectedClassId]=currentClassData;if(activeTab==='members'){document.getElementById('room-content').innerHTML=membersHtml(currentClassData);bindTab('members',currentClassData);}}
+    if(currentClassData&&result?.poll){const i=currentClassData.leader_elections.findIndex(x=>String(x.poll_id)===String(result.poll.poll_id));if(i>=0)currentClassData.leader_elections[i]=result.poll;state.classDetails[state.selectedClassId]=currentClassData;if(activeTab==='elections'){document.getElementById('room-content').innerHTML=electionsHtml(currentClassData);bindTab('elections',currentClassData);}}
     toast('Suara kamu tersimpan.');
     loadClassDetail(true);
   }catch(err){toast(err.message);}
@@ -484,7 +558,7 @@ async function closeLeaderElection(){
   const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menutup…</span>';
   try{
     const result=await api('closeLeaderElection',{poll_id:poll.poll_id},{onSlow:()=>toast('Polling masih dihitung. Tombol tetap dikunci.')});
-    if(currentClassData&&result?.poll){const i=currentClassData.leader_elections.findIndex(x=>String(x.poll_id)===String(result.poll.poll_id));if(i>=0)currentClassData.leader_elections[i]=result.poll;state.classDetails[state.selectedClassId]=currentClassData;if(activeTab==='members'){document.getElementById('room-content').innerHTML=membersHtml(currentClassData);bindTab('members',currentClassData);}}
+    if(currentClassData&&result?.poll){const i=currentClassData.leader_elections.findIndex(x=>String(x.poll_id)===String(result.poll.poll_id));if(i>=0)currentClassData.leader_elections[i]=result.poll;state.classDetails[state.selectedClassId]=currentClassData;if(activeTab==='elections'){document.getElementById('room-content').innerHTML=electionsHtml(currentClassData);bindTab('elections',currentClassData);}}
     toast('Polling ditutup.');
     loadClassDetail(true);
   }catch(err){toast(err.message);}
