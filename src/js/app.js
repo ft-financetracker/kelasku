@@ -1,7 +1,7 @@
 /**
- * KelasKu — Application Entry Point v5.2.0
+ * KelasKu — Application Entry Point v6.0.0
  * ============================================================
- * Phase 3 membuka Academic Core: Pengumuman, Jadwal, Tugas, Materi, dan Absensi.
+ * Phase 6 memperdalam Academic Workflow: review tugas, analitik absensi, kalender, dan report.
  * Bootstrap tetap compound: config + user + settings + dashboard.
  */
 

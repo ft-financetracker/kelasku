@@ -1,7 +1,7 @@
 {
-  "version": "5.2.0",
-  "build": "20260924.080",
-  "schema": 9,
+  "version": "6.0.0",
+  "build": "20260924.090",
+  "schema": 10,
   "release_date": "2026-09-24",
-  "release_note": "Instant UX refinement: silent revalidation tanpa kedip ulang, cache chat per session, balas pesan ala WhatsApp, dan hapus pesan dengan tombstone."
+  "release_note": "Phase 6 Academic Workflow & Analytics: review tugas, nilai & feedback, analitik absensi, kalender akademik, dan export CSV."
 }

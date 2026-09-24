@@ -143,7 +143,7 @@ function carouselHtml(d) {
   const nextTask = (d.tasks || [])[0];
   const classCount = Number(d.summary?.active_classes || 0);
   const slides = [
-    { icon:'i-class', eyebrow:'KELASKU • PHASE 4', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, materi, absensi, dan timeline sekarang terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', tone:'a' },
+    { icon:'i-class', eyebrow:'KELASKU • PHASE 6', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik sekarang terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', tone:'a' },
     { icon:'i-calendar', eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', tone:'b' },
     { icon:'i-task', eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', tone:'c' }
   ];

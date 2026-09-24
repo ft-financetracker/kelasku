@@ -34,7 +34,9 @@ export const state = {
   adminOverview: null,
   messageRooms: readJson('kelasku_message_rooms_cache', []),
   messagesByClass: {},
-  classTimeline: {}
+  classTimeline: {},
+  classAnalytics: {},
+  taskReviewCache: {}
 };
 
 export function setSession(token, user) {
@@ -76,6 +78,8 @@ export function clearSession() {
   state.messageRooms = [];
   state.messagesByClass = {};
   state.classTimeline = {};
+  state.classAnalytics = {};
+  state.taskReviewCache = {};
   localStorage.removeItem('kelasku_message_rooms_cache');
   try {
     Object.keys(sessionStorage).filter(key => key.startsWith('kelasku_message_cache_')).forEach(key => sessionStorage.removeItem(key));

@@ -1,6 +1,45 @@
 {
   "releases": [
     {
+      "version": "6.0.0",
+      "build": "20260924.090",
+      "date": "24 September 2026",
+      "title": "Academic Workflow & Analytics",
+      "description": "Phase 6 memperdalam modul akademik tanpa menambah keramaian navigasi: tugas kini dapat direview dan dinilai, absensi memiliki analitik, jadwal menampilkan kalender 30 hari, materi lebih terstruktur, dan pengelola dapat export CSV.",
+      "groups": [
+        {
+          "label": "Tugas & Review",
+          "items": [
+            "Pengelola kelas dapat membuka seluruh submission per tugas, melihat siapa yang belum mengumpulkan, memberi nilai, feedback, atau meminta revisi.",
+            "Mahasiswa melihat status review, nilai, dan feedback langsung dari detail tugas. Pengumpulan ulang mengembalikan status review ke PENDING agar nilai lama tidak menyesatkan.",
+            "Ringkasan review menampilkan jumlah dikumpulkan, dinilai, perlu revisi, dan menunggu review; data dapat diexport CSV."
+          ]
+        },
+        {
+          "label": "Absensi & Analitik",
+          "items": [
+            "Room Akademik mendapat tab Analitik berisi ringkasan kehadiran pribadi dan rekap anggota untuk Koordinator/Owner.",
+            "Persentase hadir dihitung dari record yang sudah dinilai; record UNMARKED ditampilkan terpisah agar angka tidak bias.",
+            "Pengelola dapat export rekap absensi CSV tanpa round-trip API tambahan."
+          ]
+        },
+        {
+          "label": "Kalender & Materi",
+          "items": [
+            "Halaman Jadwal menambahkan Kalender Akademik 30 Hari yang menggabungkan jadwal dan deadline tugas.",
+            "Materi dapat diberi Topik dan Nomor Pertemuan, serta tipe Google Drive / File Link untuk struktur referensi yang lebih rapi."
+          ]
+        },
+        {
+          "label": "Performance",
+          "items": [
+            "Analitik dan review dimuat on-demand dari Room Kelas sehingga Dashboard dan bootstrap tidak bertambah berat.",
+            "Semua write penting tetap memakai busy state/anti double-click, sedangkan export CSV dilakukan di client tanpa membebani Apps Script."
+          ]
+        }
+      ]
+    },
+    {
       "version": "5.2.0",
       "build": "20260924.080",
       "date": "24 September 2026",

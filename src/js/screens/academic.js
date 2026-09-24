@@ -35,7 +35,7 @@ export function renderAttendance() {
 function renderAcademicShell(title, copy, active, icon) {
   const content = `
     <div class="page-head academic-page-head">
-      <div><div class="eyebrow">PHASE 3 • Academic Core</div><h1>${esc(title)}</h1><p>${esc(copy)}</p></div>
+      <div><div class="eyebrow">PHASE 6 • Academic Workflow</div><h1>${esc(title)}</h1><p>${esc(copy)}</p></div>
       <span class="phase-badge">ACTIVE</span>
     </div>
     <section class="academic-toolbar panel">
@@ -113,7 +113,7 @@ function drawAcademicScreen(data) {
   else if (activeAcademicScreen === 'materials') slot.innerHTML = materialsHtml(filterItems(data.materials || []));
   else if (activeAcademicScreen === 'announcements') slot.innerHTML = announcementsHtml(filterItems(data.announcements || []));
   else if (activeAcademicScreen === 'attendance') slot.innerHTML = attendanceHtml(filterItems(data.attendance || []));
-  else slot.innerHTML = schedulesHtml(filterItems(data.schedules || []));
+  else slot.innerHTML = schedulesHtml(filterItems(data.schedules || []), filterItems(data.tasks || []));
 
   bindAcademicRows();
 }
@@ -142,17 +142,25 @@ function filterItems(items) {
   });
 }
 
-function schedulesHtml(items) {
-  if (!items.length) return emptyAcademic('Belum ada jadwal', 'Jadwal dari kelasmu akan tampil di sini.', 'i-calendar');
+function schedulesHtml(items, tasks = []) {
+  if (!items.length && !tasks.length) return emptyAcademic('Belum ada agenda', 'Jadwal dan deadline tugas akan tampil di sini.', 'i-calendar');
   const now = Date.now();
   const upcoming = items.filter(x => dateMs(x.start_at) >= now - 21600000).slice(0, 80);
   const past = items.filter(x => dateMs(x.start_at) < now - 21600000).slice(-20).reverse();
+  const horizon = now + 30 * 86400000;
+  const calendarItems = [
+    ...items.filter(x => dateMs(x.start_at) >= now - 86400000 && dateMs(x.start_at) <= horizon).map(x => ({kind:'JADWAL',date:x.start_at,title:x.title,class_name:x.class_name,icon:'i-calendar'})),
+    ...tasks.filter(x => x.deadline && dateMs(x.deadline) >= now - 86400000 && dateMs(x.deadline) <= horizon).map(x => ({kind:'DEADLINE',date:x.deadline,title:x.title,class_name:x.class_name,icon:'i-task'}))
+  ].sort((a,b)=>dateMs(a.date)-dateMs(b.date));
   return `<section class="academic-list-layout">
+    <div class="section-title-row"><div><h2>Kalender Akademik 30 Hari</h2><p>Jadwal dan deadline penting dalam satu alur.</p></div></div>
+    <div class="academic-calendar-strip">${calendarItems.length?calendarItems.slice(0,18).map(calendarMiniCard).join(''):'<div class="search-empty">Tidak ada agenda 30 hari ke depan.</div>'}</div>
     <div class="section-title-row"><div><h2>Agenda Mendatang</h2><p>${upcoming.length} agenda</p></div></div>
     <div class="academic-card-list">${upcoming.length ? upcoming.map(scheduleCard).join('') : '<div class="search-empty">Belum ada agenda mendatang.</div>'}</div>
     ${past.length ? `<div class="section-title-row"><div><h2>Riwayat Terbaru</h2><p>${past.length} agenda terakhir</p></div></div><div class="academic-card-list is-muted">${past.map(scheduleCard).join('')}</div>` : ''}
   </section>`;
 }
+function calendarMiniCard(item){const d=new Date(item.date);const p=safeDateParts(d);return `<article class="calendar-mini-card"><div class="academic-date-tile compact"><strong>${p.day}</strong><span>${p.month}</span></div><div><span>${esc(item.kind)} · ${esc(item.class_name||'KelasKu')}</span><strong>${esc(item.title||'-')}</strong><small>${esc(shortDateTime(item.date))}</small></div>${svg(item.icon)}</article>`;}
 
 function scheduleCard(item) {
   const d = new Date(item.start_at);
@@ -165,8 +173,8 @@ function scheduleCard(item) {
 
 function tasksHtml(items) {
   if (!items.length) return emptyAcademic('Belum ada tugas', 'Tugas dari seluruh kelas akan tampil di sini.', 'i-task');
-  const open = items.filter(x => !['SUBMITTED','LATE'].includes(String(x.submission_status))).sort((a,b)=>dateMs(a.deadline,Infinity)-dateMs(b.deadline,Infinity));
-  const done = items.filter(x => ['SUBMITTED','LATE'].includes(String(x.submission_status))).sort((a,b)=>dateMs(b.deadline,0)-dateMs(a.deadline,0));
+  const open = items.filter(x => !['SUBMITTED','LATE'].includes(String(x.submission_status)) || String(x.submission?.review_status||'') === 'NEEDS_REVISION').sort((a,b)=>dateMs(a.deadline,Infinity)-dateMs(b.deadline,Infinity));
+  const done = items.filter(x => ['SUBMITTED','LATE'].includes(String(x.submission_status)) && String(x.submission?.review_status||'') !== 'NEEDS_REVISION').sort((a,b)=>dateMs(b.deadline,0)-dateMs(a.deadline,0));
   return `<section class="academic-list-layout">
     <div class="academic-summary-strip">
       <div><strong>${open.length}</strong><span>Belum dikumpulkan</span></div><div><strong>${done.length}</strong><span>Sudah dikumpulkan</span></div><div><strong>${items.length}</strong><span>Total aktif</span></div>
@@ -179,9 +187,12 @@ function tasksHtml(items) {
 
 function taskCard(item) {
   const status = taskStatus(item);
+  const sub = item.submission || {};
+  const grade = sub.score !== '' && sub.score !== undefined ? ` · Nilai ${sub.score}/${item.max_score || 0}` : '';
+  const review = sub.review_status ? ` · ${sub.review_status === 'NEEDS_REVISION' ? 'Perlu Revisi' : sub.review_status === 'REVIEWED' ? 'Sudah Dinilai' : 'Menunggu Review'}` : '';
   return `<button type="button" class="academic-row-card academic-row-button" data-open-task="${esc(item.task_id)}">
     <span class="academic-type-icon">${svg('i-task')}</span>
-    <span class="academic-row-main"><span class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(deadlineText(item.deadline))}</span></span><strong class="academic-row-title">${esc(item.title)}</strong><span class="academic-row-copy">${esc(item.description || 'Tidak ada deskripsi.')}</span></span>
+    <span class="academic-row-main"><span class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(deadlineText(item.deadline))}</span><span>Maks ${esc(String(item.max_score || 0))}</span></span><strong class="academic-row-title">${esc(item.title)}</strong><span class="academic-row-copy">${esc(item.description || 'Tidak ada deskripsi.')}${esc(review + grade)}</span></span>
     <span class="academic-status-pill status-${status.key.toLowerCase()}">${esc(status.label)}</span>
   </button>`;
 }
@@ -193,10 +204,10 @@ function materialsHtml(items) {
 
 function materialCard(item) {
   return `<article class="academic-material-card panel">
-    <div class="academic-material-icon">${svg(item.material_type === 'LINK' ? 'i-link' : 'i-file')}</div>
-    <div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDate(item.published_at))}</span></div>
-    <h3>${esc(item.title)}</h3><p>${esc(item.description || 'Materi kelas.')}</p>
-    ${item.url ? `<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.url)}">${svg('i-link')} Buka Materi</button>` : '<span class="soft-chip">Catatan</span>'}
+    <div class="academic-material-icon">${svg(['LINK','DRIVE_LINK'].includes(item.material_type) ? 'i-link' : 'i-file')}</div>
+    <div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDate(item.published_at))}</span>${item.meeting_no?`<span>Pertemuan ${esc(item.meeting_no)}</span>`:''}</div>
+    <h3>${esc(item.title)}</h3>${item.topic?`<span class="soft-chip material-topic-chip">${esc(item.topic)}</span>`:''}<p>${esc(item.description || 'Materi kelas.')}</p>
+    ${item.url ? `<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.url)}">${svg('i-link')} ${item.material_type==='DRIVE_LINK'?'Buka File / Drive':'Buka Materi'}</button>` : '<span class="soft-chip">Catatan</span>'}
   </article>`;
 }
 
@@ -263,6 +274,7 @@ function openTask(taskId) {
     <div class="modal-head"><div><div class="eyebrow">Tugas • ${esc(item.class_name || 'KelasKu')}</div><h2>${esc(item.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
     <div class="task-modal-meta"><span>${svg('i-calendar')} ${esc(deadlineText(item.deadline))}</span><span class="academic-status-pill status-${taskStatus(item).key.toLowerCase()}">${esc(taskStatus(item).label)}</span></div>
     <p class="copy compact-copy task-description">${esc(item.description || 'Tidak ada deskripsi tugas.')}</p>
+    ${sub.review_status ? `<div class="task-review-feedback ${sub.review_status==='NEEDS_REVISION'?'needs-revision':'reviewed'}"><div><span>Review Pengajar</span><strong>${sub.review_status==='NEEDS_REVISION'?'Perlu Revisi':'Sudah Dinilai'}${sub.score!==''&&sub.score!==undefined?` · ${esc(String(sub.score))}/${esc(String(item.max_score||0))}`:''}</strong></div><p>${esc(sub.feedback||'Tidak ada feedback tambahan.')}</p></div>` : ''}
     ${mode === 'NONE' ? '<div class="alert success">Tugas ini tidak memerlukan pengumpulan melalui KelasKu.</div>' : `
       <form id="task-submit-form">
         ${mode !== 'LINK' ? `<div class="field"><label>Jawaban / Catatan</label><textarea name="submission_text" class="control" rows="5" placeholder="Tulis jawaban atau catatan pengumpulan…">${esc(sub.submission_text || '')}</textarea></div>` : ''}
@@ -299,6 +311,9 @@ async function submitTask(event, item) {
 }
 
 function taskStatus(item) {
+  const review = String(item.submission?.review_status || '').toUpperCase();
+  if (review === 'NEEDS_REVISION') return { key:'OPEN', label:'Perlu Revisi' };
+  if (review === 'REVIEWED') return { key:'DONE', label:'Sudah Dinilai' };
   const sub = String(item.submission_status || 'NOT_SUBMITTED').toUpperCase();
   if (sub === 'SUBMITTED') return { key:'DONE', label:'Dikumpulkan' };
   if (sub === 'LATE') return { key:'LATE', label:'Terlambat' };

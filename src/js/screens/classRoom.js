@@ -18,7 +18,7 @@ export function renderClassRoom() {
   currentClassData = cached;
 
   const content = `<div class="class-room-page">
-    <div class="page-head"><div><div class="eyebrow">PHASE 5 • RUANG KELAS</div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${roleLabel(cached.class?.role || 'MEMBER')}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary">${svg('i-back')} Kembali</button></div>
+    <div class="page-head"><div><div class="eyebrow">PHASE 6 • RUANG KELAS</div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${roleLabel(cached.class?.role || 'MEMBER')}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary">${svg('i-back')} Kembali</button></div>
     <div id="class-room-slot">${cached ? '' : roomSkeleton()}</div>
   </div>`;
 
@@ -96,7 +96,7 @@ function roomMainButton(key,icon,label,count=0){
   return `<button type="button" class="room-main-item" data-room-main="${key}"><span class="room-main-icon">${svg(icon)}</span><span>${label}</span>${badge}</button>`;
 }
 function roomMainKey(tab){
-  if(['announcements','schedule','tasks','materials','attendance'].includes(tab))return 'academic';
+  if(['announcements','schedule','tasks','materials','attendance','analytics'].includes(tab))return 'academic';
   if(['requests','settings'].includes(tab))return 'manage';
   return tab;
 }
@@ -113,7 +113,7 @@ function refreshRoomNavigation(tab,data){
   document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('active',btn.dataset.roomMain===main));
   const sub=document.getElementById('room-subnav'); if(!sub)return;
   if(main==='academic'){
-    sub.innerHTML=[['announcements','i-mega','Pengumuman'],['schedule','i-calendar','Jadwal'],['tasks','i-task','Tugas'],['materials','i-file','Materi'],['attendance','i-check','Absensi']].map(([key,icon,label])=>`<button type="button" class="room-sub-item ${tab===key?'active':''}" data-room-sub="${key}">${svg(icon)}<span>${label}</span></button>`).join('');
+    sub.innerHTML=[['announcements','i-mega','Pengumuman'],['schedule','i-calendar','Jadwal'],['tasks','i-task','Tugas'],['materials','i-file','Materi'],['attendance','i-check','Absensi'],['analytics','i-chart','Analitik']].map(([key,icon,label])=>`<button type="button" class="room-sub-item ${tab===key?'active':''}" data-room-sub="${key}">${svg(icon)}<span>${label}</span></button>`).join('');
   }else if(main==='manage'){
     const parts=[];
     if(data.permissions?.can_manage_members)parts.push(['requests','i-users',`Permintaan ${(data.pending_requests||[]).length}`]);
@@ -141,6 +141,14 @@ function switchTab(tab, data) {
     if (cached) drawTimeline(cached);
     else slot.innerHTML = academicRoomSkeleton();
     loadClassTimeline(Boolean(cached));
+    return;
+  }
+
+  if (tab === 'analytics') {
+    const cached = state.classAnalytics[state.selectedClassId];
+    if (cached) drawClassAnalytics(cached);
+    else slot.innerHTML = academicRoomSkeleton();
+    loadClassAnalytics(Boolean(cached));
     return;
   }
 
@@ -189,6 +197,7 @@ function overviewHtml(data) {
       ${moduleButton('i-task','Tugas','Deadline & pengumpulan','tasks')}
       ${moduleButton('i-file','Materi','Link & catatan materi','materials')}
       ${moduleButton('i-check','Absensi','Kehadiran per pertemuan','attendance')}
+      ${moduleButton('i-chart','Analitik','Kehadiran & progres akademik','analytics')}
     </div></div>
     ${p.can_manage_class ? `<div class="panel wide-panel"><div class="panel-head"><div><div class="panel-title">Akses Cepat Pengelola</div><p class="panel-copy">Kelola anggota, Ketua Kelas, pemilihan, dan konfigurasi.</p></div></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan Kelas</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota & Ketua Kelas</button></div></div>`:''}
   </section>`;
@@ -253,11 +262,11 @@ function scheduleRoom(items,p,attendanceItems) {
 }
 
 function tasksRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Tugas Kelas</div><p class="panel-copy">Deadline dan status pengumpulan kamu.</p></div>${p.can_manage_academic?`<button id="create-task" class="btn btn-primary">${svg('i-plus')} Buat Tugas</button>`:''}</div><div class="academic-card-list">${items.length?items.map(x=>`<article class="academic-row-card"><span class="academic-type-icon">${svg('i-task')}</span><div class="academic-row-main"><div class="academic-meta-line"><span>${esc(deadlineText(x.deadline))}</span><span>${esc(x.submission_mode||'NONE')}</span></div><h3>${esc(x.title)}</h3><p>${esc(x.description||'')}</p><small>Status kamu: ${esc(x.submission_status||'NOT_SUBMITTED')}</small></div><div class="academic-row-actions"><button type="button" class="btn btn-secondary small-btn" data-open-global-task="${esc(x.task_id)}">Buka</button>${p.can_manage_academic?archiveButton('TASK',x.task_id):''}</div></article>`).join(''):'<div class="search-empty">Belum ada tugas.</div>'}</div></section>`;
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Tugas Kelas</div><p class="panel-copy">Deadline, pengumpulan, review, nilai, dan feedback.</p></div>${p.can_manage_academic?`<button id="create-task" class="btn btn-primary">${svg('i-plus')} Buat Tugas</button>`:''}</div><div class="academic-card-list">${items.length?items.map(x=>`<article class="academic-row-card"><span class="academic-type-icon">${svg('i-task')}</span><div class="academic-row-main"><div class="academic-meta-line"><span>${esc(deadlineText(x.deadline))}</span><span>${esc(x.submission_mode||'NONE')}</span><span>Maks ${esc(String(x.max_score||0))}</span></div><h3>${esc(x.title)}</h3><p>${esc(x.description||'')}</p><small>Status kamu: ${esc(x.submission_status||'NOT_SUBMITTED')}${x.submission?.review_status?` · Review ${esc(x.submission.review_status)}`:''}${x.submission?.score!==''&&x.submission?.score!==undefined?` · Nilai ${esc(String(x.submission.score))}/${esc(String(x.max_score||0))}`:''}</small></div><div class="academic-row-actions"><button type="button" class="btn btn-secondary small-btn" data-open-global-task="${esc(x.task_id)}">Buka</button>${p.can_review_tasks?`<button type="button" class="btn btn-secondary small-btn" data-review-task="${esc(x.task_id)}">${svg('i-grade')} Review</button>`:''}${p.can_manage_academic?archiveButton('TASK',x.task_id):''}</div></article>`).join(''):'<div class="search-empty">Belum ada tugas.</div>'}</div></section>`;
 }
 
 function materialsRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Materi Kelas</div><p class="panel-copy">Link referensi dan catatan belajar.</p></div>${p.can_publish?`<button id="create-material" class="btn btn-primary">${svg('i-plus')} Tambah Materi</button>`:''}</div><div class="academic-material-grid">${items.length?items.map(x=>`<article class="academic-material-card panel"><div class="academic-material-icon">${svg(x.material_type==='LINK'?'i-link':'i-file')}</div><div class="academic-meta-line"><span>${esc(shortDate(x.published_at))}</span><span>${esc(x.material_type||'LINK')}</span></div><h3>${esc(x.title)}</h3><p>${esc(x.description||'')}</p><div class="academic-row-actions">${x.url?`<button type="button" class="btn btn-secondary small-btn" data-open-material-url="${esc(x.url)}">${svg('i-link')} Buka</button>`:''}${p.can_publish?archiveButton('MATERIAL',x.material_id):''}</div></article>`).join(''):'<div class="search-empty">Belum ada materi.</div>'}</div></section>`;
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Materi Kelas</div><p class="panel-copy">Referensi belajar dapat dikelompokkan berdasarkan topik/pertemuan.</p></div>${p.can_publish?`<button id="create-material" class="btn btn-primary">${svg('i-plus')} Tambah Materi</button>`:''}</div><div class="academic-material-grid">${items.length?items.map(x=>`<article class="academic-material-card panel"><div class="academic-material-icon">${svg((x.material_type==='LINK'||x.material_type==='DRIVE_LINK')?'i-link':'i-file')}</div><div class="academic-meta-line"><span>${esc(shortDate(x.published_at))}</span><span>${esc(x.material_type||'LINK')}</span>${x.meeting_no?`<span>Pertemuan ${esc(x.meeting_no)}</span>`:''}</div><h3>${esc(x.title)}</h3>${x.topic?`<span class="soft-chip material-topic-chip">${esc(x.topic)}</span>`:''}<p>${esc(x.description||'')}</p><div class="academic-row-actions">${x.url?`<button type="button" class="btn btn-secondary small-btn" data-open-url="${esc(x.url)}">${svg('i-link')} Buka</button>`:''}${p.can_publish?archiveButton('MATERIAL',x.material_id):''}</div></article>`).join(''):'<div class="search-empty">Belum ada materi.</div>'}</div></section>`;
 }
 
 function attendanceRoom(items,p) {
@@ -271,6 +280,7 @@ function bindAcademicTab(tab,data) {
   if(tab==='tasks'&&p.can_manage_academic) document.getElementById('create-task').onclick=openCreateTask;
   if(tab==='materials'&&p.can_publish) document.getElementById('create-material').onclick=openCreateMaterial;
   if(tab==='attendance'&&p.can_manage_attendance) document.getElementById('create-attendance').onclick=openCreateAttendance;
+  if(tab==='tasks') document.querySelectorAll('[data-review-task]').forEach(btn=>btn.onclick=()=>openTaskReview(btn.dataset.reviewTask));
   document.querySelectorAll('[data-archive-type]').forEach(btn=>btn.onclick=()=>archiveItem(btn.dataset.archiveType,btn.dataset.archiveId,btn));
   document.querySelectorAll('[data-open-material-url]').forEach(btn=>btn.onclick=()=>openExternal(btn.dataset.openMaterialUrl));
   document.querySelectorAll('[data-open-global-task]').forEach(btn=>btn.onclick=()=>go('tasks'));
@@ -291,13 +301,13 @@ function openCreateSchedule(){
 }
 
 function openCreateTask(){
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Tugas</div><h2>Buat Tugas</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="field"><label>Judul</label><input name="title" class="control" required minlength="3"></div><div class="field"><label>Instruksi</label><textarea name="description" class="control" rows="5"></textarea></div><div class="form-grid"><div class="field"><label>Deadline</label><input name="deadline" type="datetime-local" class="control"></div><div class="field"><label>Mode Pengumpulan</label><select name="submission_mode" class="control"><option value="TEXT_LINK">Teks atau Link</option><option value="TEXT">Teks</option><option value="LINK">Link</option><option value="NONE">Tidak melalui KelasKu</option></select></div></div><label class="setting-card"><span class="setting-card-copy"><strong>Izinkan terlambat</strong><small>Status akan ditandai LATE.</small></span><span class="switch"><input name="allow_late" type="checkbox" checked><span></span></span></label>${formFooter('Terbitkan Tugas')}</form>`);
+  showModal(`<div class="modal-head"><div><div class="eyebrow">Tugas</div><h2>Buat Tugas</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="field"><label>Judul</label><input name="title" class="control" required minlength="3"></div><div class="field"><label>Instruksi</label><textarea name="description" class="control" rows="5"></textarea></div><div class="form-grid"><div class="field"><label>Deadline</label><input name="deadline" type="datetime-local" class="control"></div><div class="field"><label>Mode Pengumpulan</label><select name="submission_mode" class="control"><option value="TEXT_LINK">Teks atau Link</option><option value="TEXT">Teks</option><option value="LINK">Link</option><option value="NONE">Tidak melalui KelasKu</option></select></div></div><div class="field"><label>Nilai Maksimum</label><input name="max_score" type="number" min="0" max="1000" value="100" class="control"><div class="form-help">Dipakai pada workflow review/nilai. Gunakan 100 untuk skala persentase.</div></div><label class="setting-card"><span class="setting-card-copy"><strong>Izinkan terlambat</strong><small>Status akan ditandai LATE.</small></span><span class="switch"><input name="allow_late" type="checkbox" checked><span></span></span></label>${formFooter('Terbitkan Tugas')}</form>`);
   bindCreateForm('createTask');
 }
 
 function openCreateMaterial(){
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Materi</div><h2>Tambah Materi</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="field"><label>Judul</label><input name="title" class="control" required minlength="3"></div><div class="field"><label>Deskripsi / Catatan</label><textarea name="description" class="control" rows="4"></textarea></div><div class="field"><label>Tipe</label><select name="material_type" id="material-type" class="control"><option value="LINK">Link</option><option value="NOTE">Catatan</option></select></div><div class="field" id="material-url-field"><label>URL</label><input name="url" type="url" class="control" placeholder="https://..."></div>${formFooter('Terbitkan Materi')}</form>`);
-  document.getElementById('material-type').onchange=e=>document.getElementById('material-url-field').classList.toggle('hidden',e.target.value!=='LINK');
+  showModal(`<div class="modal-head"><div><div class="eyebrow">Materi</div><h2>Tambah Materi</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="field"><label>Judul</label><input name="title" class="control" required minlength="3"></div><div class="field"><label>Deskripsi / Catatan</label><textarea name="description" class="control" rows="4"></textarea></div><div class="form-grid"><div class="field"><label>Topik</label><input name="topic" class="control" placeholder="Contoh: Kelangkaan & Pilihan"></div><div class="field"><label>Pertemuan</label><input name="meeting_no" class="control" placeholder="01"></div></div><div class="field"><label>Tipe</label><select name="material_type" id="material-type" class="control"><option value="LINK">Link</option><option value="DRIVE_LINK">Google Drive / File Link</option><option value="NOTE">Catatan</option></select></div><div class="field" id="material-url-field"><label>URL</label><input name="url" type="url" class="control" placeholder="https://..."></div>${formFooter('Terbitkan Materi')}</form>`);
+  document.getElementById('material-type').onchange=e=>document.getElementById('material-url-field').classList.toggle('hidden',!['LINK','DRIVE_LINK'].includes(e.target.value));
   bindCreateForm('createMaterial');
 }
 
@@ -320,7 +330,7 @@ function bindCreateForm(action){
   };
 }
 
-async function refreshAcademicAfterMutation(){invalidateAcademicClientCache(state.selectedClassId);delete state.classAcademic[state.selectedClassId];await loadClassAcademic(false);}
+async function refreshAcademicAfterMutation(){invalidateAcademicClientCache(state.selectedClassId);delete state.classAcademic[state.selectedClassId];delete state.classAnalytics[state.selectedClassId];await loadClassAcademic(false);}
 async function archiveItem(type,id,button){
   const ok=await confirmDialog({title:'Arsipkan item?',message:'Item akan disembunyikan dari kelas aktif. Data tidak dihapus permanen.',confirmText:'Arsipkan',danger:true}); if(!ok)return;
   const old=button?.innerHTML; if(button){button.disabled=true;button.innerHTML='<span class="btn-spinner"></span>';}
@@ -342,6 +352,43 @@ function drawAttendanceModal(data){
 }
 function attendanceRecordRow(r){return `<div class="attendance-record-row" data-att-user="${esc(r.user_id)}"><div class="member-avatar">${avatarMarkup(r)}</div><div class="member-info"><strong>${esc(r.full_name||r.username)}</strong><span>@${esc(r.username||'-')} · ${esc(r.kelasku_id||'-')}</span></div><select class="control compact-control" data-att-status><option value="UNMARKED" ${r.attendance_status==='UNMARKED'?'selected':''}>Belum</option><option value="PRESENT" ${r.attendance_status==='PRESENT'?'selected':''}>Hadir</option><option value="SICK" ${r.attendance_status==='SICK'?'selected':''}>Sakit</option><option value="PERMIT" ${r.attendance_status==='PERMIT'?'selected':''}>Izin</option><option value="ABSENT" ${r.attendance_status==='ABSENT'?'selected':''}>Alpa</option></select><input class="control compact-control" data-att-note placeholder="Catatan" value="${esc(r.note||'')}"></div>`;}
 async function saveAttendance(event,attendanceId){event.preventDefault();const btn=document.getElementById('attendance-save-btn'),status=document.getElementById('attendance-save-status'),old=btn.innerHTML;if(btn.disabled)return;const records=[...document.querySelectorAll('[data-att-user]')].map(row=>({user_id:row.dataset.attUser,attendance_status:row.querySelector('[data-att-status]').value,note:row.querySelector('[data-att-note]').value}));btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent=`Menyimpan ${records.length} anggota dalam satu request… Jangan klik dua kali.`;try{await api('saveAttendanceRecords',{attendance_id:attendanceId,records},{onSlow:()=>status.textContent='Masih menyimpan. Tombol tetap dikunci.'});toast('Absensi tersimpan.');closeModal();await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
+
+
+async function loadClassAnalytics(background=false){
+  try{
+    const data=await api('getAttendanceAnalytics',{class_id:state.selectedClassId});
+    const previous=state.classAnalytics[state.selectedClassId];
+    const changed=!sameData(previous,data);
+    state.classAnalytics[state.selectedClassId]=data;
+    if((changed||!background)&&activeTab==='analytics')drawClassAnalytics(data);
+  }catch(err){if(!background&&activeTab==='analytics')document.getElementById('room-content').innerHTML=`<div class="panel error-panel"><strong>Analitik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;}
+}
+function drawClassAnalytics(data){
+  const slot=document.getElementById('room-content');if(!slot)return;
+  const own=data.own||{}; const ag=data.aggregate||{}; const rows=data.members||[];
+  slot.innerHTML=`<section class="panel class-analytics-panel"><div class="panel-head"><div><div class="panel-title">Analitik Akademik</div><p class="panel-copy">Kehadiran dihitung dari sesi aktif. Ringkasan pribadi selalu terlihat; tabel kelas hanya untuk pengelola.</p></div>${data.can_manage?`<button type="button" id="export-attendance-csv" class="btn btn-secondary">${svg('i-download')} Export CSV</button>`:''}</div>
+    <div class="analytics-kpi-grid"><div><span>Sesi</span><strong>${Number(data.session_count||0)}</strong></div><div><span>Kehadiran Saya</span><strong>${Number(own.attendance_rate||0)}%</strong></div><div><span>Hadir</span><strong>${Number(own.PRESENT||0)}</strong></div><div><span>Alpa</span><strong>${Number(own.ABSENT||0)}</strong></div></div>
+    <div class="analytics-own-card"><div class="academic-type-icon">${svg('i-chart')}</div><div><span>Ringkasan Saya</span><strong>${Number(own.PRESENT||0)} hadir · ${Number(own.SICK||0)} sakit · ${Number(own.PERMIT||0)} izin · ${Number(own.ABSENT||0)} alpa</strong><small>Belum dinilai: ${Number(own.UNMARKED||0)}</small></div></div>
+    ${data.can_manage?`<div class="section-title-row"><div><h2>Rekap Anggota</h2><p>${rows.length} anggota · total record Hadir ${Number(ag.PRESENT||0)} / Alpa ${Number(ag.ABSENT||0)}</p></div></div><div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Anggota</th><th>Hadir</th><th>Sakit</th><th>Izin</th><th>Alpa</th><th>% Hadir</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.full_name||r.username||'-')}</strong><small>@${esc(r.username||'-')}</small></td><td>${Number(r.PRESENT||0)}</td><td>${Number(r.SICK||0)}</td><td>${Number(r.PERMIT||0)}</td><td>${Number(r.ABSENT||0)}</td><td><b>${Number(r.attendance_rate||0)}%</b></td></tr>`).join('')}</tbody></table></div>`:''}
+  </section>`;
+  document.getElementById('export-attendance-csv')?.addEventListener('click',()=>exportAttendanceCsv(data));
+}
+function exportAttendanceCsv(data){
+  const rows=[['Nama','Username','KelasKu ID','Hadir','Sakit','Izin','Alpa','Belum','Persentase Hadir']];
+  (data.members||[]).forEach(r=>rows.push([r.full_name||'',r.username||'',r.kelasku_id||'',r.PRESENT||0,r.SICK||0,r.PERMIT||0,r.ABSENT||0,r.UNMARKED||0,r.attendance_rate||0]));
+  downloadCsv(`kelasku-absensi-${state.selectedClassId}.csv`,rows);
+}
+async function openTaskReview(taskId){
+  const cached=state.taskReviewCache[taskId];
+  showModal(`<div class="modal-head"><div><div class="eyebrow">PHASE 6 • REVIEW TUGAS</div><h2>${cached?esc(cached.task?.title||'Review Tugas'):'Memuat pengumpulan…'}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div id="task-review-slot">${cached?taskReviewHtml(cached):'<div class="search-loading"><span class="status-dot"></span>Memuat submission anggota…</div>'}</div>`);
+  if(cached)bindTaskReview(cached);
+  try{const data=await api('getTaskSubmissions',{task_id:taskId});state.taskReviewCache[taskId]=data;const slot=document.getElementById('task-review-slot');if(slot){slot.innerHTML=taskReviewHtml(data);bindTaskReview(data);}}catch(err){const slot=document.getElementById('task-review-slot');if(slot)slot.innerHTML=`<div class="alert danger">${esc(err.message)}</div>`;}
+}
+function taskReviewHtml(data){const s=data.summary||{},task=data.task||{},items=data.items||[];return `<div class="review-summary-grid"><div><strong>${Number(s.submitted||0)}</strong><span>Dikumpulkan</span></div><div><strong>${Number(s.reviewed||0)}</strong><span>Dinilai</span></div><div><strong>${Number(s.needs_revision||0)}</strong><span>Revisi</span></div><div><strong>${Number(s.pending||0)}</strong><span>Menunggu</span></div></div><div class="review-toolbar"><small>Nilai maksimum ${Number(task.max_score||0)}</small><button type="button" class="btn btn-secondary small-btn" id="export-task-review">${svg('i-download')} Export CSV</button></div><div class="task-review-list">${items.map(item=>{const sub=item.submission;return `<article class="task-review-row"><span class="member-avatar">${avatarMarkup(item)}</span><div class="task-review-main"><strong>${esc(item.full_name||item.username)}</strong><small>@${esc(item.username||'-')} · ${esc(item.submission_status)}</small>${sub?.review_status?`<span class="review-status-pill review-${String(sub.review_status).toLowerCase()}">${esc(sub.review_status)}</span>`:''}</div><div class="task-review-score">${sub&&sub.score!==''?`<strong>${esc(String(sub.score))}/${Number(task.max_score||0)}</strong>`:'<span>—</span>'}</div>${sub?`<button type="button" class="btn btn-secondary small-btn" data-review-submission="${esc(sub.submission_id)}">Review</button>`:'<span class="soft-chip">Belum kirim</span>'}</article>`;}).join('')}</div>`;}
+function bindTaskReview(data){document.querySelectorAll('[data-review-submission]').forEach(btn=>btn.onclick=()=>openSubmissionReview(data,btn.dataset.reviewSubmission));document.getElementById('export-task-review')?.addEventListener('click',()=>{const rows=[['Nama','Username','Status','Review','Nilai','Feedback','Submitted At']];(data.items||[]).forEach(i=>rows.push([i.full_name||'',i.username||'',i.submission_status||'',i.submission?.review_status||'',i.submission?.score??'',i.submission?.feedback||'',i.submission?.submitted_at||'']));downloadCsv(`kelasku-tugas-${data.task?.task_id||'review'}.csv`,rows);});}
+function openSubmissionReview(data,submissionId){const item=(data.items||[]).find(x=>String(x.submission?.submission_id)===String(submissionId));if(!item)return;const sub=item.submission||{},max=Number(data.task?.max_score||0);showModal(`<div class="modal-head"><div><div class="eyebrow">REVIEW • ${esc(item.full_name||item.username)}</div><h2>${esc(data.task?.title||'Tugas')}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="submission-preview"><div><span>Status</span><strong>${esc(sub.status||'-')}</strong></div>${sub.submission_text?`<p>${esc(sub.submission_text)}</p>`:''}${sub.submission_url?`<button type="button" class="btn btn-secondary small-btn" id="review-open-link">${svg('i-link')} Buka Link</button>`:''}</div><form id="submission-review-form"><div class="form-grid"><div class="field"><label>Nilai (0–${max})</label><input name="score" type="number" min="0" max="${max}" step="0.1" class="control" value="${sub.score!==''&&sub.score!==undefined?esc(String(sub.score)):''}"></div><div class="field"><label>Status Review</label><select name="review_status" class="control"><option value="REVIEWED" ${sub.review_status==='REVIEWED'?'selected':''}>Selesai Dinilai</option><option value="NEEDS_REVISION" ${sub.review_status==='NEEDS_REVISION'?'selected':''}>Perlu Revisi</option></select></div></div><div class="field"><label>Feedback</label><textarea name="feedback" rows="4" class="control" placeholder="Catatan untuk mahasiswa…">${esc(sub.feedback||'')}</textarea></div><div id="submission-review-status" class="request-status"></div><button id="submission-review-submit" class="btn btn-primary btn-block" type="submit">Simpan Review</button></form>`);document.getElementById('review-open-link')?.addEventListener('click',()=>openExternal(sub.submission_url));document.getElementById('submission-review-form').onsubmit=e=>saveSubmissionReview(e,data,submissionId);}
+async function saveSubmissionReview(event,data,submissionId){event.preventDefault();const form=event.currentTarget,btn=document.getElementById('submission-review-submit'),status=document.getElementById('submission-review-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan nilai & feedback…';try{await api('reviewTaskSubmission',{submission_id:submissionId,score:form.score.value,feedback:form.feedback.value,review_status:form.review_status.value});delete state.taskReviewCache[data.task.task_id];toast('Review tugas tersimpan.');closeModal();openTaskReview(data.task.task_id);loadClassAcademic(true);}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
+function downloadCsv(filename,rows){const csv='\uFEFF'+rows.map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 function membersHtml(data) {
   const p=data.permissions||{}; const items=data.members||[]; const leader=items.find(m=>m.is_class_leader)||null; const candidates=items;
@@ -412,6 +459,7 @@ function bindTab(tab,data) {
     document.getElementById('quick-settings')?.addEventListener('click',()=>switchTab('settings',data));
     document.getElementById('quick-members')?.addEventListener('click',()=>switchTab('members',data));
   }
+  if(tab==='tasks') document.querySelectorAll('[data-review-task]').forEach(btn=>btn.onclick=()=>openTaskReview(btn.dataset.reviewTask));
   if(tab==='members'){
     document.querySelectorAll('[data-role-user]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleUser,sel.value,sel));
     document.querySelectorAll('[data-remove-user]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.removeUser,btn));
