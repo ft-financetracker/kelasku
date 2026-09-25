@@ -1,7 +1,7 @@
 {
-  "version": "6.2.0",
-  "build": "20260925.110",
-  "schema": 12,
+  "version": "6.3.0",
+  "build": "20260925.200",
+  "schema": 13,
   "release_date": "2026-09-25",
-  "release_note": "Public Class Links: kelola link grup dan link penting dari Setting Kelas lalu bagikan sebagai satu landing page publik tanpa login."
+  "release_note": "Quick Access Hub: landing kelas adaptif, navigasi Ruang Kelas lebih ringkas, link PUBLIC/MEMBER, dan normalisasi rendering lintas-device."
 }

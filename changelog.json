@@ -1,6 +1,22 @@
 {
   "releases": [
     {
+      "version": "6.3.0",
+      "build": "20260925.200",
+      "date": "2026-09-25",
+      "title": "Quick Access Hub & Compatibility",
+      "changes": [
+        "Landing publik berkembang menjadi Quick Access Hub: identitas, Link Cepat, preview akademik untuk anggota, dan showcase KelasKu.",
+        "Link kelas sekarang dapat ditandai PUBLIC atau MEMBER.",
+        "Kategori Link Cepat memakai mini hero dan otomatis collapse setelah tiga link.",
+        "Menu Timeline dihapus dari navigasi Ruang Kelas; fitur akademik dikonsolidasikan di dropdown Akademik.",
+        "Ringkasan tidak lagi memakai Academic Core dan menggunakan container penuh per baris.",
+        "Hierarchy hero kelas dan badge role dirapikan.",
+        "Blur/backdrop-filter dan shadow berat dikurangi untuk mencegah glitch rendering pada perangkat Android tertentu."
+      ],
+      "description": "Landing kelas menjadi satu pintu akses yang adaptif untuk guest/anggota, Room Class dirapikan, dan efek visual berat dinormalisasi untuk kompatibilitas Android."
+    },
+    {
       "version": "6.2.0",
       "build": "20260925.110",
       "release_date": "25 Sep 2026",
