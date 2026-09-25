@@ -611,13 +611,13 @@ html[data-theme="light"] .settings-search-input,html[data-theme="light"] .admin-
 
 /* Global academic hub. */
 .academic-page-head{margin-bottom:14px}
-.academic-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 170px auto;gap:9px;align-items:center;margin-bottom:14px}
+.academic-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 170px auto;gap:9px;align-items:center;margin-bottom:14px}.academic-toolbar.attendance-toolbar{grid-template-columns:minmax(220px,1fr) 170px minmax(220px,280px) auto}
 .academic-search{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 12px;border:1px solid rgba(93,169,255,.2);border-radius:14px;background:rgba(5,20,47,.52)}
 .academic-search>.icon{width:18px;height:18px;color:var(--muted)}
 .academic-search input{min-width:0;width:100%;border:0;outline:0;background:transparent;color:var(--text);font:inherit;font-size:10.5px}
 .academic-summary-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .academic-summary-strip>div{min-height:70px;padding:13px 15px;border-radius:16px;border:1px solid rgba(94,160,239,.12);background:rgba(7,29,63,.46);display:grid;align-content:center;gap:3px}
-.academic-summary-strip strong{font-size:20px;letter-spacing:-.025em}.academic-summary-strip span{font-size:8.5px;color:var(--muted)}
+.academic-summary-strip strong{font-size:20px;letter-spacing:-.025em}.academic-summary-strip span{font-size:8.5px;color:var(--muted)}.academic-attendance-scope{display:flex;align-items:center;gap:10px;margin:-2px 0 10px;padding:10px 12px;border:1px solid rgba(34,224,199,.13);border-radius:14px;background:rgba(7,29,63,.34)}.academic-attendance-scope>.icon{width:20px;height:20px;color:var(--tosca)}.academic-attendance-scope>div{display:grid;gap:2px}.academic-attendance-scope strong{font-size:10.5px}.academic-attendance-scope small{font-size:8.8px;color:var(--muted)}.academic-attendance-session{display:block;margin-top:3px;color:#8EADCB;font-size:8.8px;line-height:1.45}
 .academic-card-list{display:grid;gap:9px}.academic-card-list.is-muted{opacity:.86}
 .academic-row-card{width:100%;min-height:94px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:13px;padding:13px 14px;border:1px solid rgba(94,160,239,.12);border-radius:17px;background:rgba(7,29,63,.44);color:var(--text);text-align:left}
 button.academic-row-card{appearance:none;font:inherit;cursor:pointer}.academic-row-button:hover{border-color:rgba(34,224,199,.23);background:rgba(34,224,199,.045)}
@@ -660,7 +660,7 @@ html[data-theme="light"] .academic-row-main h3,html[data-theme="light"] .academi
   .carousel-eyebrow{font-size:7.7px;margin-bottom:5px}.carousel-action{min-height:31px;padding:7px 10px;font-size:8.8px}
   .carousel-diamond{width:62px;height:62px;border-radius:18px}.carousel-diamond .icon{width:27px;height:27px}.orbit-one{width:98px;height:98px}.orbit-two{width:138px;height:138px}.dashboard-carousel-dots{left:18px;bottom:9px}
   .dashboard-quick-actions{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.dashboard-quick-action{min-height:62px;display:grid;justify-items:center;align-content:center;text-align:center;gap:5px;padding:8px 5px}.dashboard-quick-action>span{width:34px;height:34px;flex-basis:auto}.dashboard-quick-action .icon{width:18px;height:18px}.dashboard-quick-action strong{font-size:8.7px}
-  .academic-toolbar{grid-template-columns:1fr 1fr}.academic-search{grid-column:1/-1}.academic-toolbar .btn{width:100%}
+  .academic-toolbar{grid-template-columns:1fr 1fr}.academic-toolbar.attendance-toolbar{grid-template-columns:1fr 1fr}.academic-search{grid-column:1/-1}.academic-toolbar .btn{width:100%}
   .academic-material-grid{grid-template-columns:1fr 1fr}
   .class-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .attendance-record-row{grid-template-columns:minmax(0,1fr) 130px}.attendance-record-row>input{grid-column:1/-1}
@@ -671,7 +671,7 @@ html[data-theme="light"] .academic-row-main h3,html[data-theme="light"] .academi
   .carousel-copy h2{font-size:17px;line-height:1.15}.carousel-copy p{font-size:8.7px;line-height:1.45}.carousel-eyebrow{font-size:7.2px}.carousel-action{font-size:8px}
   .carousel-diamond{width:52px;height:52px;border-radius:15px}.carousel-diamond .icon{width:23px;height:23px}.orbit-one{width:80px;height:80px}.orbit-two{width:112px;height:112px}
   .dashboard-quick-actions{gap:6px}.dashboard-quick-action{min-height:58px;border-radius:14px}.dashboard-quick-action>span{width:32px;height:32px;border-radius:10px}.dashboard-quick-action strong{font-size:8px}
-  .academic-toolbar{grid-template-columns:1fr}.academic-search{grid-column:auto}.academic-summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.academic-summary-strip>div{padding:10px;min-height:62px}.academic-summary-strip strong{font-size:17px}.academic-summary-strip span{font-size:7.3px}
+  .academic-toolbar{grid-template-columns:1fr}.academic-toolbar.attendance-toolbar{grid-template-columns:1fr}.academic-search{grid-column:auto}.academic-summary-strip{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.academic-summary-strip>div{padding:10px;min-height:62px}.academic-summary-strip strong{font-size:17px}.academic-summary-strip span{font-size:7.3px}
   .academic-row-card{grid-template-columns:auto minmax(0,1fr);gap:10px;padding:11px}.academic-row-card>.academic-status-pill{grid-column:2;justify-self:start}.academic-date-tile{width:46px;height:52px}.academic-type-icon{width:40px;height:40px}.academic-material-grid{grid-template-columns:1fr}.announcement-card{grid-template-columns:auto 1fr}.announcement-card>.soft-chip{grid-column:2;justify-self:start}
   .class-module-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.class-module-card{min-height:92px;padding:11px}.class-module-card span{font-size:7.6px}
   .attendance-record-row{grid-template-columns:1fr}.attendance-record-row>input{grid-column:auto}
@@ -1268,3 +1268,5 @@ PHASE 6.2 — CLASS PUBLIC LINKS SETTINGS
   .overview-manager-panel{display:grid;align-items:start}
   .overview-manager-panel .page-actions{width:100%}
 }
+
+/* KelasKu v6.4.1 — Link accordion, infinite showcase loop, attendance schedule tracker */

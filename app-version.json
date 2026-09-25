@@ -1,7 +1,7 @@
 {
-  "version": "6.4.0",
-  "build": "20260925.240",
+  "version": "6.4.1",
+  "build": "20260925.241",
   "schema": 13,
   "release_date": "2026-09-25",
-  "release_note": "Landing Link Kelas lebih compact: room switcher, link satu baris, carousel otomatis, loading lebih cepat, install PWA diperbaiki, dan Ringkasan Room Class dikembalikan ke layout dua kolom."
+  "release_note": "Hotfix Quick Access Hub: kategori Link Cepat menjadi accordion seperti room, icon item dibedakan dari kategori, carousel loop maju tanpa animasi balik, dan Absensi dapat difilter Semua atau per Jadwal/Mata Kuliah."
 }

@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "6.4.1",
+      "build": "20260925.241",
+      "date": "2026-09-25",
+      "title": "Quick Links Accordion + Attendance Tracker",
+      "description": "Hotfix frontend untuk mempercepat akses landing dan membuat riwayat absensi dapat ditrack secara global maupun per jadwal/mata kuliah.",
+      "changes": [
+        "Hero kategori Link Cepat sekarang menjadi accordion: klik kategori untuk membuka daftar link, satu kategori aktif pada satu waktu.",
+        "Icon kategori dan icon item link dibedakan agar hierarchy lebih jelas.",
+        "Carousel Kenal KelasKu memakai infinite triplicate loop sehingga urutan 1→2→…→6→1 terus bergerak maju tanpa animasi kembali ke kiri.",
+        "Menu Akademik → Absensi mendapat filter Semua Jadwal / Mata Kuliah dan filter per jadwal berbasis source_schedule_id.",
+        "Ringkasan Hadir, Sakit/Izin, dan Alpa mengikuti filter aktif sehingga bisa dipakai tracking per pertemuan."
+      ]
+    },
+    {
       "version": "6.4.0",
       "build": "20260925.240",
       "date": "2026-09-25",

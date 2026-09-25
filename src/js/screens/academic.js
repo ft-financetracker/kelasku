@@ -39,9 +39,10 @@ function renderAcademicShell(title, copy, active, icon) {
       <div><div class="eyebrow">PHASE 6 • Academic Workflow</div><h1>${esc(title)}</h1><p>${esc(copy)}</p></div>
       <span class="phase-badge">ACTIVE</span>
     </div>
-    <section class="academic-toolbar panel">
+    <section class="academic-toolbar panel ${active === 'attendance' ? 'attendance-toolbar' : ''}">
       <div class="academic-search">${svg('i-search')}<input id="academic-search" placeholder="Cari ${esc(title.toLowerCase())}…" autocomplete="off"></div>
       <select id="academic-class-filter" class="control compact-control"><option value="ALL">Semua Kelas</option></select>
+      ${active === 'attendance' ? '<select id="academic-attendance-filter" class="control compact-control"><option value="ALL">Semua Jadwal / Mata Kuliah</option></select>' : ''}
       <button type="button" id="academic-refresh" class="btn btn-secondary">${svg('i-refresh')} Refresh</button>
     </section>
     <div id="academic-slot">${state.academicHub ? '' : academicSkeleton()}</div>`;
@@ -56,7 +57,11 @@ function renderAcademicShell(title, copy, active, icon) {
 
 function bindAcademicToolbar() {
   document.getElementById('academic-search')?.addEventListener('input', () => drawAcademicScreen(state.academicHub));
-  document.getElementById('academic-class-filter')?.addEventListener('change', () => drawAcademicScreen(state.academicHub));
+  document.getElementById('academic-class-filter')?.addEventListener('change', () => {
+    if (activeAcademicScreen === 'attendance') hydrateAttendanceFilter(state.academicHub, true);
+    drawAcademicScreen(state.academicHub);
+  });
+  document.getElementById('academic-attendance-filter')?.addEventListener('change', () => drawAcademicScreen(state.academicHub));
   document.getElementById('academic-refresh')?.addEventListener('click', () => loadAcademicHub(true));
 }
 
@@ -109,11 +114,12 @@ function drawAcademicScreen(data) {
   const slot = document.getElementById('academic-slot');
   if (!slot) return;
   hydrateClassFilter(data);
+  if (activeAcademicScreen === 'attendance') hydrateAttendanceFilter(data);
 
   if (activeAcademicScreen === 'tasks') slot.innerHTML = tasksHtml(filterItems(data.tasks || []));
   else if (activeAcademicScreen === 'materials') slot.innerHTML = materialsHtml(filterItems(data.materials || []));
   else if (activeAcademicScreen === 'announcements') slot.innerHTML = announcementsHtml(filterItems(data.announcements || []));
-  else if (activeAcademicScreen === 'attendance') slot.innerHTML = attendanceHtml(filterItems(data.attendance || []));
+  else if (activeAcademicScreen === 'attendance') slot.innerHTML = attendanceHtml(filteredAttendanceItems(data));
   else slot.innerHTML = schedulesHtml(filterItems(data.schedules || []), filterItems(data.tasks || []));
 
   bindAcademicRows();
@@ -141,6 +147,70 @@ function filterItems(items) {
     const hay = [item.title,item.description,item.body,item.location,item.class_name].join(' ').toLowerCase();
     return hay.includes(query);
   });
+}
+
+function attendanceScheduleMap(data) {
+  const map = new Map();
+  (data?.schedules || []).forEach(item => map.set(String(item.schedule_id || ''), item));
+  return map;
+}
+
+function hydrateAttendanceFilter(data, force = false) {
+  const select = document.getElementById('academic-attendance-filter');
+  if (!select || !data) return;
+  const classId = String(document.getElementById('academic-class-filter')?.value || 'ALL');
+  const scheduleMap = attendanceScheduleMap(data);
+  const rows = (data.attendance || []).filter(item => classId === 'ALL' || String(item.class_id) === classId);
+  const optionMap = new Map();
+  let hasUnlinked = false;
+  rows.forEach(item => {
+    const scheduleId = String(item.source_schedule_id || '');
+    if (!scheduleId) { hasUnlinked = true; return; }
+    if (optionMap.has(scheduleId)) return;
+    const schedule = scheduleMap.get(scheduleId);
+    const label = schedule
+      ? `${schedule.title || 'Jadwal'} • ${shortDateTime(schedule.start_at || item.start_at)}`
+      : `${attendanceSubject(item)} • ${shortDateTime(item.start_at)}`;
+    optionMap.set(scheduleId, label);
+  });
+  const fingerprint = `${classId}|${[...optionMap.entries()].map(([id,label])=>`${id}:${label}`).join('|')}|${hasUnlinked}`;
+  if (!force && select.dataset.fingerprint === fingerprint) return;
+  const previous = select.value || 'ALL';
+  select.innerHTML = '<option value="ALL">Semua Jadwal / Mata Kuliah</option>'
+    + [...optionMap.entries()].map(([id,label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('')
+    + (hasUnlinked ? '<option value="UNLINKED">Tanpa Jadwal / Manual</option>' : '');
+  select.dataset.fingerprint = fingerprint;
+  if ([...select.options].some(option => option.value === previous)) select.value = previous;
+  else select.value = 'ALL';
+}
+
+function filteredAttendanceItems(data) {
+  const scheduleMap = attendanceScheduleMap(data);
+  const selectedSchedule = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
+  const query = String(document.getElementById('academic-search')?.value || '').trim().toLowerCase();
+  const classId = String(document.getElementById('academic-class-filter')?.value || 'ALL');
+  return (data?.attendance || []).map(item => {
+    const schedule = scheduleMap.get(String(item.source_schedule_id || ''));
+    return {
+      ...item,
+      schedule_title: schedule?.title || attendanceSubject(item),
+      schedule_start_at: schedule?.start_at || item.start_at,
+      schedule_location: schedule?.location || ''
+    };
+  }).filter(item => {
+    if (classId !== 'ALL' && String(item.class_id) !== classId) return false;
+    const sourceId = String(item.source_schedule_id || '');
+    if (selectedSchedule === 'UNLINKED' && sourceId) return false;
+    if (!['ALL','UNLINKED'].includes(selectedSchedule) && sourceId !== selectedSchedule) return false;
+    if (!query) return true;
+    const hay = [item.title,item.schedule_title,item.description,item.body,item.location,item.schedule_location,item.class_name].join(' ').toLowerCase();
+    return hay.includes(query);
+  });
+}
+
+function attendanceSubject(item) {
+  const title = String(item?.title || '').trim();
+  return title.replace(/^absensi\s*[—–:-]?\s*/i,'').trim() || 'Absensi Kelas';
 }
 
 function schedulesHtml(items, tasks = []) {
@@ -226,13 +296,14 @@ function announcementCard(item) {
 }
 
 function attendanceHtml(items) {
-  if (!items.length) return emptyAcademic('Belum ada riwayat absensi', 'Sesi absensi dari kelasmu akan tampil di sini.', 'i-check');
+  if (!items.length) return emptyAcademic('Tidak ada data pada filter ini', 'Pilih Semua Jadwal atau jadwal/mata kuliah lain untuk melihat riwayat absensi.', 'i-check');
   const counts = items.reduce((acc, item) => {
     const key = String(item.my_status || 'UNMARKED').toUpperCase();
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
   return `<section class="academic-list-layout">
+    <div class="academic-attendance-scope"><span>${svg('i-calendar')}</span><div><strong>Tracker Absensi</strong><small>${items.length} sesi sesuai filter kelas + jadwal/mata kuliah.</small></div></div>
     <div class="academic-summary-strip">
       <div><strong>${counts.PRESENT || 0}</strong><span>Hadir</span></div>
       <div><strong>${(counts.SICK || 0) + (counts.PERMIT || 0)}</strong><span>Sakit / Izin</span></div>
@@ -246,7 +317,12 @@ function attendanceCard(item) {
   const status = attendanceStatusMeta(item.my_status);
   return `<article class="academic-row-card">
     <span class="academic-type-icon">${svg('i-check')}</span>
-    <span class="academic-row-main"><span class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDateTime(item.start_at))}</span></span><strong class="academic-row-title">${esc(item.title || 'Absensi')}</strong><span class="academic-row-copy">${esc(item.my_note || 'Tidak ada catatan.')}</span></span>
+    <span class="academic-row-main">
+      <span class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDateTime(item.start_at))}</span></span>
+      <strong class="academic-row-title">${esc(item.schedule_title || attendanceSubject(item))}</strong>
+      <span class="academic-attendance-session">${esc(item.title || 'Absensi')}${item.schedule_location ? ` • ${esc(item.schedule_location)}` : ''}</span>
+      <span class="academic-row-copy">${esc(item.my_note || 'Tidak ada catatan.')}</span>
+    </span>
     <span class="academic-status-pill status-${status.key}">${esc(status.label)}</span>
   </article>`;
 }

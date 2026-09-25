@@ -65,19 +65,24 @@ function groupSection(key, items) {
   const [label, icon, copy] = PLATFORM[key] || PLATFORM.OTHER;
   const visible = items.slice(0,3);
   const extra = items.slice(3);
+  // Icon item sengaja berbeda dari icon kategori. Kategori = platform/room,
+  // item = link yang dibuka dari room tersebut.
   const cards = arr => arr.map(item => `<a class="public-link-card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-    <span class="public-link-icon material-symbols-rounded">${icon}</span>
+    <span class="public-link-icon material-symbols-rounded">link</span>
     <span class="public-link-copy"><strong>${esc(item.label)}</strong>${item.description?`<small>${esc(item.description)}</small>`:''}</span>
     <span class="material-symbols-rounded public-link-arrow">arrow_outward</span>
   </a>`).join('');
+  const panelId = `public-group-panel-${key.toLowerCase()}`;
   return `<section class="public-link-group" data-public-group="${key}">
-    <div class="public-group-hero platform-${key.toLowerCase()}">
-      <div class="public-group-art"><span class="material-symbols-rounded">${icon}</span></div>
-      <div class="public-group-title"><span class="public-kicker">${esc(label)}</span><strong>${esc(copy)}</strong></div>
+    <button type="button" class="public-group-hero platform-${key.toLowerCase()}" data-public-group-toggle="${key}" aria-expanded="false" aria-controls="${panelId}">
+      <span class="public-group-art"><span class="material-symbols-rounded">${icon}</span></span>
+      <span class="public-group-title"><span class="public-kicker">${esc(label)}</span><strong>${esc(copy)}</strong></span>
       <span class="public-group-count">${items.length} LINK</span>
+    </button>
+    <div class="public-group-panel" id="${panelId}" hidden>
+      <div class="public-link-list">${cards(visible)}<div class="public-link-extra" ${extra.length?'hidden':''}>${cards(extra)}</div></div>
+      ${extra.length?`<button class="public-show-more" type="button" data-show-more="${key}"><span>Lihat ${extra.length} link lainnya</span><span class="material-symbols-rounded">expand_more</span></button>`:''}
     </div>
-    <div class="public-link-list">${cards(visible)}<div class="public-link-extra" ${extra.length?'hidden':''}>${cards(extra)}</div></div>
-    ${extra.length?`<button class="public-show-more" type="button" data-show-more="${key}"><span>Lihat ${extra.length} link lainnya</span><span class="material-symbols-rounded">expand_more</span></button>`:''}
   </section>`;
 }
 
@@ -185,6 +190,27 @@ function bindInteractions(){
     document.querySelectorAll('[data-public-room-panel]').forEach(panel=>{ panel.hidden=panel.dataset.publicRoomPanel!==key; });
   }));
 
+  // Accordion ala room/category: hero kategori tetap menjadi parent control,
+  // daftar link baru muncul setelah kategori dipilih. Hanya satu kategori terbuka.
+  document.querySelectorAll('[data-public-group-toggle]').forEach(toggle=>toggle.addEventListener('click',()=>{
+    const group=toggle.closest('[data-public-group]');
+    const panel=group?.querySelector('.public-group-panel');
+    if(!group || !panel)return;
+    const opening=panel.hidden;
+    document.querySelectorAll('[data-public-group]').forEach(other=>{
+      const otherPanel=other.querySelector('.public-group-panel');
+      const otherToggle=other.querySelector('[data-public-group-toggle]');
+      if(otherPanel)otherPanel.hidden=true;
+      if(otherToggle)otherToggle.setAttribute('aria-expanded','false');
+      other.classList.remove('open');
+    });
+    if(opening){
+      panel.hidden=false;
+      toggle.setAttribute('aria-expanded','true');
+      group.classList.add('open');
+    }
+  }));
+
   document.querySelectorAll('[data-show-more]').forEach(btn=>btn.onclick=()=>{
     const group=btn.closest('[data-public-group]');
     const extra=group?.querySelector('.public-link-extra');
@@ -205,12 +231,49 @@ function bindShowcase(){
   if(showcaseTimer){ clearInterval(showcaseTimer); showcaseTimer=null; }
   const track=document.getElementById('public-showcase-track');
   if(!track)return;
-  const step=()=>Math.max(260,Math.min(track.clientWidth*.78,(track.querySelector('.public-device-card')?.getBoundingClientRect().width||260)+10));
-  const move=direction=>track.scrollBy({left:direction*step(),behavior:'smooth'});
-  const next=()=>{
-    const atEnd=track.scrollLeft+track.clientWidth>=track.scrollWidth-16;
-    if(atEnd)track.scrollTo({left:0,behavior:'smooth'});else move(1);
+
+  const originals=[...track.querySelectorAll('.public-device-card')];
+  if(!originals.length)return;
+
+  // 3 set identik: [clone 1..6] [asli 1..6] [clone 1..6].
+  // User selalu melihat gerakan ke arah yang dipilih; saat masuk set clone,
+  // posisi di-recenter secara instan ke card identik sehingga tidak ada animasi balik 6 -> 1.
+  const before=document.createDocumentFragment();
+  const after=document.createDocumentFragment();
+  originals.forEach(card=>{
+    const a=card.cloneNode(true); a.dataset.loopClone='before'; a.setAttribute('aria-hidden','true'); before.appendChild(a);
+    const b=card.cloneNode(true); b.dataset.loopClone='after'; b.setAttribute('aria-hidden','true'); after.appendChild(b);
+  });
+  track.insertBefore(before,track.firstChild);
+  track.appendChild(after);
+
+  let settlingTimer=null;
+  const stride=()=>{
+    const cards=track.querySelectorAll('.public-device-card');
+    if(cards.length<2)return (cards[0]?.getBoundingClientRect().width||260)+9;
+    return Math.max(1,cards[1].offsetLeft-cards[0].offsetLeft);
   };
+  const middleStart=()=>originals[0].offsetLeft;
+  const setWidth=()=>stride()*originals.length;
+  const recenter=()=>{
+    const start=middleStart();
+    const width=setWidth();
+    if(!width)return;
+    const x=track.scrollLeft;
+    const tolerance=Math.max(3,stride()*.15);
+    if(x>=start+width-tolerance) track.scrollLeft=x-width;
+    else if(x<start-tolerance) track.scrollLeft=x+width;
+  };
+  const move=direction=>track.scrollBy({left:direction*stride(),behavior:'smooth'});
+  const next=()=>move(1);
+
+  // Mulai dari set tengah agar next maupun previous dapat loop tanpa ujung.
+  requestAnimationFrame(()=>{ track.scrollLeft=middleStart(); });
+  track.addEventListener('scroll',()=>{
+    clearTimeout(settlingTimer);
+    settlingTimer=setTimeout(recenter,180);
+  },{passive:true});
+
   document.querySelector('[data-showcase-prev]')?.addEventListener('click',()=>move(-1));
   document.querySelector('[data-showcase-next]')?.addEventListener('click',next);
 
