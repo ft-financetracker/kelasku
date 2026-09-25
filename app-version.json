@@ -1,7 +1,7 @@
 {
-  "version": "6.1.0",
-  "build": "20260924.100",
-  "schema": 11,
-  "release_date": "2026-09-24",
-  "release_note": "Room Class Maximize: layout 2-row desktop, dropdown akademik, chat gambar/VN, tugas gambar & ranking, kelas umum list, short attendance link, dan logo KelasKu baru."
+  "version": "6.2.0",
+  "build": "20260925.110",
+  "schema": 12,
+  "release_date": "2026-09-25",
+  "release_note": "Public Class Links: kelola link grup dan link penting dari Setting Kelas lalu bagikan sebagai satu landing page publik tanpa login."
 }

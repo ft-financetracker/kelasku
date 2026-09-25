@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.1.0-b100';
+const CACHE_NAME = 'kelasku-v6.2.0-b110';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,9 @@ const APP_SHELL = [
   './app-version.json',
   './changelog.json',
   './update-recovery.html',
+  './links.html',
+  './src/css/public-links.css',
+  './src/js/screens/publicLinks.js',
   './src/css/app.css',
   './src/js/app.js',
   './src/js/core/state.js',
@@ -86,14 +89,16 @@ self.addEventListener('fetch', event => {
   }
 
   if (req.mode === 'navigate') {
+    const isPublicLinks = url.pathname.endsWith('/links.html');
+    const fallback = isPublicLinks ? './links.html' : './index.html';
     event.respondWith(
       fetch(req)
         .then(res => {
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(fallback, clone));
           return res;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match(fallback))
     );
     return;
   }

@@ -1,6 +1,31 @@
 {
   "releases": [
     {
+      "version": "6.2.0",
+      "build": "20260925.110",
+      "release_date": "25 Sep 2026",
+      "type": "LTS",
+      "summary": "Public Class Links & Share Landing",
+      "groups": [
+        {
+          "label": "Setting Kelas",
+          "items": [
+            "Pengelola dapat menambahkan, mengurutkan, mengedit, dan menghapus link grup/link penting hingga 30 item per kelas.",
+            "Link dikelompokkan berdasarkan platform seperti WhatsApp, Zoom, Google Drive, Google Meet, YouTube, Telegram, Website, dan Lainnya.",
+            "Halaman link publik default nonaktif untuk kelas lama dan hanya dibuka setelah pengelola mengaktifkannya."
+          ]
+        },
+        {
+          "label": "Landing Publik",
+          "items": [
+            "Satu URL publik per kelas dapat dibuka tanpa login dan hanya menampilkan identitas kelas serta link yang memang dipublikasikan.",
+            "Landing page mobile-first memakai branding KelasKu secara natural dan footer sederhana Copyright © 2026 Qulaimun.id.",
+            "CTA pengenalan KelasKu ditempatkan ringan agar fungsi utama halaman tetap menjadi akses link kelas."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.1.0",
       "build": "20260924.100",
       "release_date": "24 Sep 2026",
