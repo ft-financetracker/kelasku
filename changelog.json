@@ -1,6 +1,23 @@
 {
   "releases": [
     {
+      "version": "6.4.0",
+      "build": "20260925.240",
+      "date": "2026-09-25",
+      "title": "Quick Access Hub Refinement",
+      "changes": [
+        "Hero Link Kelas dipadatkan agar identitas utama terbaca tanpa menumpuk banyak baris.",
+        "Empat card akademik diganti menjadi room switcher Jadwal, Tugas, Presensi, dan Informasi dengan satu panel list aktif.",
+        "Link Cepat kembali satu link per baris; mini hero kategori diperjelas sebagai pemisah section dan tidak menyerupai isi link.",
+        "Showcase KelasKu berjalan otomatis, tetap mendukung swipe mobile dan tombol navigasi desktop.",
+        "Typography Landing diperbesar untuk keterbacaan dan first-load diringankan dengan render publik lebih awal serta request member paralel.",
+        "Landing sekarang memuat manifest dan mendaftarkan Service Worker agar Install KelasKu hanya muncul ketika prompt install benar-benar tersedia.",
+        "Ringkasan Room Class dikembalikan ke ritme dua kolom yang lebih dekat dengan baseline sebelum v6.3; Academic Core tetap tidak dikembalikan.",
+        "Tidak ada perubahan schema/database dan tidak ada perubahan Apps Script."
+      ],
+      "description": "Refinement frontend dari baseline v6.3.0: landing lebih compact, mudah dibaca, responsif, lebih cepat terasa, dan Ringkasan Room Class tidak lagi berubah desain secara berlebihan."
+    },
+    {
       "version": "6.3.0",
       "build": "20260925.200",
       "date": "2026-09-25",

@@ -1,7 +1,7 @@
 {
-  "version": "6.3.0",
-  "build": "20260925.200",
+  "version": "6.4.0",
+  "build": "20260925.240",
   "schema": 13,
   "release_date": "2026-09-25",
-  "release_note": "Quick Access Hub: landing kelas adaptif, navigasi Ruang Kelas lebih ringkas, link PUBLIC/MEMBER, dan normalisasi rendering lintas-device."
+  "release_note": "Landing Link Kelas lebih compact: room switcher, link satu baris, carousel otomatis, loading lebih cepat, install PWA diperbaiki, dan Ringkasan Room Class dikembalikan ke layout dua kolom."
 }

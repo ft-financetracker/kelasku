@@ -212,14 +212,14 @@ async function loadClassAcademic(background = false) {
 function overviewHtml(data) {
   const c=data.class||{}, p=data.permissions||{};
   const leader=(data.members||[]).find(m=>m.is_class_leader);
-  return `<section class="room-overview room-overview-v63">
-    <div class="panel overview-full-row"><div class="panel-head"><div><div class="panel-title">Tentang Kelas</div><p class="panel-copy">Ringkasan identitas kelas tanpa mengulang menu akademik.</p></div></div><div class="overview-inline-details">
+  return `<section class="room-overview room-overview-v64">
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Informasi Kelas</div><p class="panel-copy">Identitas utama dan struktur kelas.</p></div></div><div class="detail-list">
       ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
     </div></div>
-    <div class="panel overview-full-row"><div class="panel-head"><div><div class="panel-title">Status & Akses</div><p class="panel-copy">Informasi akses yang paling sering dibutuhkan.</p></div></div><div class="overview-inline-details">
-      ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}${detail('Class Code',c.class_code||'-')}${detail('Visibilitas',c.visibility||'-')}${detail('Anggota aktif',String((data.members||[]).length))}
+    <div class="panel"><div class="panel-head"><div><div class="panel-title">Status Kelas</div><p class="panel-copy">Status keanggotaan dan akses kelas saat ini.</p></div></div><div class="detail-list">
+      ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}${detail('Visibilitas',c.visibility||'-')}${detail('Anggota aktif',String((data.members||[]).length))}${detail('Class Code',c.class_code||'-')}
     </div></div>
-    ${p.can_manage_class?`<div class="panel overview-full-row"><div class="panel-head"><div><div class="panel-title">Akses Cepat Pengelola</div><p class="panel-copy">Kelola kelas tanpa memenuhi Ringkasan dengan kartu fitur.</p></div></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan Kelas</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota & Ketua Kelas</button></div></div>`:''}
+    ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Akses pengaturan dan pengelolaan anggota tanpa mengubah tampilan Ringkasan.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan Kelas</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota & Ketua Kelas</button></div></div>`:''}
   </section>`;
 }
 

@@ -1237,3 +1237,34 @@ PHASE 6.2 — CLASS PUBLIC LINKS SETTINGS
 @media(max-width:900px){.overview-inline-details{grid-template-columns:repeat(2,minmax(0,1fr))}.room-main-nav{display:flex;overflow:auto;scrollbar-width:none}.room-main-item{flex:0 0 112px}.class-link-editor-row{grid-template-columns:32px 1fr 1fr!important}.class-link-editor-row .link-label,.class-link-editor-row .link-url,.class-link-editor-row .link-description{grid-column:2/-1}.class-link-row-actions{grid-column:2/-1;justify-self:end}}
 @media(max-width:620px){.class-hero-code-rail{grid-template-columns:repeat(2,minmax(0,1fr))!important}.class-hero-v51 .class-hero-main h2{font-size:17px}.overview-inline-details{grid-template-columns:1fr}.room-dropdown{width:100%}.class-link-editor-row{grid-template-columns:28px 1fr!important}.class-link-editor-row>*:not(.class-link-drag){grid-column:2/-1}.class-link-row-actions{justify-self:end}}
 @media(prefers-reduced-motion:reduce){.btn:hover,.class-card:hover{transform:none!important}}
+
+
+/* ============================================================
+ * KelasKu v6.4.0 — Landing Refinement + Room Overview Restore
+ * ============================================================ */
+/* Rendering safety: remove the remaining blur layer used by carousel controls. */
+.carousel-action{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#082451}
+
+/* Room Class: v6.3 changed Ringkasan too aggressively. Restore the original
+   two-column overview rhythm and only keep Academic Core out of Ringkasan. */
+.room-overview-v64{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+.room-overview-v64 .panel{min-width:0}
+.room-overview-v64 .detail-row{font-size:11.5px;min-height:46px}
+.room-overview-v64 .detail-row span{font-size:10.5px}
+.room-overview-v64 .detail-row strong{font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.overview-manager-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px}
+.overview-manager-panel .panel-copy{margin-bottom:0}
+
+/* Readability pass for the Room Class elements touched in this release. */
+.class-primary-meta{font-size:10.5px}
+.class-hero-v51 .class-hero-description{font-size:10.5px!important}
+.class-secondary-meta{font-size:9.5px}
+.class-badge-bottom .role-pill{font-size:9px}
+.room-dropdown-title small{font-size:9px}.room-dropdown-title strong{font-size:11px}
+.room-dropdown-menu button{font-size:10.5px}
+
+@media(max-width:760px){
+  .room-overview-v64{grid-template-columns:1fr!important}
+  .overview-manager-panel{display:grid;align-items:start}
+  .overview-manager-panel .page-actions{width:100%}
+}
