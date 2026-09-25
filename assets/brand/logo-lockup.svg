@@ -1,18 +1,16 @@
-<svg width="820" height="220" viewBox="0 0 820 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="840" height="220" viewBox="0 0 840 220" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="kkBlue" x1="28" y1="188" x2="174" y2="24" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#1767E8"/><stop offset="0.5" stop-color="#3194FF"/><stop offset="1" stop-color="#86D3FF"/>
-    </linearGradient>
-    <linearGradient id="kkTosca" x1="95" y1="98" x2="675" y2="164" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#22E0C7"/><stop offset="0.5" stop-color="#2BE9D3"/><stop offset="1" stop-color="#8BFAE9"/>
-    </linearGradient>
+    <linearGradient id="kkStem" x1="30" y1="190" x2="90" y2="30" gradientUnits="userSpaceOnUse"><stop stop-color="#1557C7"/><stop offset=".55" stop-color="#247BE8"/><stop offset="1" stop-color="#47A6FF"/></linearGradient>
+    <linearGradient id="kkUpper" x1="65" y1="110" x2="170" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#124BAF"/><stop offset=".55" stop-color="#1E69D8"/><stop offset="1" stop-color="#3A95FF"/></linearGradient>
+    <linearGradient id="kkLower" x1="75" y1="115" x2="175" y2="195" gradientUnits="userSpaceOnUse"><stop stop-color="#08CDBB"/><stop offset=".58" stop-color="#20DFC9"/><stop offset="1" stop-color="#69F2E2"/></linearGradient>
+    <linearGradient id="kkKu" x1="470" y1="50" x2="650" y2="135" gradientUnits="userSpaceOnUse"><stop stop-color="#11D6C2"/><stop offset="1" stop-color="#69F2E2"/></linearGradient>
   </defs>
-  <g transform="translate(10,4)">
-    <rect x="38" y="28" width="42" height="164" rx="21" fill="url(#kkBlue)" stroke="#BFE8FF" stroke-opacity=".3" stroke-width="2"/>
-    <rect x="65" y="82" width="42" height="127" rx="21" transform="rotate(-45 65 82)" fill="url(#kkBlue)" stroke="#BFE8FF" stroke-opacity=".25" stroke-width="2"/>
-    <rect x="88" y="104" width="42" height="129" rx="21" transform="rotate(-45 88 104)" fill="url(#kkTosca)" stroke="#D2FFF8" stroke-opacity=".3" stroke-width="2"/>
+  <g transform="translate(12 5)">
+    <path d="M52 36V184" stroke="url(#kkStem)" stroke-width="38" stroke-linecap="round"/>
+    <path d="M66 108L153 36" stroke="url(#kkUpper)" stroke-width="38" stroke-linecap="round"/>
+    <path d="M72 112L154 184" stroke="url(#kkLower)" stroke-width="38" stroke-linecap="round"/>
   </g>
-  <text x="210" y="117" font-family="Poppins, Arial, sans-serif" font-size="78" font-style="italic" font-weight="800" fill="#F7FBFF">Kelas</text>
-  <text x="419" y="117" font-family="Poppins, Arial, sans-serif" font-size="78" font-style="italic" font-weight="800" fill="url(#kkTosca)">Ku</text>
-  <text x="214" y="159" font-family="Poppins, Arial, sans-serif" font-size="25" font-weight="600" fill="#A9BED7">Sistem Komunikasi &amp; Informasi Kelas</text>
+  <text x="205" y="118" font-family="Poppins,Arial,sans-serif" font-size="76" font-weight="800" font-style="italic" fill="#F8FBFF">Kelas</text>
+  <text x="432" y="118" font-family="Poppins,Arial,sans-serif" font-size="76" font-weight="800" font-style="italic" fill="url(#kkKu)">Ku</text>
+  <text x="209" y="158" font-family="Poppins,Arial,sans-serif" font-size="23" font-weight="500" fill="#9FB5D0">Sistem Komunikasi &amp; Informasi Kelas</text>
 </svg>

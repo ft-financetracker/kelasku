@@ -1,6 +1,48 @@
 {
   "releases": [
     {
+      "version": "6.1.0",
+      "build": "20260924.100",
+      "release_date": "24 Sep 2026",
+      "type": "LTS",
+      "summary": "Room Class Maximize & Media Workflow",
+      "groups": [
+        {
+          "label": "Room Kelas",
+          "items": [
+            "Academic Core menjadi 4 kolom pada desktop sehingga 8 modul cukup 2 baris.",
+            "Menu Akademik dan Kelola memakai dropdown yang lebih ringkas.",
+            "Tugas yang dibuka dari Room Kelas tetap berada dalam konteks Room Kelas.",
+            "Daftar kelas menampilkan Kelas Saya dan seluruh kelas PUBLIC dalam format list/table."
+          ]
+        },
+        {
+          "label": "Pesan",
+          "items": [
+            "Reply dan hapus dipindahkan ke action rail di samping bubble.",
+            "Kirim gambar terkompresi dan foto kamera ukuran sedang.",
+            "Voice note hingga 45 detik dengan MediaRecorder dan penyimpanan Drive.",
+            "Emoji, kamera, gambar, voice note, optimistic send, dan anti double-send tetap aktif."
+          ]
+        },
+        {
+          "label": "Akademik",
+          "items": [
+            "Tugas menerima lampiran gambar dan dapat direview oleh pengelola.",
+            "Analitik menampilkan Peringkat Tugas berdasarkan nilai tugas yang sudah direview saja.",
+            "Link absensi baru memakai token pendek dan parameter ?a=."
+          ]
+        },
+        {
+          "label": "Branding",
+          "items": [
+            "Logo KelasKu digambar ulang menjadi K rounded-stroke biru + tosca yang bersih dan konsisten.",
+            "Icon PWA ikut disinkronkan dengan logo baru."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.0.0",
       "build": "20260924.090",
       "date": "24 September 2026",

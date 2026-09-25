@@ -2,6 +2,7 @@ import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
+import { compressImageFile } from '../core/media.js';
 import { go } from '../core/router.js';
 
 const HUB_TTL_MS = 45000;
@@ -260,13 +261,14 @@ function attendanceStatusMeta(value) {
 }
 
 function bindAcademicRows() {
-  document.querySelectorAll('[data-open-task]').forEach(btn => btn.onclick = () => openTask(btn.dataset.openTask));
+  document.querySelectorAll('[data-open-task]').forEach(btn => btn.onclick = () => openTaskModal(btn.dataset.openTask));
   document.querySelectorAll('[data-open-url]').forEach(btn => btn.onclick = () => openExternal(btn.dataset.openUrl));
   document.getElementById('academic-open-classes')?.addEventListener('click', () => go('classes'));
 }
 
-function openTask(taskId) {
-  const item = (state.academicHub?.tasks || []).find(x => String(x.task_id) === String(taskId));
+export function openTaskModal(taskId, sourceItems = null, options = {}) {
+  const pool = Array.isArray(sourceItems) ? sourceItems : (state.academicHub?.tasks || []);
+  const item = pool.find(x => String(x.task_id) === String(taskId));
   if (!item) return;
   const mode = String(item.submission_mode || 'NONE').toUpperCase();
   const sub = item.submission || {};
@@ -279,15 +281,31 @@ function openTask(taskId) {
       <form id="task-submit-form">
         ${mode !== 'LINK' ? `<div class="field"><label>Jawaban / Catatan</label><textarea name="submission_text" class="control" rows="5" placeholder="Tulis jawaban atau catatan pengumpulan…">${esc(sub.submission_text || '')}</textarea></div>` : ''}
         ${mode !== 'TEXT' ? `<div class="field"><label>Tautan Pengumpulan</label><input name="submission_url" class="control" type="url" placeholder="https://…" value="${esc(sub.submission_url || '')}"></div>` : ''}
+        <div class="field"><label>Lampiran Gambar <span class="field-optional">opsional</span></label><div class="task-image-picker"><input id="task-image-input" type="file" accept="image/*" hidden><button type="button" id="task-image-btn" class="btn btn-secondary">${svg('i-camera')} Pilih Gambar</button><span id="task-image-label">${sub.submission_image_url ? 'Gambar tersimpan' : 'JPG/PNG/WebP • otomatis dikompresi'}</span></div><div id="task-image-preview" class="task-image-preview">${sub.submission_image_url ? `<img src="${esc(sub.submission_image_url)}" alt="Lampiran tugas">` : ''}</div></div>
         <div id="task-submit-status" class="request-status"></div>
         <button id="task-submit-btn" class="btn btn-primary btn-block" type="submit">${sub.submission_id ? 'Perbarui Pengumpulan' : 'Kumpulkan Tugas'}</button>
       </form>`}
   `);
   const form = document.getElementById('task-submit-form');
-  if (form) form.onsubmit = e => submitTask(e, item);
+  let pendingTaskImage = null;
+  const imageInput = document.getElementById('task-image-input');
+  document.getElementById('task-image-btn')?.addEventListener('click', () => imageInput?.click());
+  imageInput?.addEventListener('change', async e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const processed = await compressImageFile(file, { maxEdge: 1280, targetBytes: 420000 });
+      pendingTaskImage = processed;
+      const preview = document.getElementById('task-image-preview');
+      const label = document.getElementById('task-image-label');
+      if (preview) preview.innerHTML = `<img src="${esc(processed.dataUrl)}" alt="Preview lampiran">`;
+      if (label) label.textContent = `${processed.name} • ${Math.round(processed.blob.size / 1024)} KB`;
+    } catch (err) { toast(err.message || 'Gambar gagal diproses.'); }
+  });
+  if (form) form.onsubmit = e => submitTask(e, item, { ...options, image: () => pendingTaskImage });
 }
 
-async function submitTask(event, item) {
+async function submitTask(event, item, options = {}) {
   event.preventDefault();
   const form = event.currentTarget;
   const btn = document.getElementById('task-submit-btn');
@@ -299,12 +317,14 @@ async function submitTask(event, item) {
     await api('submitTask', {
       task_id:item.task_id,
       submission_text:form.submission_text?.value || '',
-      submission_url:form.submission_url?.value || ''
+      submission_url:form.submission_url?.value || '',
+      submission_image_data_url: options.image?.()?.dataUrl || ''
     });
     invalidateAcademicClientCache(item.class_id);
     toast('Tugas berhasil dikumpulkan.');
     closeModal();
-    await loadAcademicHub(true);
+    if (typeof options.onSuccess === 'function') await options.onSuccess();
+    else await loadAcademicHub(true);
   } catch (err) {
     status.className = 'request-status error'; status.textContent = err.message;
   } finally { btn.disabled = false; btn.innerHTML = old; }

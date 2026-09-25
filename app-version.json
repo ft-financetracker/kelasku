@@ -1,7 +1,7 @@
 {
-  "version": "6.0.0",
-  "build": "20260924.090",
-  "schema": 10,
+  "version": "6.1.0",
+  "build": "20260924.100",
+  "schema": 11,
   "release_date": "2026-09-24",
-  "release_note": "Phase 6 Academic Workflow & Analytics: review tugas, nilai & feedback, analitik absensi, kalender akademik, dan export CSV."
+  "release_note": "Room Class Maximize: layout 2-row desktop, dropdown akademik, chat gambar/VN, tugas gambar & ranking, kelas umum list, short attendance link, dan logo KelasKu baru."
 }

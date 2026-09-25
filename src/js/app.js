@@ -1,5 +1,5 @@
 /**
- * KelasKu — Application Entry Point v6.0.0
+ * KelasKu — Application Entry Point v6.1.0
  * ============================================================
  * Phase 6 memperdalam Academic Workflow: review tugas, analitik absensi, kalender, dan report.
  * Bootstrap tetap compound: config + user + settings + dashboard.
@@ -145,7 +145,7 @@ function routeReadyUser() {
   if (shouldShowAppSetup()) return go('setup');
 
   const currentUrl = new URL(window.location.href);
-  if (currentUrl.searchParams.get('attendance')) return go('attendance-link');
+  if (currentUrl.searchParams.get('a') || currentUrl.searchParams.get('attendance')) return go('attendance-link');
   const deep = currentUrl.searchParams.get('deep');
   if (deep) {
     currentUrl.searchParams.delete('deep');

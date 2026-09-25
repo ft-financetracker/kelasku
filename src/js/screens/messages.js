@@ -3,11 +3,18 @@ import { api } from '../core/api.js';
 import { esc, svg, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
+import { compressImageFile, blobToDataUrl, formatBytes } from '../core/media.js';
 
 let activeClassId = '';
 let sending = false;
 let loadingOlder = false;
 let replyTarget = null;
+let pendingMedia = null;
+let mediaRecorder = null;
+let mediaChunks = [];
+let mediaStream = null;
+let recordStartedAt = 0;
+let recordTimer = null;
 const deletingIds = new Set();
 const QUICK_EMOJI = ['😀','😂','😊','👍','🙏','🔥','✅','📚','🎯','❤️','👏','🤝'];
 const CONVERSATION_CACHE_PREFIX = 'kelasku_message_cache_';
@@ -159,10 +166,19 @@ function renderStream(data, options = {}) {
 function composerHtml() {
   return `<div class="message-composer-shell">
     <div class="message-reply-composer" id="message-reply-composer" hidden></div>
+    <div class="message-media-preview" id="message-media-preview" hidden></div>
     <form class="message-composer-wa" id="message-composer">
       <div class="emoji-popover" id="emoji-popover" hidden>${QUICK_EMOJI.map(e => `<button type="button" data-emoji="${e}">${e}</button>`).join('')}</div>
+      <div class="chat-tool-popover" id="chat-tool-popover" hidden>
+        <button type="button" data-chat-tool="image"><span class="material-symbols-rounded">image</span><span>Gambar</span></button>
+        <button type="button" data-chat-tool="camera"><span class="material-symbols-rounded">photo_camera</span><span>Kamera</span></button>
+      </div>
+      <input id="chat-image-input" type="file" accept="image/*" hidden>
+      <input id="chat-camera-input" type="file" accept="image/*" capture="environment" hidden>
       <button class="chat-icon-btn" id="emoji-toggle" type="button" aria-label="Pilih emoji" title="Emoji"><span class="material-symbols-rounded">sentiment_satisfied</span></button>
+      <button class="chat-icon-btn" id="attachment-toggle" type="button" aria-label="Lampirkan media" title="Lampiran"><span class="material-symbols-rounded">add_circle</span></button>
       <div class="message-input-wrap"><textarea id="message-input" maxlength="1600" rows="1" placeholder="Ketik pesan"></textarea></div>
+      <button class="chat-icon-btn chat-mic-btn" id="voice-toggle" type="button" aria-label="Rekam voice note" title="Voice note"><span class="material-symbols-rounded">mic</span><span class="voice-time" id="voice-time" hidden>0:00</span></button>
       <button class="message-send-circle" id="message-send" type="submit" aria-label="Kirim pesan" title="Kirim"><span class="material-symbols-rounded">send</span></button>
     </form>
   </div>`;
@@ -173,12 +189,22 @@ function bindComposer() {
   const input = document.getElementById('message-input');
   const toggle = document.getElementById('emoji-toggle');
   const pop = document.getElementById('emoji-popover');
+  const toolToggle = document.getElementById('attachment-toggle');
+  const toolPop = document.getElementById('chat-tool-popover');
+  const imageInput = document.getElementById('chat-image-input');
+  const cameraInput = document.getElementById('chat-camera-input');
+  const voiceBtn = document.getElementById('voice-toggle');
   if (!form || !input) return;
+
   form.onsubmit = sendMessage;
   const resize = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; };
   input.addEventListener('input', resize);
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
-  toggle?.addEventListener('click', () => { if (pop) pop.hidden = !pop.hidden; });
+
+  toggle?.addEventListener('click', () => {
+    if (pop) pop.hidden = !pop.hidden;
+    if (toolPop) toolPop.hidden = true;
+  });
   pop?.querySelectorAll('[data-emoji]').forEach(btn => btn.onclick = () => {
     const start = input.selectionStart ?? input.value.length;
     const end = input.selectionEnd ?? start;
@@ -188,6 +214,22 @@ function bindComposer() {
     resize();
     pop.hidden = true;
   });
+
+  toolToggle?.addEventListener('click', () => {
+    if (toolPop) toolPop.hidden = !toolPop.hidden;
+    if (pop) pop.hidden = true;
+  });
+  toolPop?.querySelectorAll('[data-chat-tool]').forEach(btn => btn.onclick = () => {
+    toolPop.hidden = true;
+    if (btn.dataset.chatTool === 'camera') cameraInput?.click();
+    else imageInput?.click();
+  });
+  imageInput?.addEventListener('change', e => handleChatImage(e.target.files?.[0]));
+  cameraInput?.addEventListener('change', e => handleChatImage(e.target.files?.[0]));
+  voiceBtn?.addEventListener('click', toggleVoiceRecording);
+
+  pendingMedia = null;
+  renderMediaPreview();
   renderReplyComposer();
 }
 
@@ -199,20 +241,46 @@ function messageBubble(item) {
   const canReply = !deleted && !localPending;
   const canDelete = !deleted && !localPending && item.can_delete === true;
   const reply = item.reply_to ? replyQuoteHtml(item.reply_to, true) : '';
-  const actions = (canReply || canDelete) ? `<div class="message-actions" aria-label="Aksi pesan">
+  const sideActions = (canReply || canDelete) ? `<div class="message-side-actions ${item.is_mine ? 'side-left' : 'side-right'}">
       ${canReply ? `<button type="button" data-message-reply="${esc(item.message_id)}" title="Balas"><span class="material-symbols-rounded">reply</span></button>` : ''}
-      ${canDelete ? `<button type="button" class="danger" data-message-delete="${esc(item.message_id)}" title="Hapus pesan"><span class="material-symbols-rounded">delete_outline</span></button>` : ''}
+      ${canDelete ? `<div class="message-more-wrap"><button type="button" data-message-menu="${esc(item.message_id)}" title="Lainnya"><span class="material-symbols-rounded">more_vert</span></button><div class="message-more-menu" data-message-menu-panel="${esc(item.message_id)}" hidden><button type="button" class="danger" data-message-delete="${esc(item.message_id)}"><span class="material-symbols-rounded">delete</span><span>Hapus pesan</span></button></div></div>` : ''}
     </div>` : '';
+  const media = deleted ? '' : messageMediaHtml(item);
+  const body = deleted
+    ? '<p class="message-deleted-text"><span class="material-symbols-rounded">block</span> Pesan telah dihapus</p>'
+    : `${media}${item.body ? `<p>${esc(item.body)}</p>` : ''}`;
 
   return `<article class="message-bubble ${item.is_mine ? 'mine' : ''} ${deleted ? 'is-deleted' : ''}" data-message-id="${esc(item.message_id)}">
     <span class="message-avatar">${avatar}</span>
-    <div class="message-body">
-      <div class="message-meta"><div><strong>${esc(item.is_mine ? 'Kamu' : (item.sender?.full_name || item.sender?.username || 'User'))}</strong><span class="message-role-badges">${badges}</span></div><time>${esc(shortTime(item.created_at))}</time></div>
-      ${reply}
-      ${deleted ? '<p class="message-deleted-text"><span class="material-symbols-rounded">block</span> Pesan telah dihapus</p>' : `<p>${esc(item.body)}</p>`}
-      ${actions}
+    <div class="message-bubble-wrap">
+      ${item.is_mine ? sideActions : ''}
+      <div class="message-body">
+        <div class="message-meta"><div><strong>${esc(item.is_mine ? 'Kamu' : (item.sender?.full_name || item.sender?.username || 'User'))}</strong><span class="message-role-badges">${badges}</span></div><time>${esc(shortTime(item.created_at))}</time></div>
+        ${reply}
+        ${body}
+      </div>
+      ${item.is_mine ? '' : sideActions}
     </div>
   </article>`;
+}
+
+function messageMediaHtml(item) {
+  const url = String(item.attachment_url || '');
+  const mime = String(item.attachment_mime || '');
+  if (!url) return '';
+  if (mime.startsWith('image/')) {
+    return `<button type="button" class="chat-image-attachment" data-open-media="${esc(url)}" aria-label="Buka gambar"><img src="${esc(url)}" alt="${esc(item.attachment_name || 'Gambar chat')}" loading="lazy"></button>`;
+  }
+  if (mime.startsWith('audio/')) {
+    const duration = Number(item.attachment_duration || 0);
+    return `<div class="chat-audio-attachment" data-audio-control>
+      <button type="button" class="chat-audio-play" aria-label="Putar voice note"><span class="material-symbols-rounded">play_arrow</span></button>
+      <div class="chat-audio-track"><span class="chat-audio-progress"></span><span class="chat-audio-dots" aria-hidden="true"></span></div>
+      <small class="chat-audio-time">${esc(formatDuration(duration))}</small>
+      <audio preload="metadata" src="${esc(url)}"></audio>
+    </div>`;
+  }
+  return '';
 }
 
 function replyQuoteHtml(reply, clickable = false) {
@@ -225,12 +293,49 @@ function replyQuoteHtml(reply, clickable = false) {
 function bindMessageActions() {
   document.querySelectorAll('[data-message-reply]').forEach(btn => btn.onclick = () => beginReply(btn.dataset.messageReply));
   document.querySelectorAll('[data-message-delete]').forEach(btn => btn.onclick = () => deleteMessage(btn.dataset.messageDelete, btn));
+  document.querySelectorAll('[data-message-menu]').forEach(btn => btn.onclick = event => {
+    event.stopPropagation();
+    const id = btn.dataset.messageMenu;
+    document.querySelectorAll('[data-message-menu-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.messageMenuPanel !== id ? true : !panel.hidden;
+    });
+  });
+  document.querySelectorAll('[data-open-media]').forEach(btn => btn.onclick = () => window.open(btn.dataset.openMedia, '_blank', 'noopener,noreferrer'));
+  document.querySelectorAll('[data-audio-control]').forEach(bindVoicePlayer);
   document.querySelectorAll('.message-bubble:not(.is-deleted)').forEach(bindSwipeReply);
   document.querySelectorAll('[data-jump-message]').forEach(el => {
     const jump = () => jumpToMessage(el.dataset.jumpMessage);
     el.onclick = jump;
     el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jump(); } };
   });
+}
+
+
+function bindVoicePlayer(root) {
+  if (!root || root.dataset.bound === '1') return;
+  root.dataset.bound = '1';
+  const audio = root.querySelector('audio');
+  const button = root.querySelector('.chat-audio-play');
+  const icon = button?.querySelector('.material-symbols-rounded');
+  const progress = root.querySelector('.chat-audio-progress');
+  const time = root.querySelector('.chat-audio-time');
+  if (!audio || !button) return;
+
+  button.onclick = async () => {
+    if (audio.paused) {
+      document.querySelectorAll('[data-audio-control] audio').forEach(other => { if (other !== audio) other.pause(); });
+      try { await audio.play(); } catch { toast('Voice note belum bisa diputar. Coba lagi.'); }
+    } else audio.pause();
+  };
+  audio.addEventListener('play', () => { if (icon) icon.textContent = 'pause'; root.classList.add('playing'); });
+  audio.addEventListener('pause', () => { if (icon) icon.textContent = 'play_arrow'; root.classList.remove('playing'); });
+  audio.addEventListener('timeupdate', () => {
+    const duration = Number(audio.duration || 0);
+    if (duration && progress) progress.style.width = `${Math.min(100, (audio.currentTime / duration) * 100)}%`;
+    if (time) time.textContent = formatDuration(Math.max(0, duration ? duration - audio.currentTime : 0));
+  });
+  audio.addEventListener('loadedmetadata', () => { if (time && Number.isFinite(audio.duration)) time.textContent = formatDuration(audio.duration); });
+  audio.addEventListener('ended', () => { audio.currentTime = 0; if (progress) progress.style.width = '0%'; });
 }
 
 function bindSwipeReply(el) {
@@ -276,6 +381,138 @@ function renderReplyComposer() {
   root.hidden = false;
   root.innerHTML = `<div><span class="material-symbols-rounded">reply</span><div><strong>Membalas ${esc(replyTarget.sender_name || 'pesan')}</strong><small>${esc(String(replyTarget.body || '').slice(0, 140))}</small></div></div><button type="button" id="cancel-message-reply" aria-label="Batalkan balasan"><span class="material-symbols-rounded">close</span></button>`;
   document.getElementById('cancel-message-reply').onclick = () => { replyTarget = null; renderReplyComposer(); };
+}
+
+
+async function handleChatImage(file) {
+  if (!file) return;
+  try {
+    const processed = await compressImageFile(file, { maxEdge: 1280, targetBytes: 400000 });
+    pendingMedia = {
+      kind: 'IMAGE',
+      data_url: processed.dataUrl,
+      mime: processed.mime,
+      name: processed.name,
+      size: processed.blob.size,
+      preview_url: processed.dataUrl,
+      duration: 0
+    };
+    renderMediaPreview();
+    document.getElementById('message-input')?.focus();
+  } catch (err) {
+    toast(err.message || 'Gambar gagal diproses.');
+  }
+}
+
+async function toggleVoiceRecording() {
+  const btn = document.getElementById('voice-toggle');
+  if (!btn) return;
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    toast('Browser ini belum mendukung voice note.');
+    return;
+  }
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const preferred = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4','audio/aac'];
+    const mimeType = preferred.find(x => MediaRecorder.isTypeSupported?.(x)) || '';
+    mediaChunks = [];
+    mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 });
+    mediaRecorder.ondataavailable = event => { if (event.data?.size) mediaChunks.push(event.data); };
+    mediaRecorder.onstop = finishVoiceRecording;
+    recordStartedAt = Date.now();
+    btn.classList.add('recording');
+    btn.querySelector('.material-symbols-rounded').textContent = 'stop_circle';
+    const time = document.getElementById('voice-time');
+    if (time) time.hidden = false;
+    updateVoiceTimer();
+    recordTimer = window.setInterval(updateVoiceTimer, 500);
+    mediaRecorder.start(500);
+    window.setTimeout(() => {
+      if (mediaRecorder?.state === 'recording') mediaRecorder.stop();
+    }, 45000);
+  } catch (err) {
+    stopMediaStream();
+    toast('Mikrofon tidak dapat digunakan. Periksa izin browser.');
+  }
+}
+
+function updateVoiceTimer() {
+  const elapsed = Math.min(45, Math.max(0, Math.floor((Date.now() - recordStartedAt) / 1000)));
+  const time = document.getElementById('voice-time');
+  if (time) time.textContent = formatDuration(elapsed);
+}
+
+async function finishVoiceRecording() {
+  window.clearInterval(recordTimer);
+  recordTimer = null;
+  const btn = document.getElementById('voice-toggle');
+  if (btn) {
+    btn.classList.remove('recording');
+    const icon = btn.querySelector('.material-symbols-rounded');
+    if (icon) icon.textContent = 'mic';
+  }
+  const time = document.getElementById('voice-time');
+  if (time) time.hidden = true;
+  const duration = Math.max(1, Math.round((Date.now() - recordStartedAt) / 1000));
+  const mime = mediaRecorder?.mimeType || mediaChunks?.[0]?.type || 'audio/webm';
+  const blob = new Blob(mediaChunks, { type: mime });
+  stopMediaStream();
+  mediaRecorder = null;
+  mediaChunks = [];
+  if (!blob.size) return;
+  if (blob.size > 820000) {
+    toast('Voice note terlalu besar. Rekam maksimal sekitar 45 detik.');
+    return;
+  }
+  try {
+    const dataUrl = await blobToDataUrl(blob);
+    pendingMedia = {
+      kind: 'AUDIO',
+      data_url: dataUrl,
+      mime,
+      name: `voice_${Date.now()}.${mime.includes('mp4') || mime.includes('m4a') ? 'm4a' : mime.includes('ogg') ? 'ogg' : mime.includes('aac') ? 'aac' : 'webm'}`,
+      size: blob.size,
+      preview_url: URL.createObjectURL(blob),
+      duration
+    };
+    renderMediaPreview();
+  } catch (err) {
+    toast('Voice note gagal diproses.');
+  }
+}
+
+function stopMediaStream() {
+  try { mediaStream?.getTracks()?.forEach(track => track.stop()); } catch {}
+  mediaStream = null;
+}
+
+function renderMediaPreview() {
+  const root = document.getElementById('message-media-preview');
+  if (!root) return;
+  if (!pendingMedia) {
+    root.hidden = true;
+    root.innerHTML = '';
+    return;
+  }
+  root.hidden = false;
+  const body = pendingMedia.kind === 'IMAGE'
+    ? `<img src="${esc(pendingMedia.preview_url)}" alt="Preview gambar">`
+    : `<span class="material-symbols-rounded">graphic_eq</span><div><strong>Voice note</strong><small>${esc(formatDuration(pendingMedia.duration))} · ${esc(formatBytes(pendingMedia.size))}</small></div>`;
+  root.innerHTML = `<div class="message-media-preview-card media-${pendingMedia.kind.toLowerCase()}">${body}<button type="button" id="clear-message-media" aria-label="Hapus lampiran"><span class="material-symbols-rounded">close</span></button></div>`;
+  document.getElementById('clear-message-media').onclick = () => {
+    if (pendingMedia?.kind === 'AUDIO' && String(pendingMedia.preview_url || '').startsWith('blob:')) URL.revokeObjectURL(pendingMedia.preview_url);
+    pendingMedia = null;
+    renderMediaPreview();
+  };
+}
+
+function formatDuration(seconds) {
+  const total = Math.max(0, Math.round(Number(seconds || 0)));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 function findMessage(messageId) {
@@ -335,7 +572,8 @@ async function sendMessage(event) {
   const input = document.getElementById('message-input');
   const btn = document.getElementById('message-send');
   const body = String(input?.value || '').trim();
-  if (!body || !input || !btn) return;
+  const mediaSnapshot = pendingMedia ? { ...pendingMedia } : null;
+  if ((!body && !mediaSnapshot) || !input || !btn) return;
 
   const replySnapshot = replyTarget ? { ...replyTarget } : null;
   sending = true;
@@ -347,6 +585,8 @@ async function sendMessage(event) {
   if (sendIcon) sendIcon.textContent = 'sync';
   replyTarget = null;
   renderReplyComposer();
+  pendingMedia = null;
+  renderMediaPreview();
 
   const activeRoom = state.messageRooms.find(x => String(x.class_id) === String(activeClassId)) || {};
   const optimistic = {
@@ -354,6 +594,12 @@ async function sendMessage(event) {
     class_id: activeClassId,
     user_id: state.user?.user_id,
     body,
+    message_type: mediaSnapshot ? (body ? 'MIXED' : mediaSnapshot.kind) : 'TEXT',
+    attachment_url: mediaSnapshot?.preview_url || '',
+    attachment_mime: mediaSnapshot?.mime || '',
+    attachment_name: mediaSnapshot?.name || '',
+    attachment_size: mediaSnapshot?.size || '',
+    attachment_duration: mediaSnapshot?.duration || 0,
     reply_to_message_id: replySnapshot?.message_id || '',
     reply_to: replySnapshot,
     created_at: new Date().toISOString(),
@@ -376,7 +622,15 @@ async function sendMessage(event) {
   scrollBottom();
 
   try {
-    const data = await api('sendMessage', { class_id: activeClassId, body, reply_to_message_id: replySnapshot?.message_id || '' }, { onSlow: () => btn.classList.add('slow') });
+    const data = await api('sendMessage', {
+      class_id: activeClassId,
+      body,
+      reply_to_message_id: replySnapshot?.message_id || '',
+      message_type: optimistic.message_type,
+      media_data_url: mediaSnapshot?.data_url || '',
+      media_name: mediaSnapshot?.name || '',
+      media_duration: mediaSnapshot?.duration || 0
+    }, { onSlow: () => btn.classList.add('slow') });
     const current = state.messagesByClass[activeClassId] || { items: [] };
     current.items = (current.items || []).map(x => x.message_id === optimistic.message_id ? data.item : x);
     state.messagesByClass[activeClassId] = current;
@@ -385,12 +639,14 @@ async function sendMessage(event) {
     if (pending) pending.outerHTML = messageBubble(data.item);
     bindMessageActions();
     const room = state.messageRooms.find(x => String(x.class_id) === String(activeClassId));
+    const previewText = body || (optimistic.message_type === 'AUDIO' ? '🎙️ Voice note' : '🖼️ Gambar');
     if (room) {
-      room.last_message = body;
+      room.last_message = previewText;
       room.last_message_at = data.item.created_at;
-      patchRoomPreview(activeClassId, body);
+      patchRoomPreview(activeClassId, previewText);
       localStorage.setItem('kelasku_message_rooms_cache', JSON.stringify(state.messageRooms));
     }
+    if (mediaSnapshot?.kind === 'AUDIO' && String(mediaSnapshot.preview_url || '').startsWith('blob:')) URL.revokeObjectURL(mediaSnapshot.preview_url);
   } catch (err) {
     const current = state.messagesByClass[activeClassId] || { items: [] };
     current.items = (current.items || []).filter(x => x.message_id !== optimistic.message_id);
@@ -399,6 +655,7 @@ async function sendMessage(event) {
     const currentInput = document.getElementById('message-input');
     if (currentInput) currentInput.value = body;
     if (replySnapshot) { replyTarget = replySnapshot; renderReplyComposer(); }
+    if (mediaSnapshot) { pendingMedia = mediaSnapshot; renderMediaPreview(); }
     toast('Pesan gagal dikirim: ' + err.message);
   } finally {
     sending = false;
@@ -451,7 +708,7 @@ async function deleteMessage(messageId, button) {
 function applyDeletedState(messageId) {
   const data = state.messagesByClass[activeClassId];
   if (!data) return;
-  data.items = (data.items || []).map(x => String(x.message_id) === String(messageId) ? { ...x, body: '', status: 'DELETED', is_deleted: true, can_delete: false } : x);
+  data.items = (data.items || []).map(x => String(x.message_id) === String(messageId) ? { ...x, body: '', attachment_url:'', attachment_mime:'', attachment_name:'', attachment_size:'', attachment_duration:'', status: 'DELETED', is_deleted: true, can_delete: false } : x);
   const el = document.querySelector(`[data-message-id="${CSS.escape(String(messageId))}"]`);
   const next = findMessage(messageId);
   if (el && next) el.outerHTML = messageBubble(next);

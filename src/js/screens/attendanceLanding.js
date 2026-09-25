@@ -6,7 +6,7 @@ import { go } from '../core/router.js';
 let currentToken='';
 
 export function renderAttendanceLanding(){
-  currentToken=new URL(window.location.href).searchParams.get('attendance')||'';
+  const params=new URL(window.location.href).searchParams;currentToken=params.get('a')||params.get('attendance')||'';
   if(!currentToken){go('attendance');return;}
   const content=`<div class="attendance-landing-page"><div class="page-head"><div><div class="eyebrow">KELASKU • CHECK-IN</div><h1>Absensi Kelas</h1><p>Login KelasKu diperlukan agar kehadiran tercatat pada akun yang benar.</p></div><button id="attendance-landing-back" class="btn btn-secondary">${svg('i-back')} Beranda</button></div><div id="attendance-landing-slot">${landingSkeleton()}</div></div>`;
   document.getElementById('app').innerHTML=appShell({active:'attendance',content,hideSearch:true});
@@ -33,7 +33,7 @@ async function checkIn(){
   try{await api('selfCheckInAttendance',{token:currentToken},{onSlow:()=>status.textContent='Server masih memproses. Kehadiran hanya akan dicatat satu kali.'});status.className='request-status ok';status.textContent='Kehadiran berhasil dicatat ✓';toast('Check-in berhasil.');await loadLanding();}catch(err){status.className='request-status error';status.textContent=err.message;btn.disabled=false;btn.innerHTML=old;}
 }
 
-function clearAttendanceQuery(){const url=new URL(window.location.href);url.searchParams.delete('attendance');history.replaceState({},'',url.pathname+(url.search||''));}
+function clearAttendanceQuery(){const url=new URL(window.location.href);url.searchParams.delete('a');url.searchParams.delete('attendance');history.replaceState({},'',url.pathname+(url.search||''));}
 function landingSkeleton(){return `<div class="panel skeleton" style="height:270px"></div><div class="panel skeleton" style="height:180px;margin-top:14px"></div>`;}
 function formatDateTime(v){try{return new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));}catch{return v||'-';}}
 function formatTime(v){try{return new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch{return '-';}}

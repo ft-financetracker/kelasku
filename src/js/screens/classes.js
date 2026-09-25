@@ -4,10 +4,13 @@ import { esc, svg, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { go } from '../core/router.js';
 
+let publicPage = 1;
+let publicQuery = '';
+
 export function renderClasses() {
   const content = `
     <div class="page-head">
-      <div><div class="eyebrow">09–10 • Class Foundation</div><h1>Kelas Saya</h1><p>Buat kelompok kelas, cari kelas, atau masuk dengan Class Code / Join Code.</p></div>
+      <div><div class="eyebrow">KELASKU • RUANG BELAJAR</div><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
       <div class="page-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} Masuk dengan Kode</button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} Buat Kelas</button></div>
     </div>
 
@@ -16,9 +19,15 @@ export function renderClasses() {
       <div id="class-search-results" class="search-results hidden"></div>
     </section>
 
-    <section>
-      <div class="section-title-row"><div><h2>Kelas Aktif</h2><p id="class-count">Memuat kelas…</p></div></div>
-      <div id="class-grid" class="class-grid">${classSkeleton()}</div>
+    <section class="class-list-section">
+      <div class="section-title-row"><div><h2>Kelas Saya</h2><p id="class-count">Memuat kelas…</p></div></div>
+      <div id="class-grid" class="class-table-shell">${classSkeleton()}</div>
+    </section>
+
+    <section class="class-list-section public-class-section">
+      <div class="section-title-row"><div><h2>Kelas Umum</h2><p id="public-class-count">Kelas PUBLIC yang dapat dijelajahi.</p></div><button id="public-class-refresh" class="btn btn-secondary small-btn">${svg('i-refresh')} Refresh</button></div>
+      <div id="public-class-list" class="class-table-shell">${classSkeleton()}</div>
+      <div class="class-public-pager" id="public-class-pager"></div>
     </section>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'classes', content, searchPlaceholder: 'Cari kelas, kode kelas, atau teman…' });
@@ -28,11 +37,12 @@ export function renderClasses() {
   document.getElementById('join-code-btn').onclick = openJoinCode;
   document.getElementById('class-search-btn').onclick = runSearch;
   document.getElementById('class-search-input').onkeydown = e => { if (e.key === 'Enter') runSearch(); };
+  document.getElementById('public-class-refresh').onclick = () => loadPublicClasses(true);
 
   if (Array.isArray(state.myClasses) && state.myClasses.length) drawMyClasses(state.myClasses);
   loadMyClasses();
+  loadPublicClasses(false);
 }
-
 async function loadMyClasses() {
   try {
     const data = await api('getMyClasses');
@@ -58,23 +68,68 @@ function drawMyClasses(items) {
     return;
   }
 
-  grid.innerHTML = items.map(classCard).join('');
-  grid.querySelectorAll('[data-open-class]').forEach(el => {
+  grid.innerHTML = `<div class="class-table-head"><span>Kelas</span><span>Peran</span><span>Visibilitas</span><span></span></div>${items.map(c => classListRow(c, true)).join('')}`;
+  bindClassRows(grid);
+}
+
+function classListRow(c, mine = false) {
+  const leader = c.is_class_leader ? '<span class="role-pill leader-role-pill">Ketua Kelas</span>' : '';
+  const action = mine || c.is_member
+    ? `<button type="button" class="class-row-action" data-open-class="${esc(c.class_id)}">${svg('i-arrow')}<span>Buka</span></button>`
+    : `<button type="button" class="class-row-action join" data-public-join="${esc(c.class_id)}">${svg('i-plus')}<span>Gabung</span></button>`;
+  return `<article class="class-list-row">
+    <div class="class-list-identity"><span class="class-symbol small">${svg('i-class')}</span><div><strong>${esc(c.name)}</strong><small>${esc(c.institution || 'KelasKu')}${c.cohort ? ' · Angkatan ' + esc(c.cohort) : ''}<span class="class-code-inline">${esc(c.class_code || '')}</span></small></div></div>
+    <div class="class-list-role">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}</div>
+    <div class="class-list-visibility"><span>${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count || 0) ? `<small>${Number(c.member_count)} anggota</small>` : ''}</div>
+    <div class="class-list-action">${action}</div>
+  </article>`;
+}
+
+function bindClassRows(root) {
+  root.querySelectorAll('[data-open-class]').forEach(el => {
     el.onclick = () => {
       state.selectedClassId = el.dataset.openClass;
       sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
       go('class');
     };
   });
+  root.querySelectorAll('[data-public-join]').forEach(btn => {
+    btn.onclick = () => {
+      const item = (state.publicClasses?.items || []).find(x => String(x.class_id) === String(btn.dataset.publicJoin));
+      if (item) openJoinPreview(item, item.class_code || '');
+    };
+  });
 }
 
-function classCard(c) {
-  return `<button type="button" class="class-card" data-open-class="${esc(c.class_id)}">
-    <div class="class-card-top"><span class="class-symbol">${svg('i-class')}</span><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span></div>
-    <h3>${esc(c.name)}</h3>
-    <p>${esc(c.institution || 'KelasKu')} ${c.cohort ? '· ' + esc(c.cohort) : ''}</p>
-    <div class="class-card-foot"><span>${esc(c.class_code || '')}</span><span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
-  </button>`;
+async function loadPublicClasses(force = false) {
+  const slot = document.getElementById('public-class-list');
+  if (!slot) return;
+  if (!force && state.publicClasses?.items?.length) drawPublicClasses(state.publicClasses);
+  try {
+    const data = await api('listPublicClasses', { page: publicPage, limit: 30, query: publicQuery });
+    state.publicClasses = data;
+    drawPublicClasses(data);
+  } catch (err) {
+    if (!state.publicClasses?.items?.length) slot.innerHTML = `<div class="panel error-panel"><strong>Kelas umum gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+  }
+}
+
+function drawPublicClasses(data) {
+  const slot = document.getElementById('public-class-list');
+  const count = document.getElementById('public-class-count');
+  const pager = document.getElementById('public-class-pager');
+  if (!slot) return;
+  const items = data.items || [];
+  if (count) count.textContent = `${Number(data.total || items.length)} kelas PUBLIC`;
+  slot.innerHTML = items.length
+    ? `<div class="class-table-head"><span>Kelas</span><span>Status</span><span>Anggota</span><span></span></div>${items.map(c => classListRow(c, false)).join('')}`
+    : '<div class="search-empty">Belum ada kelas umum.</div>';
+  bindClassRows(slot);
+  if (pager) {
+    pager.innerHTML = `<button class="btn btn-secondary small-btn" id="public-prev" ${Number(data.page||1)<=1?'disabled':''}>${svg('i-back')} Sebelumnya</button><span>Halaman ${Number(data.page||1)}</span><button class="btn btn-secondary small-btn" id="public-next" ${data.has_more?'':'disabled'}>Berikutnya ${svg('i-arrow')}</button>`;
+    document.getElementById('public-prev')?.addEventListener('click',()=>{publicPage=Math.max(1,publicPage-1);loadPublicClasses(true);});
+    document.getElementById('public-next')?.addEventListener('click',()=>{publicPage+=1;loadPublicClasses(true);});
+  }
 }
 
 async function runSearch() {
