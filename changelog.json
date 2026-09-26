@@ -1,15 +1,14 @@
 {
   "releases": [
     {
-      "version": "6.5.5",
-      "build": "20260926.255",
+      "version": "6.5.6",
+      "build": "20260926.256",
       "date": "2026-09-26",
-      "title": "Patch 1 — Live UI Blockers & Mobile 100%",
+      "title": "Patch 2 — Academic UI Consolidation",
       "items": [
-        "False-update guard diperbaiki agar versi/build yang sama tidak meminta update lagi.",
-        "Daftar Kelas dan Hero Room Class memakai hierarchy lebih padat dengan visibility badge dan public class link.",
-        "Timeline dibatasi tinggi dan scroll internal; context Chat menyimpan kelas asal untuk Back navigation.",
-        "Sidebar desktop mendapat internal scroll tersembunyi; responsive mobile 100% dan Light Mode dipoles.",
+        "Pengumuman, Tugas, Materi, dan Absensi dipadatkan untuk desktop/mobile dan modal dibuat scrollable.",
+        "Jadwal dikelompokkan per mata kuliah/seri dengan KPI, date strip, dan status Normal/Revisi/Batal.",
+        "Review tugas menggunakan export XLSX dan analitik dibagi per view agar tidak ramai.",
         "Frontend-only; Apps Script dan Schema 14 tidak berubah."
       ]
     },

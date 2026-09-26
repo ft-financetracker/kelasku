@@ -1,7 +1,7 @@
 {
-  "version": "6.5.5",
-  "build": "20260926.255",
+  "version": "6.5.6",
+  "build": "20260926.256",
   "schema": 14,
   "release_date": "2026-09-26",
-  "release_note": "Patch 1 live-readiness: false-update fix, class list/hero hierarchy, visibility badges, timeline scroll, chat back-context, mobile 100% responsive hardening, sidebar internal scroll, light-mode polish, landing guest schedule/detail and action locks."
+  "release_note": "Patch 2 academic UI consolidation: compact announcement/detail/modal, grouped schedule series with KPI/date state strip, compact task/material/attendance rows, XLSX task review export, responsive forms and analytics density."
 }
