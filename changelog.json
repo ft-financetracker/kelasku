@@ -1,6 +1,21 @@
 {
   "releases": [
     {
+      "version": "6.6.2",
+      "build": "20260927.262",
+      "date": "2026-09-27",
+      "title": "Urgent Attendance & Schedule Cleanup",
+      "items": [
+        "Jadwal dan Absensi sekarang benar-benar collapse/expand; semua grup default tertutup agar daftar sesi panjang tidak memenuhi layar.",
+        "Sesi absensi berstatus Belum Dibuka tidak dapat diklik dan tidak menampilkan tombol Presensi/Salin Link; aksi tersedia hanya saat window OPEN.",
+        "Detail Jadwal memakai tombol aksi lebih compact; Presensi, Salin Link, Zoom/Meet, Edit, dan Batalkan tidak lagi memenuhi modal.",
+        "Modal Absensi menampilkan ringkasan Mahasiswa/Sudah Isi/Hadir/Belum, daftar anggota yang sudah mengisi lebih dahulu, pagination, dan form status/catatan yang lebih padat.",
+        "Export XLSX disederhanakan untuk dosen: sheet ANALISIS + satu sheet per mata kuliah berisi matrix mahasiswa × sesi serta ringkasan status di kanan.",
+        "Header XLSX diperkuat dengan identitas KelasKu, section header navy/blue, dan column header tosca agar cepat dibaca.",
+        "Schema tetap 15 dan Apps Script tidak berubah; patch ini frontend-only."
+      ]
+    },
+    {
       "version": "6.6.1",
       "build": "20260927.261",
       "date": "2026-09-27",
