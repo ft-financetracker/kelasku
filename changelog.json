@@ -1,15 +1,17 @@
 {
   "releases": [
     {
-      "version": "6.5.6",
-      "build": "20260926.256",
+      "version": "6.6.0",
+      "build": "20260926.260",
       "date": "2026-09-26",
-      "title": "Patch 2 — Academic UI Consolidation",
+      "title": "LTS Final Consolidation — Attendance Flex, XLSX & Public Class",
       "items": [
-        "Pengumuman, Tugas, Materi, dan Absensi dipadatkan untuk desktop/mobile dan modal dibuat scrollable.",
-        "Jadwal dikelompokkan per mata kuliah/seri dengan KPI, date strip, dan status Normal/Revisi/Batal.",
-        "Review tugas menggunakan export XLSX dan analitik dibagi per view agar tidak ramai.",
-        "Frontend-only; Apps Script dan Schema 14 tidak berubah."
+        "Presensi mendukung mode Mandiri/Manual/Hybrid; status Hadir/Sakit/Izin/Alpa dipisahkan dari media Zoom/YouTube/Offline.",
+        "Tracking keterlambatan opsional per jadwal/sesi: Hadir tetap Hadir, dengan atribut Tepat Waktu/Terlambat bila fitur diaktifkan.",
+        "Jadwal AUTO dapat membuat absensi tiap sesi dengan konfigurasi media, window, dan aturan keterlambatan.",
+        "Analitik/export XLSX dirancang untuk dosen: ANALISIS, ALL/SAYA, rekap mahasiswa, rekap sesi, dan detail per mata kuliah/kegiatan.",
+        "Custom public slug kelas, guest public academic preview, dan attachment terstruktur Pengumuman/Tugas/Materi ditambahkan.",
+        "Schema naik 14→15; Apps Script wajib update dan migrateKelasKu() wajib dijalankan satu kali."
       ]
     },
     {

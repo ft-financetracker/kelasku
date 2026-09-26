@@ -1,7 +1,7 @@
 {
-  "version": "6.5.6",
-  "build": "20260926.256",
-  "schema": 14,
+  "version": "6.6.0",
+  "build": "20260926.260",
+  "schema": 15,
   "release_date": "2026-09-26",
-  "release_note": "Patch 2 academic UI consolidation: compact announcement/detail/modal, grouped schedule series with KPI/date state strip, compact task/material/attendance rows, XLSX task review export, responsive forms and analytics density."
+  "release_note": "Patch 3 final live-readiness: attendance flex (status, media, optional late tracking), custom public slug, public academic preview, academic attachments, analytics XLSX consolidation, timeline and responsive polish."
 }

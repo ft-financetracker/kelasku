@@ -296,7 +296,7 @@ function materialCard(item) {
     <div class="academic-material-icon">${svg(['LINK','DRIVE_LINK'].includes(item.material_type) ? 'i-link' : 'i-file')}</div>
     <div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDate(item.published_at))}</span>${item.meeting_no?`<span>Pertemuan ${esc(item.meeting_no)}</span>`:''}</div>
     <h3>${esc(item.title)}</h3>${item.topic?`<span class="soft-chip material-topic-chip">${esc(item.topic)}</span>`:''}<p>${esc(item.description || 'Materi kelas.')}</p>
-    ${item.url ? `<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.url)}">${svg('i-link')} ${item.material_type==='DRIVE_LINK'?'Buka File / Drive':'Buka Materi'}</button>` : '<span class="soft-chip">Catatan</span>'}
+    ${item.url ? `<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.url)}">${svg('i-link')} ${item.material_type==='DRIVE_LINK'?'Buka File / Drive':'Buka Materi'}</button>` : (item.attachments?.length?`<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.attachments[0].download_url||item.attachments[0].url||'')}">${svg('i-file')} ${item.attachments.length} Lampiran</button>`:'<span class="soft-chip">Catatan</span>')}
   </article>`;
 }
 
@@ -369,6 +369,8 @@ function bindAcademicRows() {
   document.getElementById('academic-open-classes')?.addEventListener('click', () => go('classes'));
 }
 
+function academicAttachmentLinks(items=[]){if(!items.length)return '';return `<div class="task-supporting-list"><strong>Lampiran Pendukung</strong>${items.map((a,i)=>`<a href="${esc(a.download_url||a.url||'#')}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-rounded">${a.type==='LINK'?'link':String(a.mime_type||'').startsWith('image/')?'image':'description'}</span><span>${esc(a.filename||`Lampiran ${i+1}`)}</span><span class="material-symbols-rounded">open_in_new</span></a>`).join('')}</div>`;}
+
 export function openTaskModal(taskId, sourceItems = null, options = {}) {
   const pool = Array.isArray(sourceItems) ? sourceItems : (state.academicHub?.tasks || []);
   const item = pool.find(x => String(x.task_id) === String(taskId));
@@ -378,7 +380,7 @@ export function openTaskModal(taskId, sourceItems = null, options = {}) {
   showModal(`
     <div class="modal-head"><div><div class="eyebrow">Tugas • ${esc(item.class_name || 'KelasKu')}</div><h2>${esc(item.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
     <div class="task-modal-meta"><span>${svg('i-calendar')} ${esc(deadlineText(item.deadline))}</span><span class="academic-status-pill status-${taskStatus(item).key.toLowerCase()}">${esc(taskStatus(item).label)}</span></div>
-    <p class="copy compact-copy task-description">${esc(item.description || 'Tidak ada deskripsi tugas.')}</p>
+    <p class="copy compact-copy task-description">${esc(item.description || 'Tidak ada deskripsi tugas.')}</p>${academicAttachmentLinks(item.attachments||[])}
     ${sub.review_status ? `<div class="task-review-feedback ${sub.review_status==='NEEDS_REVISION'?'needs-revision':'reviewed'}"><div><span>Review Pengajar</span><strong>${sub.review_status==='NEEDS_REVISION'?'Perlu Revisi':'Sudah Dinilai'}${sub.score!==''&&sub.score!==undefined?` · ${esc(String(sub.score))}/${esc(String(item.max_score||0))}`:''}</strong></div><p>${esc(sub.feedback||'Tidak ada feedback tambahan.')}</p></div>` : ''}
     ${mode === 'NONE' ? '<div class="alert success">Tugas ini tidak memerlukan pengumpulan melalui KelasKu.</div>' : `
       <form id="task-submit-form">
