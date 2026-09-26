@@ -1,6 +1,19 @@
 {
   "releases": [
     {
+      "version": "6.5.5",
+      "build": "20260926.255",
+      "date": "2026-09-26",
+      "title": "Patch 1 — Live UI Blockers & Mobile 100%",
+      "items": [
+        "False-update guard diperbaiki agar versi/build yang sama tidak meminta update lagi.",
+        "Daftar Kelas dan Hero Room Class memakai hierarchy lebih padat dengan visibility badge dan public class link.",
+        "Timeline dibatasi tinggi dan scroll internal; context Chat menyimpan kelas asal untuk Back navigation.",
+        "Sidebar desktop mendapat internal scroll tersembunyi; responsive mobile 100% dan Light Mode dipoles.",
+        "Frontend-only; Apps Script dan Schema 14 tidak berubah."
+      ]
+    },
+    {
       "version": "6.5.4",
       "build": "20260926.254",
       "date": "2026-09-26",

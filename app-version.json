@@ -1,7 +1,7 @@
 {
-  "version": "6.5.4",
-  "build": "20260926.254",
+  "version": "6.5.5",
+  "build": "20260926.255",
   "schema": 14,
   "release_date": "2026-09-26",
-  "release_note": "Live performance stabilization: cache-first dan stale-while-revalidate diperluas, Room Class memanaskan data akademik/timeline/analitik di background, skeleton besar diganti loader compact, bootstrap cache tidak lagi ditahan 420ms, dan PWA route memakai app-shell cache-first."
+  "release_note": "Patch 1 live-readiness: false-update fix, class list/hero hierarchy, visibility badges, timeline scroll, chat back-context, mobile 100% responsive hardening, sidebar internal scroll, light-mode polish, landing guest schedule/detail and action locks."
 }

@@ -46,7 +46,7 @@ export function renderMessages() {
   const content = `
     <div class="page-head message-page-head">
       <div><div class="eyebrow">RUANG KOMUNIKASI</div><h1>Pesan Kelas</h1><p>Chat kelas yang ringkas, cepat, dan fokus untuk koordinasi belajar.</p></div>
-      <span class="phase-badge">CLASS CHAT</span>
+      <div class="page-actions message-context-actions">${sessionStorage.getItem('kelasku_message_origin')==='class' ? `<button type="button" id="message-back-class" class="btn btn-secondary">${svg('i-back')} Kembali ke Kelas</button>` : ''}<span class="phase-badge">CLASS CHAT</span></div>
     </div>
     <section class="message-layout panel">
       <aside class="message-room-list" id="message-room-list">${state.messageRooms?.length ? '' : roomSkeleton()}</aside>
@@ -54,6 +54,12 @@ export function renderMessages() {
     </section>`;
   document.getElementById('app').innerHTML = appShell({ active: 'messages', content, hideSearch: true });
   bindAppShell();
+  document.getElementById('message-back-class')?.addEventListener('click', () => {
+    const classId = sessionStorage.getItem('kelasku_message_origin_class') || activeClassId;
+    if (classId) { state.selectedClassId = classId; sessionStorage.setItem('kelasku_selected_class', classId); sessionStorage.setItem('kelasku_class_tab','messages'); }
+    sessionStorage.removeItem('kelasku_message_origin');
+    go('class');
+  });
 
   if (state.messageRooms?.length) {
     if (!activeClassId) activeClassId = state.messageRooms[0].class_id;

@@ -353,7 +353,9 @@ async function checkUpdate() {
     state.remoteConfig = config;
     localStorage.setItem('kelasku_app_config_cache', JSON.stringify(config));
     const result = await checkForAppUpdate({ notify: false });
-    const newer = result.available || config.update_required === true;
+    const minVersion = String(config.min_version || '0.0.0');
+    const forcedByMinimum = config.update_required === true && semverCmp(C.APP_VERSION, minVersion) < 0;
+    const newer = result.available || forcedByMinimum;
     if (newer) {
       status.innerHTML = `Update tersedia: v${esc(result.version || config.current_version)}. <button type="button" id="run-update-now" class="button-link">Update sekarang</button>`;
       document.getElementById('run-update-now').onclick = updateApp;

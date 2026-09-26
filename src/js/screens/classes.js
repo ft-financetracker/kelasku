@@ -96,9 +96,9 @@ function classListRow(c, mine = false) {
     ? `<button type="button" class="class-row-action" data-open-class="${esc(c.class_id)}">${svg('i-arrow')}<span>Buka</span></button>`
     : `<button type="button" class="class-row-action join" data-public-join="${esc(c.class_id)}">${svg('i-plus')}<span>Gabung</span></button>`;
   return `<article class="class-list-row">
-    <div class="class-list-identity"><span class="class-symbol small">${svg('i-class')}</span><div><strong>${esc(c.name)}</strong><small>${esc(c.institution || 'KelasKu')}${c.cohort ? ' · Angkatan ' + esc(c.cohort) : ''}<span class="class-code-inline">${esc(c.class_code || '')}</span></small></div></div>
+    <div class="class-list-identity"><span class="class-symbol small">${svg('i-class')}</span><div class="class-list-copy"><small class="class-list-subtitle">${esc(c.institution || 'KelasKu')}${c.cohort ? ' · Angkatan ' + esc(c.cohort) : ''}</small><strong>${esc(c.name)}</strong><span class="class-code-inline">${esc(c.class_code || '')}</span></div></div>
     <div class="class-list-role">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}</div>
-    <div class="class-list-visibility"><span>${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count || 0) ? `<small>${Number(c.member_count)} anggota</small>` : ''}</div>
+    <div class="class-list-visibility"><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count || 0) ? `<small>${Number(c.member_count)} anggota</small>` : ''}</div>
     <div class="class-list-action">${action}</div>
   </article>`;
 }

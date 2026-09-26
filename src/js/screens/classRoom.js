@@ -139,8 +139,8 @@ function drawClass(data, preserveTab = true) {
     <section class="class-hero class-hero-v51 panel">
       <div class="class-hero-icon">${svg('i-class')}</div>
       <div class="class-hero-main">
+        <div class="class-primary-meta class-hero-subtitle"><span>${esc(c.institution || 'KelasKu')}</span>${c.study_program?`<span>${esc(c.study_program)}</span>`:''}${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}${c.semester?`<span>${esc(c.semester)}</span>`:''}</div>
         <h2>${esc(c.name)}</h2>
-        <div class="class-primary-meta"><span>${esc(c.institution || 'KelasKu')}</span>${c.study_program?`<span>${esc(c.study_program)}</span>`:''}${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}${c.semester?`<span>${esc(c.semester)}</span>`:''}</div>
         <p class="class-hero-description">${esc(c.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
         <div class="class-identity-divider"></div>
         <div class="class-hero-bottomline">
@@ -157,7 +157,7 @@ function drawClass(data, preserveTab = true) {
     <section class="room-navigation-shell" aria-label="Navigasi Ruang Kelas">
       <nav class="room-main-nav" id="room-main-nav">
         ${roomMainButton('overview','i-home','Ringkasan')}
-        ${roomMainButton('timeline','i-timeline','Timeline')}
+        ${roomMainButton('timeline','i-activity','Timeline')}
         ${roomMainButton('messages','i-chat','Pesan')}
         ${roomMainButton('academic','i-class','Akademik')}
         ${roomMainButton('members','i-users',`Anggota`,(data.members||[]).length)}
@@ -217,6 +217,8 @@ function switchTab(tab, data) {
 
   if (tab === 'messages') {
     sessionStorage.setItem('kelasku_message_class', state.selectedClassId);
+    sessionStorage.setItem('kelasku_message_origin', 'class');
+    sessionStorage.setItem('kelasku_message_origin_class', state.selectedClassId);
     go('messages');
     return;
   }
@@ -290,7 +292,7 @@ function overviewHtml(data) {
       ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
     </div></div>
     <div class="panel"><div class="panel-head"><div><div class="panel-title">Status Kelas</div><p class="panel-copy">Status keanggotaan dan akses kelas saat ini.</p></div></div><div class="detail-list">
-      ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}${detail('Visibilitas',c.visibility||'-')}${detail('Anggota aktif',String((data.members||[]).length))}${detail('Class Code',c.class_code||'-')}
+      ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}${detail('Visibilitas',c.visibility||'-')}${detail('Anggota aktif',String((data.members||[]).length))}${detail('Class Code',c.class_code||'-')}${detail('Link Kelas',publicClassLinksUrl(c.class_code||''))}
     </div></div>
     ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Akses pengaturan dan pengelolaan anggota tanpa mengubah tampilan Ringkasan.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan Kelas</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota & Ketua Kelas</button></div></div>`:''}
   </section>`;
