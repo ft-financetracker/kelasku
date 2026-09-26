@@ -12,7 +12,7 @@ let updateWatchBound = false;
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    state.swReg = await navigator.serviceWorker.register('./service-worker.js');
+    state.swReg = await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
     state.swReg.update().catch(() => {});
     return state.swReg;
   } catch (err) {
@@ -97,12 +97,9 @@ function normalizeDeepLink(url='dashboard') {
   const value=String(url||'dashboard').trim();
   if (/^https?:\/\//i.test(value)) return value;
   const route=value.replace(/^\.\/?#/,'').replace(/^#/,'').replace(/^\//,'') || 'dashboard';
-  const target=new URL('./', window.location.href);
-  if (route.includes(':')) {
-    target.searchParams.set('deep', route);
-  } else {
-    target.hash=route;
-  }
+  const origin=String(C.PRIMARY_ORIGIN || window.location.origin).replace(/\/$/,'');
+  const target=new URL('/', `${origin}/`);
+  target.searchParams.set('deep', route);
   return target.href;
 }
 
@@ -195,7 +192,7 @@ export async function updateApp() {
 
   showUpdateOverlay(targetVersion);
 
-  const recovery = new URL('./update-recovery.html', window.location.href);
+  const recovery = new URL('/update-recovery.html', String(C.PRIMARY_ORIGIN || window.location.origin));
   recovery.searchParams.set('v', targetVersion);
   if (targetBuild) recovery.searchParams.set('b', targetBuild);
   recovery.searchParams.set('t', String(Date.now()));

@@ -68,3 +68,10 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 .public-room-clickable:hover{border-color:rgba(34,224,199,.32)!important;background:#0A315F!important}
 .public-room-clickable .public-row-arrow{margin-left:auto;color:#5E86AB;font-size:20px}
 .public-room-inline-link{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-decoration:none;color:inherit}.public-room-inline-link>div{display:grid;min-width:0}
+
+
+/* v6.5.2 — guest sees the room structure without exposing private data. */
+.public-room-guest-row{width:100%;appearance:none;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.public-guest-hint{margin-top:7px;padding:8px 10px;border-radius:10px;background:#071D3F;color:#86A4C2;font-size:10px;line-height:1.45}
+.public-notice{position:fixed;z-index:9999;left:50%;bottom:22px;transform:translate(-50%,18px);width:min(92vw,560px);padding:11px 14px;border-radius:12px;border:1px solid rgba(34,224,199,.28);background:#071D3F;color:#DDF8F4;box-shadow:0 10px 30px rgba(0,8,30,.28);font-size:11.5px;font-weight:700;line-height:1.45;opacity:0;pointer-events:none;transition:opacity .16s ease,transform .16s ease}
+.public-notice.show{opacity:1;transform:translate(-50%,0)}

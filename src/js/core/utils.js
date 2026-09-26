@@ -1,5 +1,28 @@
 export const C = window.KELASKU_CONFIG;
 
+export function primaryOrigin() {
+  return String(C.PRIMARY_ORIGIN || window.location.origin || '').replace(/\/$/, '');
+}
+
+export function primaryUrl(path = '/', params = null) {
+  const origin = primaryOrigin();
+  const cleanPath = String(path || '/').startsWith('/') ? String(path || '/') : `/${String(path || '')}`;
+  const url = new URL(cleanPath, `${origin}/`);
+  if (params && typeof params === 'object') {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return;
+      url.searchParams.set(key, String(value));
+    });
+  }
+  return url;
+}
+
+export function isLegacyFrontendLocation() {
+  const legacyOrigin = String(C.LEGACY_ORIGIN || '').replace(/\/$/, '');
+  const legacyPath = String(C.LEGACY_BASE_PATH || '').replace(/\/$/, '');
+  return Boolean(legacyOrigin && window.location.origin === legacyOrigin && (!legacyPath || window.location.pathname === legacyPath || window.location.pathname.startsWith(`${legacyPath}/`)));
+}
+
 export function esc(value = '') {
   return String(value).replace(/[&<>'"]/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'

@@ -6,10 +6,15 @@
  */
 window.KELASKU_CONFIG = Object.freeze({
   APP_NAME: 'KelasKu',
-  APP_VERSION: '6.5.0',
-  BUILD: '20260925.250',
+  APP_VERSION: '6.5.2',
+  BUILD: '20260926.252',
 
   API_URL: 'https://script.google.com/macros/s/AKfycbyIsv19DU3M-zWu2HCvDvRQgYbstNy1wHF-8ehaMh0OnQ8ousYswuGmsz23S_QD2FRH/exec',
+
+  // Canonical frontend. Semua link yang dibagikan KelasKu harus dibentuk dari origin ini.
+  PRIMARY_ORIGIN: 'https://klasku.my.id',
+  LEGACY_ORIGIN: 'https://ft-financetracker.github.io',
+  LEGACY_BASE_PATH: '/kelasku',
 
   API_TIMEOUT_MS: 20000,
   SLOW_REQUEST_MS: 850,

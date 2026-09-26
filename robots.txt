@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /lengkapi-profil
+Disallow: /pengaturan
+Disallow: /notifikasi
+
+Sitemap: https://klasku.my.id/sitemap.xml

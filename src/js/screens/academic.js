@@ -7,6 +7,8 @@ import { go } from '../core/router.js';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
+let attendanceListPage = 1;
+const ATTENDANCE_LIST_PAGE_SIZE = 12;
 
 export function renderSchedule() {
   activeAcademicScreen = 'schedule';
@@ -56,12 +58,12 @@ function renderAcademicShell(title, copy, active, icon) {
 }
 
 function bindAcademicToolbar() {
-  document.getElementById('academic-search')?.addEventListener('input', () => drawAcademicScreen(state.academicHub));
+  document.getElementById('academic-search')?.addEventListener('input', () => { attendanceListPage = 1; drawAcademicScreen(state.academicHub); });
   document.getElementById('academic-class-filter')?.addEventListener('change', () => {
-    if (activeAcademicScreen === 'attendance') hydrateAttendanceFilter(state.academicHub, true);
+    if (activeAcademicScreen === 'attendance') { attendanceListPage = 1; hydrateAttendanceFilter(state.academicHub, true); }
     drawAcademicScreen(state.academicHub);
   });
-  document.getElementById('academic-attendance-filter')?.addEventListener('change', () => drawAcademicScreen(state.academicHub));
+  document.getElementById('academic-attendance-filter')?.addEventListener('change', () => { attendanceListPage = 1; drawAcademicScreen(state.academicHub); });
   document.getElementById('academic-refresh')?.addEventListener('click', () => loadAcademicHub(true));
 }
 
@@ -308,6 +310,8 @@ function attendanceHtml(items) {
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
+  const totalPages=Math.max(1,Math.ceil(items.length/ATTENDANCE_LIST_PAGE_SIZE));attendanceListPage=Math.min(Math.max(1,attendanceListPage),totalPages);
+  const pageItems=items.slice((attendanceListPage-1)*ATTENDANCE_LIST_PAGE_SIZE,attendanceListPage*ATTENDANCE_LIST_PAGE_SIZE);
   return `<section class="academic-list-layout">
     <div class="academic-attendance-scope"><span>${svg('i-calendar')}</span><div><strong>Tracker Absensi</strong><small>${items.length} sesi sesuai filter kelas + jadwal/mata kuliah.</small></div></div>
     <div class="academic-summary-strip">
@@ -315,8 +319,14 @@ function attendanceHtml(items) {
       <div><strong>${(counts.SICK || 0) + (counts.PERMIT || 0)}</strong><span>Sakit / Izin</span></div>
       <div><strong>${counts.ABSENT || 0}</strong><span>Alpa</span></div>
     </div>
-    <div class="academic-card-list">${items.map(attendanceCard).join('')}</div>
+    <div class="academic-card-list">${pageItems.map(attendanceCard).join('')}</div>
+    ${attendanceListPagination(attendanceListPage,totalPages,items.length)}
   </section>`;
+}
+function attendanceListPagination(page,totalPages,total){
+  if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} sesi</span></div>`;
+  const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-academic-attendance-page="${i}" class="${i===page?'active':''}">${i}</button>`);
+  return `<div class="table-pagination"><span>${total} sesi • Halaman ${page}/${totalPages}</span><div><button type="button" data-academic-attendance-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-academic-attendance-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;
 }
 
 function attendanceCard(item) {
@@ -345,6 +355,7 @@ function attendanceStatusMeta(value) {
 function bindAcademicRows() {
   document.querySelectorAll('[data-open-task]').forEach(btn => btn.onclick = () => openTaskModal(btn.dataset.openTask));
   document.querySelectorAll('[data-open-url]').forEach(btn => btn.onclick = () => openExternal(btn.dataset.openUrl));
+  document.querySelectorAll('[data-academic-attendance-page]').forEach(btn => btn.onclick = () => { attendanceListPage = Number(btn.dataset.academicAttendancePage) || 1; drawAcademicScreen(state.academicHub); });
   document.getElementById('academic-open-classes')?.addEventListener('click', () => go('classes'));
 }
 

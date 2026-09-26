@@ -1,5 +1,6 @@
 import { api } from '../core/api.js';
 import { state } from '../core/state.js';
+import { primaryUrl } from '../core/utils.js';
 
 const content = document.getElementById('public-links-content');
 const params = new URLSearchParams(location.search);
@@ -121,10 +122,10 @@ function memberAcademicHub(academic={}, classId='') {
   const announcements=(academic.announcements||[]).slice(0,4);
 
   const panels = {
-    schedule: `${roomList(schedules,'Belum ada jadwal mendatang.',x=>`<a href="./#class" data-open-class-tab="schedule" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title || 'Jadwal Kelas')}</strong><small>${esc(fmtDate(x.start_at))}${x.location?` · ${esc(x.location)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`)}<a class="public-text-link" href="./#class" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Lihat jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`,
-    tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<a href="./#class" data-open-class-tab="tasks" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`),
-    attendance: roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><a href="./#class" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title || 'Presensi Kelas')}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi sedang aktif'}</small></div></a><a href="./?a=${encodeURIComponent(x.public_token||'')}" class="public-primary-action">Isi Presensi</a></div>`),
-    announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<a href="./#class" data-open-class-tab="announcements" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`)
+    schedule: `${roomList(schedules,'Belum ada jadwal mendatang.',x=>`<a href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title || 'Jadwal Kelas')}</strong><small>${esc(fmtDate(x.start_at))}${x.location?` · ${esc(x.location)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`)}<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Lihat jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`,
+    tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<a href="/ruang-kelas" data-open-class-tab="tasks" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`),
+    attendance: roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title || 'Presensi Kelas')}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi sedang aktif'}</small></div></a><a href="/absensi?a=${encodeURIComponent(x.public_token||'')}" class="public-primary-action">Isi Presensi</a></div>`),
+    announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<a href="/ruang-kelas" data-open-class-tab="announcements" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`)
   };
 
   const tabs = [
@@ -144,25 +145,39 @@ function academicLoading() {
   return `<section class="public-room-hub public-room-loading" aria-live="polite"><div class="public-inline-loader"><span class="public-loader"></span><div><strong>Menyiapkan informasi kelas…</strong><small>Link publik sudah dapat digunakan sambil data anggota dimuat.</small></div></div></section>`;
 }
 
-function lockedPreview(loggedIn) {
-  return `<section class="public-locked"><span class="material-symbols-rounded">lock</span><div><strong>${loggedIn?'Konten ini hanya tersedia untuk anggota kelas.':'Masuk untuk melihat informasi kelas'}</strong><p>${loggedIn?'Jadwal, tugas, presensi, materi, dan informasi internal tetap terlindungi.':'Simpan satu link kelas, lalu akses jadwal, tugas, presensi, materi, dan informasi internal setelah masuk.'}</p></div><a href="./#auth" class="public-secondary-action">${loggedIn?'Buka KelasKu':'Masuk KelasKu'}</a></section>`;
+function guestAcademicHub(loggedIn) {
+  const tabs=[['schedule','calendar_month','Jadwal'],['tasks','checklist','Tugas'],['attendance','done_all','Presensi'],['announcements','campaign','Informasi']];
+  const copy={
+    schedule:['Jadwal Kelas','Lihat agenda dan perubahan jadwal setelah masuk ke kelas.'],
+    tasks:['Tugas Kelas','Deadline dan status tugas tersedia untuk anggota kelas.'],
+    attendance:['Presensi Kelas','Link presensi tetap mewajibkan login agar identitas kehadiran valid.'],
+    announcements:['Informasi Kelas','Pengumuman internal tersedia setelah akun memiliki akses kelas.']
+  };
+  const panels=tabs.map(([key,icon])=>{const c=copy[key];return `<div class="public-room-panel" data-public-room-panel="${key}" ${key!=='schedule'?'hidden':''}><button type="button" class="public-room-row public-room-clickable public-room-guest-row" data-public-login-required="${key}"><span class="public-room-row-icon material-symbols-rounded">${icon}</span><div><strong>${c[0]}</strong><small>${c[1]}</small></div><span class="material-symbols-rounded public-row-arrow">${key==='attendance'?'login':'chevron_right'}</span></button><div class="public-guest-hint">${loggedIn?'Akun ini belum memiliki akses anggota ke kelas ini.':'Belum login? Link publik kelas tetap tersedia di bagian Link Cepat di bawah.'}</div></div>`;}).join('');
+  return `<section class="public-room-hub"><div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Kenali ruang kelas.</h2><p>Room tetap dapat dilihat. Data internal baru dibuka setelah login dan memiliki akses.</p></div></div><nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${panels}</div></section>`;
+}
+function showPublicNotice(message){
+  let notice=document.getElementById('public-notice');
+  if(!notice){notice=document.createElement('div');notice.id='public-notice';notice.className='public-notice';document.body.appendChild(notice);}
+  notice.textContent=message;notice.classList.add('show');clearTimeout(showPublicNotice.timer);showPublicNotice.timer=setTimeout(()=>notice.classList.remove('show'),2600);
 }
 
 function showcase() {
   const slides=[['dashboard','Dashboard','Semua informasi penting dalam satu layar.'],['calendar_month','Jadwal','Agenda kelas lebih teratur.'],['checklist','Tugas','Deadline dan progres lebih jelas.'],['done_all','Presensi','Check-in dan riwayat kehadiran.'],['folder','Materi','Referensi kelas tetap rapi.'],['groups','Kelola Kelas','Koordinasi anggota dalam satu ruang.']];
-  return `<section class="public-showcase"><div class="public-section-head"><div><span class="public-kicker">KENAL KELASKU</span><h2>Satu ruang untuk kebutuhan kelas.</h2></div><div class="public-showcase-nav"><button type="button" data-showcase-prev aria-label="Sebelumnya"><span class="material-symbols-rounded">arrow_back</span></button><button type="button" data-showcase-next aria-label="Berikutnya"><span class="material-symbols-rounded">arrow_forward</span></button></div></div><div class="public-showcase-track" id="public-showcase-track">${slides.map(([icon,title,copy],i)=>`<article class="public-device-card"><div class="public-browser-bar"><i></i><i></i><i></i><span>kelasku.app</span></div><div class="public-device-screen"><span class="material-symbols-rounded">${icon}</span><small>PREVIEW ${String(i+1).padStart(2,'0')}</small><strong>${title}</strong><p>${copy}</p><div class="public-mock-lines"><i></i><i></i><i></i></div></div></article>`).join('')}</div><div class="public-showcase-actions"><a href="./" class="public-promo-btn">Buka KelasKu <span class="material-symbols-rounded">arrow_forward</span></a><button id="public-install-btn" type="button" class="public-install-btn" hidden>Install KelasKu <span class="material-symbols-rounded">download</span></button></div></section>`;
+  return `<section class="public-showcase"><div class="public-section-head"><div><span class="public-kicker">KENAL KELASKU</span><h2>Satu ruang untuk kebutuhan kelas.</h2></div><div class="public-showcase-nav"><button type="button" data-showcase-prev aria-label="Sebelumnya"><span class="material-symbols-rounded">arrow_back</span></button><button type="button" data-showcase-next aria-label="Berikutnya"><span class="material-symbols-rounded">arrow_forward</span></button></div></div><div class="public-showcase-track" id="public-showcase-track">${slides.map(([icon,title,copy],i)=>`<article class="public-device-card"><div class="public-browser-bar"><i></i><i></i><i></i><span>klasku.my.id</span></div><div class="public-device-screen"><span class="material-symbols-rounded">${icon}</span><small>PREVIEW ${String(i+1).padStart(2,'0')}</small><strong>${title}</strong><p>${copy}</p><div class="public-mock-lines"><i></i><i></i><i></i></div></div></article>`).join('')}</div><div class="public-showcase-actions"><a href="/" class="public-promo-btn">Buka KelasKu <span class="material-symbols-rounded">arrow_forward</span></a><button id="public-install-btn" type="button" class="public-install-btn" hidden>Install KelasKu <span class="material-symbols-rounded">download</span></button></div></section>`;
 }
 
 function render(data, memberData=null, academic=null, { membershipLoading=false }={}) {
   const cls = data.class || {};
   document.title = `${cls.name || 'Link Kelas'} — KelasKu`;
+  syncPublicMetadata(cls);
   const isMember=Boolean(memberData);
   const loggedIn=Boolean(state.sessionToken && state.user);
   const sourceGroups=isMember?groupsFromItems(memberData.class_links||[]):(data.groups||{});
   const sections=ORDERED.filter(key=>Array.isArray(sourceGroups[key])&&sourceGroups[key].length).map(key=>groupSection(key,sourceGroups[key])).join('');
   const infoSection = isMember
     ? memberAcademicHub(academic||{},cls.class_id||'')
-    : (membershipLoading ? academicLoading() : lockedPreview(loggedIn));
+    : (membershipLoading ? academicLoading() : guestAcademicHub(loggedIn));
 
   content.innerHTML = `${publicHero(cls)}
     ${infoSection}
@@ -188,6 +203,13 @@ function bindInteractions(){
       item.setAttribute('aria-selected',String(active));
     });
     document.querySelectorAll('[data-public-room-panel]').forEach(panel=>{ panel.hidden=panel.dataset.publicRoomPanel!==key; });
+  }));
+
+  document.querySelectorAll('[data-public-login-required]').forEach(btn=>btn.addEventListener('click',()=>{
+    const loggedIn=Boolean(state.sessionToken && state.user);
+    const room=String(btn.dataset.publicLoginRequired||'fitur');
+    const labels={schedule:'Jadwal',tasks:'Tugas',attendance:'Presensi',announcements:'Informasi'};
+    showPublicNotice(loggedIn?`${labels[room]||'Konten'} hanya tersedia untuk anggota kelas ini.`:`Silakan login untuk membuka ${labels[room]||'fitur'} kelas. Link publik tetap bisa digunakan tanpa login.`);
   }));
 
   // Accordion ala room/category: hero kategori tetap menjadi parent control,
@@ -315,13 +337,30 @@ function updateInstallButton(){
   btn.hidden=!deferredInstallPrompt||standalone;
 }
 
+function syncPublicMetadata(cls={}) {
+  const code=String(cls.class_code||classCode||'').replace(/^KLS-/i,'');
+  const canonical=primaryUrl('/links.html',code?{c:code}:null).toString();
+  const title=`${cls.name || 'Link Kelas'} — KelasKu`;
+  const description=String(cls.description || 'Quick Access Hub kelas — KelasKu').trim();
+  const canonicalEl=document.querySelector('link[rel="canonical"]');
+  if(canonicalEl)canonicalEl.href=canonical;
+  const ogUrl=document.querySelector('meta[property="og:url"]');
+  if(ogUrl)ogUrl.content=canonical;
+  const ogTitle=document.querySelector('meta[property="og:title"]');
+  if(ogTitle)ogTitle.content=title;
+  const ogDescription=document.querySelector('meta[property="og:description"]');
+  if(ogDescription)ogDescription.content=description;
+  const metaDescription=document.querySelector('meta[name="description"]');
+  if(metaDescription)metaDescription.content=description;
+}
+
 function renderError(message) {
-  content.innerHTML = `<section class="public-empty error"><span class="material-symbols-rounded">link_off</span><strong>Link kelas tidak tersedia</strong><p>${esc(message || 'Periksa kembali tautan yang dibagikan.')}</p><a href="./" class="public-promo-btn">Buka KelasKu</a></section>`;
+  content.innerHTML = `<section class="public-empty error"><span class="material-symbols-rounded">link_off</span><strong>Link kelas tidak tersedia</strong><p>${esc(message || 'Periksa kembali tautan yang dibagikan.')}</p><a href="/" class="public-promo-btn">Buka KelasKu</a></section>`;
 }
 
 function registerPublicServiceWorker(){
   if(!('serviceWorker' in navigator))return;
-  navigator.serviceWorker.register('./service-worker.js').catch(err=>console.warn('Public SW:',err));
+  navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(err=>console.warn('Public SW:',err));
 }
 
 async function init() {

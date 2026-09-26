@@ -1,6 +1,35 @@
 {
   "releases": [
     {
+      "version": "6.5.2",
+      "build": "20260926.252",
+      "date": "2026-09-26",
+      "title": "Live Readiness — Attendance, Analytics & Guest Landing",
+      "items": [
+        "Analitik Room Class direstruktur: KPI/ringkasan di atas, rekap anggota dan peringkat lebih dahulu, rekap kegiatan + detail record ditempatkan di bawah agar kontainer panjang tetap terkendali.",
+        "Export analitik kembali ke CSV ringkas. CSV berisi ringkasan per anggota, ringkasan per kegiatan/mata kuliah (Hadir/Sakit/Izin/Alpa/Belum/Total/% Presensi), lalu detail record.",
+        "Pagination ditambahkan pada Absensi global, daftar sesi Absensi Room Class, anggota di modal sesi, detail record analitik, dan ringkasan anggota.",
+        "Hero Room Class mendapat layout mobile khusus: deskripsi/divider disederhanakan, metadata satu baris, status + role dipadatkan.",
+        "Landing guest/non-member tetap menampilkan room Jadwal/Tugas/Presensi/Informasi sebagai preview interaktif; klik memberi notice login tanpa membuka data privat. Link Cepat publik tetap tersedia.",
+        "Custom domain v6.5.1 tetap aktif: https://klasku.my.id sebagai canonical origin. Backend/schema tidak berubah."
+      ]
+    },
+    {
+      "version": "6.5.1",
+      "build": "20260926.251",
+      "date": "2026-09-26",
+      "title": "Custom Domain & Canonical URL Hardening",
+      "description": "Patch domain untuk menjadikan https://klasku.my.id sebagai origin utama tanpa mengubah fitur akademik atau schema.",
+      "changes": [
+        "PRIMARY_ORIGIN dipusatkan di config.js dan share link kelas/presensi selalu dibentuk menggunakan https://klasku.my.id.",
+        "Manifest/PWA memakai id, start_url, dan scope root; service worker diregistrasikan pada scope / dan cache dinaikkan ke v6.5.1.",
+        "Clean-path routing ditambahkan untuk /login, /dashboard, /kelas, /jadwal, /tugas, /materi, /pengumuman, /absensi, /pesan, /profil, /pengaturan, /notifikasi, dan admin; 404 recovery menjaga direct URL/refresh GitHub Pages tetap masuk aplikasi.",
+        "Browser Back/Forward sekarang mengikuti history route KelasKu.",
+        "CNAME, canonical/OG metadata, robots.txt, sitemap.xml, dan redirect fallback dari URL GitHub Pages lama ditambahkan.",
+        "Tidak ada perubahan database/schema dan Apps Script source tetap sama; Script Property FRONTEND_ORIGIN perlu diarahkan ke https://klasku.my.id."
+      ]
+    },
+    {
       "version": "6.5.0",
       "build": "20260925.250",
       "date": "2026-09-25",

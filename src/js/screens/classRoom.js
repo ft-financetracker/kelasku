@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast, sameData } from '../core/utils.js';
+import { esc, svg, toast, sameData, primaryUrl } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
@@ -11,8 +11,15 @@ let activeTab = 'overview';
 let timelineCategory = 'ALL';
 let currentClassData = null;
 let analyticsPage = 1;
+let analyticsMemberPage = 1;
 let analyticsFilter = 'ALL';
+let classAttendancePage = 1;
+let attendanceModalPage = 1;
+let attendanceModalState = null;
 const ANALYTICS_PAGE_SIZE = 15;
+const ANALYTICS_MEMBER_PAGE_SIZE = 15;
+const CLASS_ATTENDANCE_PAGE_SIZE = 10;
+const ATTENDANCE_MEMBER_PAGE_SIZE = 20;
 
 export function renderClassRoom() {
   const classId = state.selectedClassId || sessionStorage.getItem('kelasku_selected_class') || '';
@@ -69,8 +76,10 @@ function drawClass(data, preserveTab = true) {
         <div class="class-primary-meta"><span>${esc(c.institution || 'KelasKu')}</span>${c.study_program?`<span>${esc(c.study_program)}</span>`:''}${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}${c.semester?`<span>${esc(c.semester)}</span>`:''}</div>
         <p class="class-hero-description">${esc(c.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
         <div class="class-identity-divider"></div>
-        <div class="class-secondary-meta"><span>Class</span><i>•</i><span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
-        <div class="class-badge-line class-badge-bottom"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
+        <div class="class-hero-bottomline">
+          <div class="class-secondary-meta"><span>Class</span><i>•</i><span>${esc(c.visibility || 'DISCOVERABLE')}</span></div>
+          <div class="class-badge-line class-badge-bottom"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
+        </div>
       </div>
       <aside class="class-hero-code-rail" aria-label="Kode kelas">
         <div class="class-code-rail-item"><span>Class Code</span><div><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div></div>
@@ -272,7 +281,18 @@ function materialsRoom(items,p) {
 }
 
 function attendanceRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Absensi</div><p class="panel-copy">Sesi manual atau otomatis dari jadwal, dengan status yang konsisten.</p></div>${p.can_manage_attendance?`<button id="create-attendance" class="btn btn-primary">${svg('i-plus')} Buat Sesi</button>`:''}</div><div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row"><button type="button" class="academic-compact-main" data-attendance-id="${esc(x.attendance_id)}"><span class="academic-type-icon attendance-icon"><span class="material-symbols-rounded">how_to_reg</span></span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(shortDateTime(x.start_at))}</span><span class="attendance-window-chip window-${String(x.window_status||'').toLowerCase()}">${esc(windowLabel(x.window_status))}</span></span><strong>${esc(x.title)}</strong><small>Status kamu: ${esc(x.my_status||'UNMARKED')}</small></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${x.public_token?`<div class="academic-row-actions compact-actions"><button type="button" class="icon-btn mini" data-copy-attendance="${esc(x.public_token)}" title="Salin link absensi">${svg('i-link')}</button></div>`:''}</article>`).join(''):'<div class="search-empty">Belum ada sesi absensi.</div>'}</div></section>`;
+  const sorted=[...items].sort((a,b)=>dateMs(b.start_at)-dateMs(a.start_at));
+  const totalPages=Math.max(1,Math.ceil(sorted.length/CLASS_ATTENDANCE_PAGE_SIZE));
+  classAttendancePage=Math.min(Math.max(1,classAttendancePage),totalPages);
+  const pageItems=sorted.slice((classAttendancePage-1)*CLASS_ATTENDANCE_PAGE_SIZE,classAttendancePage*CLASS_ATTENDANCE_PAGE_SIZE);
+  const rows=pageItems.length?pageItems.map(x=>`<article class="academic-compact-row"><button type="button" class="academic-compact-main" data-attendance-id="${esc(x.attendance_id)}"><span class="academic-type-icon attendance-icon"><span class="material-symbols-rounded">how_to_reg</span></span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(shortDateTime(x.start_at))}</span><span class="attendance-window-chip window-${String(x.window_status||'').toLowerCase()}">${esc(windowLabel(x.window_status))}</span></span><strong>${esc(x.title)}</strong><small>Status kamu: ${esc(x.my_status||'UNMARKED')}</small></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${x.public_token?`<div class="academic-row-actions compact-actions"><button type="button" class="icon-btn mini" data-copy-attendance="${esc(x.public_token)}" title="Salin link absensi">${svg('i-link')}</button></div>`:''}</article>`).join(''):'<div class="search-empty">Belum ada sesi absensi.</div>';
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Absensi</div><p class="panel-copy">Sesi manual atau otomatis dari jadwal. Maksimal ${CLASS_ATTENDANCE_PAGE_SIZE} sesi per halaman agar tetap ringan.</p></div>${p.can_manage_attendance?`<button id="create-attendance" class="btn btn-primary">${svg('i-plus')} Buat Sesi</button>`:''}</div><div class="academic-compact-list">${rows}</div>${classAttendancePaginationHtml(classAttendancePage,totalPages,sorted.length)}</section>`;
+}
+function classAttendancePaginationHtml(page,totalPages,total){
+  if(!total)return '';
+  if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} sesi</span></div>`;
+  const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-class-attendance-page="${i}" class="${i===page?'active':''}">${i}</button>`);
+  return `<div class="table-pagination"><span>${total} sesi • Halaman ${page}/${totalPages}</span><div><button type="button" data-class-attendance-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-class-attendance-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;
 }
 
 function bindAcademicTab(tab,data) {
@@ -286,6 +306,7 @@ function bindAcademicTab(tab,data) {
   document.querySelectorAll('[data-archive-type]').forEach(btn=>btn.onclick=()=>archiveItem(btn.dataset.archiveType,btn.dataset.archiveId,btn));
   document.querySelectorAll('[data-open-global-task]').forEach(btn=>btn.onclick=()=>openTaskModal(btn.dataset.openGlobalTask,data.tasks||[],{onSuccess:async()=>{delete state.classAcademic[state.selectedClassId];await loadClassAcademic(false);}}));
   document.querySelectorAll('[data-attendance-id]').forEach(btn=>btn.onclick=()=>openAttendance(btn.dataset.attendanceId));
+  document.querySelectorAll('[data-class-attendance-page]').forEach(btn=>btn.onclick=()=>{classAttendancePage=Number(btn.dataset.classAttendancePage)||1;drawAcademicTab('attendance',data);});
   document.querySelectorAll('[data-copy-attendance]').forEach(btn=>btn.onclick=()=>copyAttendanceLink(btn.dataset.copyAttendance));
   document.querySelectorAll('[data-announcement-detail]').forEach(btn=>btn.onclick=()=>openAnnouncementDetail(btn.dataset.announcementDetail,data));
   document.querySelectorAll('[data-edit-announcement]').forEach(btn=>btn.onclick=()=>openEditAnnouncement(btn.dataset.editAnnouncement,data));
@@ -398,18 +419,39 @@ function scheduleStateBadge(x){const st=String(x?.schedule_state||'NORMAL').toUp
 
 async function openAttendance(attendanceId){
   showModal(`<div class="modal-head"><div><div class="eyebrow">Absensi</div><h2>Memuat sesi…</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="search-loading"><span class="status-dot"></span>Memuat data anggota…</div>`);
-  try{const data=await api('getAttendanceSessionDetail',{attendance_id:attendanceId});drawAttendanceModal(data);}catch(err){showModal(`<div class="modal-head"><h2>Absensi</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert danger">${esc(err.message)}</div>`);}
+  try{const data=await api('getAttendanceSessionDetail',{attendance_id:attendanceId});attendanceModalState={data,draft:{}};attendanceModalPage=1;(data.records||[]).forEach(r=>attendanceModalState.draft[String(r.user_id)]={attendance_status:r.attendance_status||'UNMARKED',note:r.note||''});drawAttendanceModal(data);}catch(err){showModal(`<div class="modal-head"><h2>Absensi</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert danger">${esc(err.message)}</div>`);}
 }
 function drawAttendanceModal(data){
   const s=data.session||{}; const link=s.public_token?attendanceLink(s.public_token):'';
   const linkBlock=link?`<div class="attendance-link-box"><div><small>Link check-in</small><strong>${esc(link)}</strong></div><button type="button" id="modal-copy-attendance" class="btn btn-secondary small-btn">${svg('i-copy')} Salin</button></div>`:'';
-  const body=data.can_manage?`<form id="attendance-record-form"><div class="attendance-record-list">${(data.records||[]).map(attendanceRecordRow).join('')}</div><div id="attendance-save-status" class="request-status"></div><button id="attendance-save-btn" class="btn btn-primary btn-block" type="submit">Simpan Absensi</button></form>`:`<div class="attendance-own-card"><span class="academic-type-icon">${svg('i-check')}</span><div><span>Status Kehadiran</span><strong>${esc(data.records?.[0]?.attendance_status||'UNMARKED')}</strong><small>${esc(data.records?.[0]?.note||'Belum ada catatan.')}</small></div></div>`;
+  const records=data.records||[];
+  const totalPages=Math.max(1,Math.ceil(records.length/ATTENDANCE_MEMBER_PAGE_SIZE));attendanceModalPage=Math.min(Math.max(1,attendanceModalPage),totalPages);
+  const pageRecords=records.slice((attendanceModalPage-1)*ATTENDANCE_MEMBER_PAGE_SIZE,attendanceModalPage*ATTENDANCE_MEMBER_PAGE_SIZE);
+  const body=data.can_manage?`<form id="attendance-record-form"><div class="attendance-record-list">${pageRecords.map(attendanceRecordRow).join('')}</div>${attendanceMemberPaginationHtml(attendanceModalPage,totalPages,records.length)}<div id="attendance-save-status" class="request-status"></div><button id="attendance-save-btn" class="btn btn-primary btn-block" type="submit">Simpan Absensi</button></form>`:`<div class="attendance-own-card"><span class="academic-type-icon attendance-icon"><span class="material-symbols-rounded">how_to_reg</span></span><div><span>Status Kehadiran</span><strong>${esc(data.records?.[0]?.attendance_status||'UNMARKED')}</strong><small>${esc(data.records?.[0]?.note||'Belum ada catatan.')}</small></div></div>`;
   showModal(`<div class="modal-head"><div><div class="eyebrow">Absensi • ${esc(shortDateTime(s.start_at))}</div><h2>${esc(s.title||'Sesi Absensi')}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${linkBlock}${body}`);
-  if(data.can_manage) document.getElementById('attendance-record-form').onsubmit=e=>saveAttendance(e,s.attendance_id);
+  bindAttendanceModalPage(data);
   document.getElementById('modal-copy-attendance')?.addEventListener('click',()=>copyText(link));
 }
-function attendanceRecordRow(r){return `<div class="attendance-record-row" data-att-user="${esc(r.user_id)}"><div class="member-avatar">${avatarMarkup(r)}</div><div class="member-info"><strong>${esc(r.full_name||r.username)}</strong><span>@${esc(r.username||'-')} · ${esc(r.kelasku_id||'-')}</span></div><select class="control compact-control" data-att-status><option value="UNMARKED" ${r.attendance_status==='UNMARKED'?'selected':''}>Belum</option><option value="PRESENT" ${r.attendance_status==='PRESENT'?'selected':''}>Hadir</option><option value="SICK" ${r.attendance_status==='SICK'?'selected':''}>Sakit</option><option value="PERMIT" ${r.attendance_status==='PERMIT'?'selected':''}>Izin</option><option value="ABSENT" ${r.attendance_status==='ABSENT'?'selected':''}>Alpa</option></select><input class="control compact-control" data-att-note placeholder="Catatan" value="${esc(r.note||'')}"></div>`;}
-async function saveAttendance(event,attendanceId){event.preventDefault();const btn=document.getElementById('attendance-save-btn'),status=document.getElementById('attendance-save-status'),old=btn.innerHTML;if(btn.disabled)return;const records=[...document.querySelectorAll('[data-att-user]')].map(row=>({user_id:row.dataset.attUser,attendance_status:row.querySelector('[data-att-status]').value,note:row.querySelector('[data-att-note]').value}));btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent=`Menyimpan ${records.length} anggota dalam satu request… Jangan klik dua kali.`;try{await api('saveAttendanceRecords',{attendance_id:attendanceId,records},{onSlow:()=>status.textContent='Masih menyimpan. Tombol tetap dikunci.'});toast('Absensi tersimpan.');closeModal();await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
+function attendanceMemberPaginationHtml(page,totalPages,total){
+  if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} anggota</span></div>`;
+  const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-attendance-member-page="${i}" class="${i===page?'active':''}">${i}</button>`);
+  return `<div class="table-pagination attendance-member-pagination"><span>${total} anggota • Halaman ${page}/${totalPages}</span><div><button type="button" data-attendance-member-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-attendance-member-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;
+}
+function bindAttendanceModalPage(data){
+  if(data.can_manage){
+    document.querySelectorAll('[data-att-user]').forEach(row=>{
+      const id=String(row.dataset.attUser||'');const draft=attendanceModalState?.draft?.[id];
+      const status=row.querySelector('[data-att-status]'),note=row.querySelector('[data-att-note]');
+      if(draft&&status)status.value=draft.attendance_status||'UNMARKED';if(draft&&note)note.value=draft.note||'';
+      status?.addEventListener('change',()=>{if(attendanceModalState?.draft?.[id])attendanceModalState.draft[id].attendance_status=status.value;});
+      note?.addEventListener('input',()=>{if(attendanceModalState?.draft?.[id])attendanceModalState.draft[id].note=note.value;});
+    });
+    document.querySelectorAll('[data-attendance-member-page]').forEach(btn=>btn.onclick=()=>{attendanceModalPage=Number(btn.dataset.attendanceMemberPage)||1;drawAttendanceModal(data);});
+    document.getElementById('attendance-record-form').onsubmit=e=>saveAttendance(e,data.session?.attendance_id);
+  }
+}
+function attendanceRecordRow(r){return `<div class="attendance-record-row" data-att-user="${esc(r.user_id)}"><div class="member-avatar">${avatarMarkup(r)}</div><div class="member-info"><strong>${esc(r.full_name||r.username)}</strong><span>@${esc(r.username||'-')} · ${esc(r.kelasku_id||'-')}</span></div><select class="control compact-control" data-att-status><option value="UNMARKED">Belum</option><option value="PRESENT">Hadir</option><option value="SICK">Sakit</option><option value="PERMIT">Izin</option><option value="ABSENT">Alpa</option></select><input class="control compact-control" data-att-note placeholder="Catatan"></div>`;}
+async function saveAttendance(event,attendanceId){event.preventDefault();const btn=document.getElementById('attendance-save-btn'),status=document.getElementById('attendance-save-status'),old=btn.innerHTML;if(btn.disabled)return;const original=attendanceModalState?.data?.records||[];const draft=attendanceModalState?.draft||{};const records=original.map(row=>({user_id:row.user_id,attendance_status:draft[String(row.user_id)]?.attendance_status||row.attendance_status||'UNMARKED',note:draft[String(row.user_id)]?.note||''}));btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent=`Menyimpan ${records.length} anggota dalam satu request… Jangan klik dua kali.`;try{await api('saveAttendanceRecords',{attendance_id:attendanceId,records},{onSlow:()=>status.textContent='Masih menyimpan. Tombol tetap dikunci.'});toast('Absensi tersimpan.');attendanceModalState=null;closeModal();await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
 
 
 async function loadClassAnalytics(background=false){
@@ -422,40 +464,59 @@ function drawClassAnalytics(data){
   const filtered=analyticsFilter==='ALL'?allRecords:allRecords.filter(r=>String(r.attendance_id)===String(analyticsFilter));
   const totalPages=Math.max(1,Math.ceil(filtered.length/ANALYTICS_PAGE_SIZE));analyticsPage=Math.min(Math.max(1,analyticsPage),totalPages);
   const pageRows=filtered.slice((analyticsPage-1)*ANALYTICS_PAGE_SIZE,analyticsPage*ANALYTICS_PAGE_SIZE);
+  const memberTotalPages=Math.max(1,Math.ceil(members.length/ANALYTICS_MEMBER_PAGE_SIZE));analyticsMemberPage=Math.min(Math.max(1,analyticsMemberPage),memberTotalPages);
+  const memberPageRows=members.slice((analyticsMemberPage-1)*ANALYTICS_MEMBER_PAGE_SIZE,analyticsMemberPage*ANALYTICS_MEMBER_PAGE_SIZE);
   const rankingHtml=ranking.length?`<div class="class-task-ranking-grid">${ranking.slice(0,10).map(r=>`<article class="class-rank-row ${String(r.user_id)===String(state.user?.user_id)?'is-me':''}"><span class="class-rank-number">#${Number(r.rank||0)}</span><span class="member-avatar">${avatarMarkup(r)}</span><div class="class-rank-person"><strong>${esc(r.full_name||r.username||'-')}</strong><small>@${esc(r.username||'-')} · ${Number(r.reviewed_tasks||0)} tugas dinilai</small></div><div class="class-rank-score"><strong>${Number(r.average_score||0).toFixed(1)}</strong><span>/ 100</span></div></article>`).join('')}</div>`:`<div class="ranking-empty"><span class="material-symbols-rounded">leaderboard</span><div><strong>Belum ada peringkat tugas</strong><small>Peringkat muncul setelah tugas dinilai.</small></div></div>`;
   const activityRows=pageRows.length?pageRows.map((r,i)=>`<tr><td>${(analyticsPage-1)*ANALYTICS_PAGE_SIZE+i+1}</td>${data.can_manage?`<td><strong>${esc(r.full_name||r.username||'-')}</strong><small>@${esc(r.username||'-')}</small></td>`:''}<td><strong>${esc(r.activity_name||r.session_title||'Absensi')}</strong><small>${esc(shortDateTime(r.start_at))}</small></td><td><span class="attendance-status-pill att-${String(r.attendance_status||'unmarked').toLowerCase()}">${esc(attendanceStatusLabel(r.attendance_status))}</span></td><td>${esc(r.note||'-')}</td></tr>`).join(''):`<tr><td colspan="${data.can_manage?5:4}" class="table-empty">Belum ada record pada filter ini.</td></tr>`;
-  slot.innerHTML=`<section class="panel class-analytics-panel"><div class="panel-head"><div><div class="panel-title">Analitik Akademik</div><p class="panel-copy">Rekap per kegiatan/mata kuliah, dengan export sesuai hak akses.</p></div><button type="button" id="export-attendance-excel" class="btn btn-secondary">${svg('i-download')} Export Excel</button></div>
+  const memberRows=memberPageRows.map((m,i)=>`<tr><td>${(analyticsMemberPage-1)*ANALYTICS_MEMBER_PAGE_SIZE+i+1}</td><td><strong>${esc(m.full_name||m.username||'-')}</strong><small>@${esc(m.username||'-')}</small></td><td>${Number(m.PRESENT||0)}</td><td>${Number(m.SICK||0)}</td><td>${Number(m.PERMIT||0)}</td><td>${Number(m.ABSENT||0)}</td><td>${Number(m.UNMARKED||0)}</td><td>${Number(m.total||0)}</td><td><strong>${Number(m.attendance_rate||0)}%</strong></td></tr>`).join('');
+  const activitySummary=buildActivitySummary(allRecords);
+  slot.innerHTML=`<section class="panel class-analytics-panel"><div class="panel-head"><div><div class="panel-title">Analitik Akademik</div><p class="panel-copy">Ringkasan kelas di atas, detail presensi per kegiatan dibatasi per halaman agar tetap sat-set.</p></div><button type="button" id="export-attendance-csv" class="btn btn-secondary">${svg('i-download')} Export CSV</button></div>
     <div class="analytics-kpi-grid"><div><span>Sesi</span><strong>${Number(data.session_count||0)}</strong></div><div><span>Kehadiran Saya</span><strong>${Number(own.attendance_rate||0)}%</strong></div><div><span>Hadir</span><strong>${Number(own.PRESENT||0)}</strong></div><div><span>Alpa</span><strong>${Number(own.ABSENT||0)}</strong></div></div>
-    <div class="analytics-own-card"><div class="academic-type-icon"><span class="material-symbols-rounded">query_stats</span></div><div><span>Ringkasan Saya</span><strong>${Number(own.PRESENT||0)} hadir · ${Number(own.SICK||0)} sakit · ${Number(own.PERMIT||0)} izin · ${Number(own.ABSENT||0)} alpa</strong><small>Belum ditandai: ${Number(own.UNMARKED||0)}</small></div></div>
-    <div class="analytics-activity-toolbar"><div><strong>Rekap per Kegiatan / Mata Kuliah</strong><small>${data.can_manage?'Owner/Koordinator/Ketua melihat seluruh anggota.':'Akun member hanya melihat dan mengekspor datanya sendiri.'}</small></div><select id="analytics-activity-filter" class="control compact-control"><option value="ALL">Semua kegiatan</option>${activities.map(a=>`<option value="${esc(a.attendance_id)}" ${analyticsFilter===String(a.attendance_id)?'selected':''}>${esc(a.activity_name||a.session_title||'Absensi')} • ${esc(shortDate(a.start_at))}</option>`).join('')}</select></div>
-    <div class="analytics-table-wrap"><table class="analytics-table analytics-activity-table"><thead><tr><th>No.</th>${data.can_manage?'<th>Anggota</th>':''}<th>Kegiatan / Mata Kuliah</th><th>Status</th><th>Catatan</th></tr></thead><tbody>${activityRows}</tbody></table></div>${paginationHtml(analyticsPage,totalPages,filtered.length)}
+    <div class="analytics-own-card"><div class="academic-type-icon attendance-icon"><span class="material-symbols-rounded">how_to_reg</span></div><div><span>Ringkasan Saya</span><strong>${Number(own.PRESENT||0)} hadir · ${Number(own.SICK||0)} sakit · ${Number(own.PERMIT||0)} izin · ${Number(own.ABSENT||0)} alpa</strong><small>Belum ditandai: ${Number(own.UNMARKED||0)} · Total ${Number(own.total||0)} record</small></div></div>
     <div class="section-title-row ranking-title-row"><div><h2>Peringkat Tugas</h2><p>Top 10 berdasarkan rata-rata nilai tugas yang sudah <b>direview</b>. Absensi tidak dicampur ke skor.</p></div><span class="soft-chip">${ranking.length} peserta bernilai</span></div>${rankingHtml}
-    ${data.can_manage?`<div class="section-title-row"><div><h2>Ringkasan Anggota</h2><p>${members.length} anggota · Hadir ${Number(ag.PRESENT||0)} / Alpa ${Number(ag.ABSENT||0)}</p></div></div>`:''}
+    ${data.can_manage?`<div class="section-title-row"><div><h2>Ringkasan Anggota</h2><p>${members.length} anggota · Hadir ${Number(ag.PRESENT||0)} · Sakit ${Number(ag.SICK||0)} · Izin ${Number(ag.PERMIT||0)} · Alpa ${Number(ag.ABSENT||0)}</p></div></div><div class="analytics-table-wrap"><table class="analytics-table analytics-member-table"><thead><tr><th>No.</th><th>Anggota</th><th>Hadir</th><th>Sakit</th><th>Izin</th><th>Alpa</th><th>Belum</th><th>Total</th><th>% Presensi</th></tr></thead><tbody>${memberRows||'<tr><td colspan="9" class="table-empty">Belum ada anggota.</td></tr>'}</tbody></table></div>${memberPaginationHtml(analyticsMemberPage,memberTotalPages,members.length)}`:''}
+    <div class="analytics-activity-section"><div class="section-title-row"><div><h2>Rekap Kegiatan / Mata Kuliah</h2><p>${activitySummary.length} kegiatan terdeteksi. Bagian ini ditempatkan di bawah karena akan bertambah seiring semester berjalan.</p></div></div>${activitySummaryHtml(activitySummary)}
+    <div class="analytics-activity-toolbar"><div><strong>Detail Record Presensi</strong><small>${data.can_manage?'Owner/Koordinator/Ketua melihat seluruh anggota.':'Akun member hanya melihat dan mengekspor datanya sendiri.'}</small></div><select id="analytics-activity-filter" class="control compact-control"><option value="ALL">Semua kegiatan</option>${activities.map(a=>`<option value="${esc(a.attendance_id)}" ${analyticsFilter===String(a.attendance_id)?'selected':''}>${esc(a.activity_name||a.session_title||'Absensi')} • ${esc(shortDate(a.start_at))}</option>`).join('')}</select></div>
+    <div class="analytics-table-wrap"><table class="analytics-table analytics-activity-table"><thead><tr><th>No.</th>${data.can_manage?'<th>Anggota</th>':''}<th>Kegiatan / Mata Kuliah</th><th>Status</th><th>Catatan</th></tr></thead><tbody>${activityRows}</tbody></table></div>${paginationHtml(analyticsPage,totalPages,filtered.length)}</div>
   </section>`;
   document.getElementById('analytics-activity-filter')?.addEventListener('change',e=>{analyticsFilter=e.target.value;analyticsPage=1;drawClassAnalytics(data);});
   document.querySelectorAll('[data-analytics-page]').forEach(btn=>btn.onclick=()=>{analyticsPage=Number(btn.dataset.analyticsPage)||1;drawClassAnalytics(data);});
-  document.getElementById('export-attendance-excel')?.addEventListener('click',()=>exportAttendanceWorkbook(data));
+  document.querySelectorAll('[data-analytics-member-page]').forEach(btn=>btn.onclick=()=>{analyticsMemberPage=Number(btn.dataset.analyticsMemberPage)||1;drawClassAnalytics(data);});
+  document.getElementById('export-attendance-csv')?.addEventListener('click',()=>exportAttendanceCsv(data));
 }
 function paginationHtml(page,totalPages,total){if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} record</span></div>`;const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-analytics-page="${i}" class="${i===page?'active':''}">${i}</button>`);return `<div class="table-pagination"><span>${total} record • Halaman ${page}/${totalPages}</span><div><button type="button" data-analytics-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-analytics-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
-function exportAttendanceWorkbook(data){
-  const records=data.activity_records||[],activities=data.activities||[];
-  const sheets=[];
-  const allRows=[[data.can_manage?'Nama':'Nama Saya','Username','KelasKu ID','Kegiatan / Mata Kuliah','Tanggal','Status','Catatan']];
-  records.forEach(r=>allRows.push([r.full_name||state.user?.full_name||'',r.username||state.user?.username||'',r.kelasku_id||state.user?.kelasku_id||'',r.activity_name||r.session_title||'',shortDateTime(r.start_at),attendanceStatusLabel(r.attendance_status),r.note||'']));
-  sheets.push({name:data.can_manage?'ALL':'SAYA',rows:allRows});
-  const own=data.own||{},ag=data.can_manage?(data.aggregate||{}):own;
-  const analysisRows=[['METRIK','NILAI'],['Jumlah Sesi',data.session_count||0],['Hadir',ag.PRESENT||0],['Sakit',ag.SICK||0],['Izin',ag.PERMIT||0],['Alpa',ag.ABSENT||0],['Belum Ditandai',ag.UNMARKED||0],['Persentase Hadir Saya',(own.attendance_rate||0)+'%'],['Scope Export',data.can_manage?'Seluruh anggota':'Data saya saja'],[],['KEGIATAN / MATA KULIAH','RECORD','HADIR','SAKIT','IZIN','ALPA','BELUM']];
+function memberPaginationHtml(page,totalPages,total){if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} anggota</span></div>`;const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-analytics-member-page="${i}" class="${i===page?'active':''}">${i}</button>`);return `<div class="table-pagination"><span>${total} anggota • Halaman ${page}/${totalPages}</span><div><button type="button" data-analytics-member-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-analytics-member-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
+function buildActivitySummary(records){
   const groups={};
-  records.forEach(r=>{const key=String(r.activity_name||r.session_title||'Kegiatan').trim()||'Kegiatan';(groups[key]||(groups[key]=[])).push(r);});
-  Object.entries(groups).forEach(([name,items])=>{const counts={PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0};items.forEach(r=>counts[String(r.attendance_status||'UNMARKED').toUpperCase()]=(counts[String(r.attendance_status||'UNMARKED').toUpperCase()]||0)+1);analysisRows.push([name,items.length,counts.PRESENT,counts.SICK,counts.PERMIT,counts.ABSENT,counts.UNMARKED]);});
-  sheets.push({name:'ANALISIS',rows:analysisRows});
-  Object.entries(groups).forEach(([name,items],index)=>{const rows=[['Nama','Username','Kegiatan / Mata Kuliah','Tanggal','Status','Catatan']];items.forEach(r=>rows.push([r.full_name||'',r.username||'',r.activity_name||'',shortDateTime(r.start_at),attendanceStatusLabel(r.attendance_status),r.note||'']));sheets.push({name:safeSheetName(`${index+1}-${name}`),rows});});
-  downloadExcelXml(`KelasKu-Analitik-${state.selectedClassId}.xls`,sheets);
+  (records||[]).forEach(r=>{const name=String(r.activity_name||r.session_title||'Kegiatan').trim()||'Kegiatan';const key=name.toLowerCase();if(!groups[key])groups[key]={name,sessionIds:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,total:0};const g=groups[key];g.sessionIds.add(String(r.attendance_id||''));const st=String(r.attendance_status||'UNMARKED').toUpperCase();g[st]=(g[st]||0)+1;g.total+=1;});
+  return Object.values(groups).map(g=>{const denominator=g.PRESENT+g.SICK+g.PERMIT+g.ABSENT;return {...g,sessions:g.sessionIds.size,attendance_rate:denominator?Math.round((g.PRESENT/denominator)*1000)/10:0};}).sort((a,b)=>a.name.localeCompare(b.name));
 }
-function safeSheetName(name){return String(name||'Sheet').replace(/[\\/:*?\[\]]/g,' ').slice(0,31)||'Sheet';}
-function xmlEsc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
-function downloadExcelXml(filename,sheets){const sheetXml=sheets.map(s=>`<Worksheet ss:Name="${xmlEsc(safeSheetName(s.name))}"><Table>${s.rows.map(row=>`<Row>${row.map(v=>`<Cell><Data ss:Type="${typeof v==='number'?'Number':'String'}">${xmlEsc(v)}</Data></Cell>`).join('')}</Row>`).join('')}</Table></Worksheet>`).join('');const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheetXml}</Workbook>`;const blob=new Blob(['\uFEFF'+xml],{type:'application/vnd.ms-excel;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+function activitySummaryHtml(items){
+  if(!items.length)return '<div class="search-empty">Belum ada data kegiatan.</div>';
+  return `<div class="analytics-table-wrap"><table class="analytics-table analytics-summary-table"><thead><tr><th>Kegiatan / Mata Kuliah</th><th>Sesi</th><th>Record</th><th>Hadir</th><th>Sakit</th><th>Izin</th><th>Alpa</th><th>Belum</th><th>% Presensi</th></tr></thead><tbody>${items.map(x=>`<tr><td><strong>${esc(x.name)}</strong></td><td>${x.sessions}</td><td>${x.total}</td><td>${x.PRESENT}</td><td>${x.SICK}</td><td>${x.PERMIT}</td><td>${x.ABSENT}</td><td>${x.UNMARKED}</td><td><strong>${x.attendance_rate}%</strong></td></tr>`).join('')}</tbody></table></div>`;
+}
+function exportAttendanceCsv(data){
+  const records=data.activity_records||[],own=data.own||{},members=data.can_manage?(data.members||[]):[own].filter(Boolean);
+  const rows=[];
+  rows.push(['KELASKU — ANALITIK PRESENSI']);
+  rows.push(['Scope',data.can_manage?'Seluruh anggota':'Data saya saja']);
+  rows.push(['Jumlah Sesi',data.session_count||0]);
+  rows.push([]);
+  rows.push(['RINGKASAN PER ANGGOTA']);
+  rows.push(['Nama','Username','KelasKu ID','Hadir','Sakit','Izin','Alpa','Belum','Total','% Presensi']);
+  members.forEach(m=>rows.push([m.full_name||'',m.username||'',m.kelasku_id||'',m.PRESENT||0,m.SICK||0,m.PERMIT||0,m.ABSENT||0,m.UNMARKED||0,m.total||0,(m.attendance_rate||0)+'%']));
+  rows.push([]);
+  rows.push(['RINGKASAN PER KEGIATAN / MATA KULIAH']);
+  rows.push(['Kegiatan / Mata Kuliah','Jumlah Sesi','Record','Hadir','Sakit','Izin','Alpa','Belum','% Presensi']);
+  buildActivitySummary(records).forEach(g=>rows.push([g.name,g.sessions,g.total,g.PRESENT,g.SICK,g.PERMIT,g.ABSENT,g.UNMARKED,g.attendance_rate+'%']));
+  rows.push([]);
+  rows.push(['DETAIL RECORD']);
+  rows.push(['Nama','Username','KelasKu ID','Kegiatan / Mata Kuliah','Tanggal','Status','Catatan']);
+  records.forEach(r=>rows.push([r.full_name||state.user?.full_name||'',r.username||state.user?.username||'',r.kelasku_id||state.user?.kelasku_id||'',r.activity_name||r.session_title||'',shortDateTime(r.start_at),attendanceStatusLabel(r.attendance_status),r.note||'']));
+  downloadCsv(`KelasKu-Analitik-${state.selectedClassId}.csv`,rows);
+}
 function attendanceStatusLabel(status){return ({PRESENT:'Hadir',SICK:'Sakit',PERMIT:'Izin',ABSENT:'Alpa',UNMARKED:'Belum'})[String(status||'UNMARKED').toUpperCase()]||String(status||'-');}
+
 async function openTaskReview(taskId){
   const cached=state.taskReviewCache[taskId];
   showModal(`<div class="modal-head"><div><div class="eyebrow">PHASE 6 • REVIEW TUGAS</div><h2>${cached?esc(cached.task?.title||'Review Tugas'):'Memuat pengumpulan…'}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div id="task-review-slot">${cached?taskReviewHtml(cached):'<div class="search-loading"><span class="status-dot"></span>Memuat submission anggota…</div>'}</div>`);
@@ -720,7 +781,7 @@ async function removeMember(userId,button){
 }
 function classLinkPlatforms(){return [['WHATSAPP','WhatsApp'],['ZOOM','Zoom'],['GOOGLE_MEET','Google Meet'],['GOOGLE_DRIVE','Google Drive'],['YOUTUBE','YouTube'],['TELEGRAM','Telegram'],['WEBSITE','Website'],['OTHER','Lainnya']];}
 function classLinkRow(item={},index=0){return `<div class="class-link-editor-row" data-class-link-row data-link-id="${esc(item.link_id||'')}"><span class="class-link-drag">${String(index+1).padStart(2,'0')}</span><select class="control link-platform">${classLinkPlatforms().map(([value,label])=>`<option value="${value}" ${String(item.platform||'OTHER')===value?'selected':''}>${label}</option>`).join('')}</select><select class="control link-visibility" title="Akses link"><option value="PUBLIC" ${String(item.visibility||'PUBLIC')==='PUBLIC'?'selected':''}>Publik</option><option value="MEMBER" ${String(item.visibility||'PUBLIC')==='MEMBER'?'selected':''}>Anggota</option></select><input class="control link-label" placeholder="Nama link" maxlength="90" value="${esc(item.label||'')}"><input class="control link-url" type="url" placeholder="https://…" maxlength="1500" value="${esc(item.url||'')}"><input class="control link-description" placeholder="Keterangan singkat (opsional)" maxlength="180" value="${esc(item.description||'')}"><span class="class-link-row-actions"><button type="button" class="icon-btn mini" data-move-class-link="up" title="Naikkan"><span class="material-symbols-rounded">arrow_upward</span></button><button type="button" class="icon-btn mini" data-move-class-link="down" title="Turunkan"><span class="material-symbols-rounded">arrow_downward</span></button><button type="button" class="icon-btn mini danger-btn" data-remove-class-link title="Hapus link">${svg('i-close')}</button></span></div>`;}
-function publicClassLinksUrl(classCode){const url=new URL('links.html',window.location.href);url.hash='';url.search='';url.searchParams.set('c',String(classCode||'').replace(/^KLS-/i,''));return url.toString();}
+function publicClassLinksUrl(classCode){return primaryUrl('/links.html',{c:String(classCode||'').replace(/^KLS-/i,'')}).toString();}
 function renumberClassLinkRows(){document.querySelectorAll('[data-class-link-row]').forEach((row,index)=>{const n=row.querySelector('.class-link-drag');if(n)n.textContent=String(index+1).padStart(2,'0');});}
 function bindClassLinksSettings(data){
   const editor=document.getElementById('class-links-editor'); if(!editor)return;
@@ -748,7 +809,7 @@ async function saveClassSettings(event){event.preventDefault();const form=event.
 async function regenerateJoinCode(){const ok=await confirmDialog({title:'Generate ulang Join Code?',message:'Kode lama langsung tidak dapat dipakai. Pastikan anggota baru menerima kode terbaru.',confirmText:'Generate Ulang',danger:true});if(!ok)return;const btn=document.getElementById('regen-code'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';try{const data=await api('regenerateJoinCode',{class_id:state.selectedClassId});toast('Join Code baru: '+data.join_code);delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
 
 async function copyAttendanceLink(token){if(!token)return toast('Link absensi belum tersedia.');await copyText(attendanceLink(token));}
-function attendanceLink(token){const url=new URL(window.location.href);url.hash='';url.search='';url.searchParams.set('a',String(token||''));return url.toString();}
+function attendanceLink(token){return primaryUrl('/absensi',{a:String(token||'')}).toString();}
 async function copyText(text){try{await navigator.clipboard.writeText(text||'');toast('Tautan/kode disalin.');}catch{toast('Gagal menyalin otomatis.');}}
 
 function academicRoomSkeleton(){return `<div class="academic-card-list">${[1,2,3].map(()=>'<div class="panel skeleton" style="height:104px"></div>').join('')}</div>`;}

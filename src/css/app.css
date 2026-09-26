@@ -1366,3 +1366,32 @@ PHASE 6.2 — CLASS PUBLIC LINKS SETTINGS
 .class-room-page .timeline-event-card p,.class-room-page .timeline-card p{font-size:calc(10.5px + var(--kk-admin-font-bump));line-height:1.55}
 .academic-page-head p,.academic-toolbar,.academic-row-card p,.academic-row-card small,.announcement-card p,.announcement-card small{font-size:calc(11px + var(--kk-admin-font-bump))}
 .academic-row-card h3,.announcement-card h3{font-size:calc(13px + var(--kk-admin-font-bump))}
+
+
+/* ============================================================
+ * KelasKu v6.5.2 — Analytics/Attendance pagination + compact mobile hero
+ * ============================================================ */
+.class-hero-bottomline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.class-hero-bottomline .class-badge-bottom{margin-top:0}
+.analytics-activity-section{margin-top:20px;padding-top:16px;border-top:1px solid rgba(95,162,241,.12)}
+.analytics-summary-table th:first-child,.analytics-summary-table td:first-child{min-width:190px;text-align:left}
+.analytics-member-table th:nth-child(2),.analytics-member-table td:nth-child(2){min-width:170px;text-align:left}
+.analytics-member-table td small{display:block;color:var(--muted);font-size:calc(9px + var(--kk-admin-font-bump));margin-top:2px}
+.attendance-member-pagination{margin:10px 0 12px}
+@media(max-width:680px){
+  .class-hero-v51{padding:12px!important;gap:9px!important}
+  .class-hero-v51 .class-hero-icon{width:40px!important;height:40px!important;min-width:40px!important;border-radius:12px!important}
+  .class-hero-v51 .class-hero-main h2{font-size:16px!important;line-height:1.22!important}
+  .class-hero-v51 .class-primary-meta{display:block!important;margin-top:3px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:10px!important}
+  .class-hero-v51 .class-primary-meta span{display:inline!important}.class-hero-v51 .class-primary-meta span+span::before{margin:0 5px!important}
+  .class-hero-v51 .class-hero-description{display:none!important}
+  .class-hero-v51 .class-identity-divider{display:none!important}
+  .class-hero-bottomline{margin-top:5px!important;gap:6px!important;flex-wrap:nowrap!important;overflow:hidden}
+  .class-hero-bottomline .class-secondary-meta{font-size:9px!important;white-space:nowrap}
+  .class-hero-bottomline .class-badge-line{display:flex;gap:5px;min-width:0;overflow:hidden}
+  .class-hero-bottomline .role-pill{font-size:8.5px!important;padding:4px 7px!important;white-space:nowrap}
+  .class-hero-code-rail{margin-top:2px!important}
+  .analytics-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .analytics-activity-toolbar{align-items:stretch;flex-direction:column}
+  .analytics-activity-toolbar select{width:100%}
+}

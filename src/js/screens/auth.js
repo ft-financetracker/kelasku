@@ -97,7 +97,13 @@ async function submitAuth(event) {
     status.className = 'request-status ok';
     status.textContent = data.recovered ? 'Akun ditemukan. Session dipulihkan.' : 'Berhasil.';
     if (!data.user.profile_complete) go('profile');
-    else go(shouldShowAppSetup() ? 'setup' : (new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard'));
+    else if (shouldShowAppSetup()) go('setup');
+    else if (new URL(window.location.href).searchParams.get('attendance')) go('attendance-link');
+    else {
+      const pendingRoute = sessionStorage.getItem('kelasku_post_auth_route') || '';
+      if (pendingRoute) sessionStorage.removeItem('kelasku_post_auth_route');
+      go(pendingRoute || 'dashboard', { replace: true });
+    }
   } catch (err) {
     status.className = 'request-status error';
     status.textContent = esc(err.message);

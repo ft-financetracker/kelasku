@@ -4,14 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0B132B">
+  <script>
+  (function(){
+    var legacyHost='ft-financetracker.github.io';
+    var primary='https://klasku.my.id';
+    if(location.hostname===legacyHost && (location.pathname==='/kelasku' || location.pathname.indexOf('/kelasku/')===0)){
+      var path=location.pathname.replace(/^\/kelasku(?=\/|$)/,'') || '/';
+      if(path==='/index.html') path='/';
+      location.replace(primary + path + location.search + location.hash);
+    }
+  })();
+  </script>
+  <base href="/" />
   <meta name="description" content="Quick Access Hub kelas — KelasKu">
-  <link rel="manifest" href="manifest.json?v=6500">
-  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=6500">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="KelasKu">
+  <meta property="og:title" content="Link Kelas — KelasKu">
+  <meta property="og:description" content="Satu link untuk kebutuhan kelas di KelasKu.">
+  <meta property="og:url" content="https://klasku.my.id/links.html">
+  <meta property="og:image" content="https://klasku.my.id/assets/brand/app-icon.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://klasku.my.id/links.html">
+  <link rel="manifest" href="manifest.json?v=6510">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg?v=6510">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300,0,0" rel="stylesheet">
-  <link rel="stylesheet" href="src/css/public-links.css?v=6500">
+  <link rel="stylesheet" href="src/css/public-links.css?v=6510">
   <title>Link Kelas — KelasKu</title>
 </head>
 <body>
@@ -19,7 +39,7 @@
     <section class="public-links-shell">
       <header class="public-brandbar">
         <a class="public-brand" href="./" aria-label="KelasKu">
-          <img src="assets/brand/logo-mark.svg?v=6500" alt="">
+          <img src="assets/brand/logo-mark.svg?v=6510" alt="">
           <span><strong>Kelas<span>Ku</span></strong><small>Belajar Bersama Lebih Mudah</small></span>
         </a>
         <span class="public-badge">LINK KELAS</span>
@@ -31,7 +51,7 @@
     </section>
   </main>
   <div id="toast-root" class="public-toast-root"></div>
-  <script src="config.js?v=6500"></script>
-  <script type="module" src="src/js/screens/publicLinks.js?v=6500"></script>
+  <script src="config.js?v=6510"></script>
+  <script type="module" src="src/js/screens/publicLinks.js?v=6510"></script>
 </body>
 </html>

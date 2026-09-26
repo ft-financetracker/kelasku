@@ -1,7 +1,7 @@
 {
-  "version": "6.5.0",
-  "build": "20260925.250",
+  "version": "6.5.2",
+  "build": "20260926.252",
   "schema": 14,
-  "release_date": "2026-09-25",
-  "release_note": "Academic Live Readiness: compact detail-first Room Class, recurring/editable schedules, multi-image materials, attendance analytics export, owner-only role settings, Timeline restore, global text scale, and clickable landing information."
+  "release_date": "2026-09-26",
+  "release_note": "Live readiness refinement: analitik/absensi dipaginasi, rekap kegiatan dan anggota diperjelas, export kembali CSV ringkas, hero Room Class dipadatkan khusus mobile, serta Landing Page guest menampilkan struktur room tanpa membuka data privat. Custom domain klasku.my.id tetap canonical."
 }

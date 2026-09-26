@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Membuka KelasKu…</title>
+<style>html,body{margin:0;min-height:100%;background:#06142F;color:#fff;font-family:system-ui,sans-serif}body{min-height:100dvh;display:grid;place-items:center}.box{text-align:center;padding:24px}.spin{width:30px;height:30px;margin:0 auto 14px;border:3px solid #ffffff25;border-top-color:#35dbc8;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}</style>
+</head>
+<body><div class="box"><div class="spin"></div><strong>Membuka KelasKu…</strong></div>
+<script>
+(function(){
+  var primary='https://klasku.my.id';
+  var legacy='ft-financetracker.github.io';
+  var path=location.pathname.replace(/\/{2,}/g,'/');
+  if(location.hostname===legacy && (path==='/kelasku' || path.indexOf('/kelasku/')===0)){
+    path=path.replace(/^\/kelasku(?=\/|$)/,'')||'/';
+    location.replace(primary+path+location.search+location.hash);
+    return;
+  }
+  var routes={"/login":"auth","/lengkapi-profil":"profile","/setup":"setup","/dashboard":"dashboard","/profil":"account","/pengaturan":"settings","/tentang":"app-info","/kelas":"classes","/ruang-kelas":"class","/jadwal":"schedule","/tugas":"tasks","/materi":"materials","/pengumuman":"announcements","/absensi":"attendance","/pesan":"messages","/notifikasi":"notifications","/admin":"admin","/admin/pengguna":"admin-users","/admin/kelas":"admin-classes","/admin/sistem":"admin-system","/admin/audit":"admin-audit"};
+  var normalized=path.length>1?path.replace(/\/+$/,''):path;
+  var route=routes[normalized.toLowerCase()];
+  if(route){
+    var target=new URL('/',primary);
+    var incoming=new URL(location.href);
+    incoming.searchParams.forEach(function(v,k){target.searchParams.append(k,v)});
+    target.searchParams.set('_route',route);
+    location.replace(target.href+incoming.hash);
+    return;
+  }
+  // Satu segmen yang tidak dikenal dicoba sebagai kode landing publik.
+  // Contoh /3NCVVN -> /links.html?c=3NCVVN. Alias custom seperti /esy3
+  // hanya valid bila backend memang memiliki kode/slug yang sesuai.
+  var slug=normalized.replace(/^\//,'');
+  if(slug && slug.indexOf('/')<0 && /^[A-Za-z0-9_-]{3,40}$/.test(slug)){
+    var publicUrl=new URL('/links.html',primary);
+    publicUrl.searchParams.set('c',slug);
+    location.replace(publicUrl.href);
+    return;
+  }
+  location.replace('/');
+})();
+</script>
+</body>
+</html>

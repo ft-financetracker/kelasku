@@ -1,5 +1,5 @@
 /**
- * KelasKu — Application Entry Point v6.4.1
+ * KelasKu — Application Entry Point v6.5.2
  * ============================================================
  * Phase 6 memperdalam Academic Workflow: review tugas, analitik absensi, kalender, dan report.
  * Bootstrap tetap compound: config + user + settings + dashboard.
@@ -84,7 +84,10 @@ async function boot() {
   await sleep(420);
 
   if (!state.sessionToken) {
-    go(readBool('kelasku_onboarding_completed') ? 'auth' : 'onboarding');
+    if (initialUrlRoute && !['auth','onboarding','splash'].includes(initialUrlRoute)) {
+      sessionStorage.setItem('kelasku_post_auth_route', initialUrlRoute);
+    }
+    go(readBool('kelasku_onboarding_completed') ? 'auth' : 'onboarding', { replace: true });
     bootstrapPromise.then(data => {
       if (!data) return;
       applyRemoteConfig(data.config);
@@ -153,6 +156,15 @@ function routeReadyUser() {
     return openDeepLink(deep);
   }
 
+  const pendingRoute = sessionStorage.getItem('kelasku_post_auth_route') || '';
+  if (pendingRoute) {
+    sessionStorage.removeItem('kelasku_post_auth_route');
+    return go(pendingRoute, { replace: true });
+  }
+  if (initialUrlRoute && !['splash','auth','onboarding','profile','setup'].includes(initialUrlRoute)) {
+    return go(initialUrlRoute, { replace: true });
+  }
+
   const startup = String(state.settings?.startup_page || 'DASHBOARD').toUpperCase();
   if (startup === 'CLASSES') return go('classes');
   if (startup === 'TASKS') return go('tasks');
@@ -195,6 +207,6 @@ function forceUpdateRequired() {
   return true;
 }
 
-startRouter();
+const initialUrlRoute = startRouter();
 boot();
 window.setTimeout(() => consumeUpdateResult(), 900);

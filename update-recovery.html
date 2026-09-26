@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B132B">
+<script>
+(function(){
+  if(location.hostname==='ft-financetracker.github.io' && (location.pathname==='/kelasku/update-recovery.html' || location.pathname.indexOf('/kelasku/')===0)){
+    var path=location.pathname.replace(/^\/kelasku(?=\/|$)/,'') || '/update-recovery.html';
+    location.replace('https://klasku.my.id'+path+location.search+location.hash);
+  }
+})();
+</script>
+<base href="/">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <title>Memperbarui KelasKu…</title>
 <style>
@@ -37,7 +46,7 @@
     }
   }catch(err){ console.warn('KelasKu recovery:',err); }
   status.textContent='Memuat versi terbaru…';
-  const next=new URL('./',location.href);
+  const next=new URL('/', 'https://klasku.my.id');
   next.search='';
   next.hash='';
   if(version)next.searchParams.set('_kkv',version);
