@@ -86,19 +86,20 @@ function drawMyClasses(items) {
     return;
   }
 
-  grid.innerHTML = `<div class="class-table-head"><span>Kelas</span><span>Peran</span><span>Visibilitas</span><span></span></div>${items.map(c => classListRow(c, true)).join('')}`;
+  grid.innerHTML = `<div class="class-table-head"><span>Kelas</span><span>Status</span><span></span></div>${items.map(c => classListRow(c, true)).join('')}`;
   bindClassRows(grid);
 }
 
 function classListRow(c, mine = false) {
   const leader = c.is_class_leader ? '<span class="role-pill leader-role-pill">Ketua Kelas</span>' : '';
   const action = mine || c.is_member
-    ? `<button type="button" class="class-row-action" data-open-class="${esc(c.class_id)}">${svg('i-arrow')}<span>Buka</span></button>`
-    : `<button type="button" class="class-row-action join" data-public-join="${esc(c.class_id)}">${svg('i-plus')}<span>Gabung</span></button>`;
+    ? `<button type="button" class="class-row-action" data-open-class="${esc(c.class_id)}" aria-label="Buka ${esc(c.name || 'kelas')}">${svg('i-arrow')}<span>Buka</span></button>`
+    : `<button type="button" class="class-row-action join" data-public-join="${esc(c.class_id)}" aria-label="Gabung ${esc(c.name || 'kelas')}">${svg('i-plus')}<span>Gabung</span></button>`;
+  const memberCount = Number(c.member_count || 0);
+  const codeMeta = `<span class="class-code-inline">${esc(c.class_code || '')}${memberCount ? `<i>•</i><b class="class-member-inline">${memberCount} anggota</b>` : ''}</span>`;
   return `<article class="class-list-row">
-    <div class="class-list-identity"><span class="class-symbol small">${svg('i-class')}</span><div class="class-list-copy"><small class="class-list-subtitle">${esc(c.institution || 'KelasKu')}${c.cohort ? ' · Angkatan ' + esc(c.cohort) : ''}</small><strong>${esc(c.name)}</strong><span class="class-code-inline">${esc(c.class_code || '')}</span></div></div>
-    <div class="class-list-role">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}</div>
-    <div class="class-list-visibility"><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count || 0) ? `<small>${Number(c.member_count)} anggota</small>` : ''}</div>
+    <div class="class-list-identity"><span class="class-symbol small">${svg('i-class')}</span><div class="class-list-copy"><small class="class-list-subtitle">${esc(c.institution || 'KelasKu')}${c.cohort ? ' · Angkatan ' + esc(c.cohort) : ''}</small><strong>${esc(c.name)}</strong>${codeMeta}</div></div>
+    <div class="class-list-badge-line">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile" aria-label="${memberCount} anggota">(${memberCount})</span>` : ''}</div>
     <div class="class-list-action">${action}</div>
   </article>`;
 }
@@ -141,7 +142,7 @@ function drawPublicClasses(data) {
   const items = data.items || [];
   if (count) count.textContent = `${Number(data.total || items.length)} kelas PUBLIC`;
   slot.innerHTML = items.length
-    ? `<div class="class-table-head"><span>Kelas</span><span>Status</span><span>Anggota</span><span></span></div>${items.map(c => classListRow(c, false)).join('')}`
+    ? `<div class="class-table-head"><span>Kelas</span><span>Status</span><span></span></div>${items.map(c => classListRow(c, false)).join('')}`
     : '<div class="search-empty">Belum ada kelas umum.</div>';
   bindClassRows(slot);
   if (pager) {

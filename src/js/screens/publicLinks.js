@@ -28,6 +28,8 @@ const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_${classCode.toL
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
 const fmtDate = value => { try { return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value)); } catch { return value || '-'; } };
 const isFuture = value => value && new Date(value).getTime() >= Date.now();
+const scheduleStillActive = x => { const end=x?.end_at?new Date(x.end_at).getTime():new Date(x?.start_at||0).getTime()+3*60*60*1000; return Number.isFinite(end)&&end>=Date.now(); };
+const taskStillActive = x => !x?.deadline || new Date(x.deadline).getTime() >= Date.now();
 const byDate = key => (a,b) => new Date(a?.[key] || 8640000000000000) - new Date(b?.[key] || 8640000000000000);
 
 window.addEventListener('beforeinstallprompt', event => {
@@ -119,8 +121,8 @@ function roomList(items, emptyText, renderItem) {
 }
 
 function memberAcademicHub(academic={}, classId='') {
-  const schedules=(academic.schedules||[]).filter(x=>isFuture(x.start_at)).sort(byDate('start_at')).slice(0,4);
-  const tasks=(academic.tasks||[]).filter(x=>x.submission_status!=='SUBMITTED' && (!x.deadline || isFuture(x.deadline))).sort(byDate('deadline')).slice(0,4);
+  const schedules=(academic.schedules||[]).filter(scheduleStillActive).sort(byDate('start_at')).slice(0,4);
+  const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
   const attendance=(academic.attendance_sessions||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3);
   const announcements=(academic.announcements||[]).slice(0,4);
   const safeLocation=value=>/^https?:\/\//i.test(String(value||'').trim())?'Pertemuan online':String(value||'').trim();
@@ -150,7 +152,7 @@ function academicLoading() {
 }
 
 function guestAcademicHub(loggedIn,academic={}) {
-  const schedules=(academic.schedules||[]).slice(0,5),tasks=(academic.tasks||[]).slice(0,4),attendance=(academic.attendance||[]).slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
+  const schedules=(academic.schedules||[]).filter(scheduleStillActive).slice(0,5),tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()!=='CLOSED').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
   const locked=room=>()=>showPublicNotice(loggedIn?`${room} hanya tersedia untuk anggota kelas ini.`:`Silakan login sebagai anggota kelas untuk membuka ${room}.`);
   const panels={
     schedule:roomList(schedules,'Belum ada jadwal publik.',x=>`<button type="button" data-guest-detail="schedule" data-public-item-id="${esc(x.schedule_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title)}</strong><small>${esc(fmtDate(x.start_at))}${x.location?` · ${esc(x.location)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
@@ -278,10 +280,25 @@ function bindInteractions(){
 }
 
 function bindShowcase(){
-  if(showcaseTimer){clearInterval(showcaseTimer);showcaseTimer=null;}const track=document.getElementById('public-showcase-track');if(!track)return;const originals=[...track.querySelectorAll('.public-device-card')];if(!originals.length)return;const count=originals.length;
-  const before=originals.map(x=>x.cloneNode(true)),after=originals.map(x=>x.cloneNode(true));before.forEach(x=>{x.dataset.loopClone='before';x.setAttribute('aria-hidden','true');track.insertBefore(x,track.firstChild);});after.forEach(x=>{x.dataset.loopClone='after';x.setAttribute('aria-hidden','true');track.appendChild(x);});
-  let index=count,userInteracting=false,resumeTimer=null;const cards=()=>[...track.querySelectorAll('.public-device-card')];const goTo=(i,smooth=true)=>{const card=cards()[i];if(card)track.scrollTo({left:card.offsetLeft,behavior:smooth?'smooth':'auto'});};const recenter=()=>{if(index>=count*2){index-=count;goTo(index,false);}else if(index<count){index+=count;goTo(index,false);}};const next=()=>{if(userInteracting)return;index+=1;goTo(index,true);setTimeout(recenter,620);};const prev=()=>{index-=1;goTo(index,true);setTimeout(recenter,620);};document.querySelector('[data-showcase-prev]')?.addEventListener('click',()=>{userInteracting=false;prev();});document.querySelector('[data-showcase-next]')?.addEventListener('click',()=>{userInteracting=false;next();});
-  const start=()=>{if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;if(!showcaseTimer)showcaseTimer=setInterval(()=>{if(document.visibilityState==='visible')next();},3600);};const pause=()=>{userInteracting=true;if(showcaseTimer){clearInterval(showcaseTimer);showcaseTimer=null;}clearTimeout(resumeTimer);resumeTimer=setTimeout(()=>{const list=cards(),stride=(list[1]?.offsetLeft||0)-(list[0]?.offsetLeft||0)||260;index=Math.max(0,Math.round(track.scrollLeft/stride));recenter();userInteracting=false;start();},1800);};track.addEventListener('pointerdown',pause,{passive:true});track.addEventListener('touchstart',pause,{passive:true});goTo(index,false);start();
+  if(showcaseTimer){clearTimeout(showcaseTimer);showcaseTimer=null;}
+  const track=document.getElementById('public-showcase-track');if(!track)return;
+  const originals=[...track.querySelectorAll('.public-device-card')];if(!originals.length)return;
+  const count=originals.length;
+  originals.map(x=>x.cloneNode(true)).forEach(x=>{x.dataset.loopClone='before';x.setAttribute('aria-hidden','true');track.insertBefore(x,track.firstChild);});
+  originals.map(x=>x.cloneNode(true)).forEach(x=>{x.dataset.loopClone='after';x.setAttribute('aria-hidden','true');track.appendChild(x);});
+  let index=count, interacting=false, resumeTimer=null;
+  const cards=()=>[...track.querySelectorAll('.public-device-card')];
+  const goTo=(i,smooth=true)=>{const card=cards()[i];if(card)track.scrollTo({left:card.offsetLeft,behavior:smooth?'smooth':'auto'});};
+  const normalize=()=>{if(index>=count*2){index-=count;goTo(index,false);}else if(index<count){index+=count;goTo(index,false);}};
+  const scheduleNext=()=>{clearTimeout(showcaseTimer);if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;showcaseTimer=setTimeout(()=>{if(document.visibilityState==='visible'&&!interacting){index+=1;goTo(index,true);setTimeout(normalize,520);}scheduleNext();},3200);};
+  const resume=()=>{clearTimeout(resumeTimer);resumeTimer=setTimeout(()=>{const list=cards();const stride=(list[1]?.offsetLeft||0)-(list[0]?.offsetLeft||0)||260;index=Math.max(0,Math.round(track.scrollLeft/stride));normalize();interacting=false;scheduleNext();},900);};
+  const pause=()=>{interacting=true;clearTimeout(showcaseTimer);showcaseTimer=null;clearTimeout(resumeTimer);};
+  document.querySelector('[data-showcase-prev]')?.addEventListener('click',()=>{pause();index-=1;goTo(index,true);setTimeout(normalize,520);resume();});
+  document.querySelector('[data-showcase-next]')?.addEventListener('click',()=>{pause();index+=1;goTo(index,true);setTimeout(normalize,520);resume();});
+  ['pointerdown','touchstart','wheel'].forEach(evt=>track.addEventListener(evt,pause,{passive:true}));
+  ['pointerup','pointercancel','touchend','touchcancel'].forEach(evt=>track.addEventListener(evt,resume,{passive:true}));
+  track.addEventListener('scroll',()=>{if(interacting)resume();},{passive:true});
+  requestAnimationFrame(()=>{goTo(index,false);scheduleNext();});
 }
 
 async function handleInstall(){

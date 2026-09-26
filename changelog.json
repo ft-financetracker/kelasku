@@ -1,6 +1,22 @@
 {
   "releases": [
     {
+      "version": "6.6.1",
+      "build": "20260927.261",
+      "date": "2026-09-27",
+      "title": "Clean Live Blocker Consolidation",
+      "items": [
+        "Landing Page dirapikan: row informasi lebih compact, chevron selalu sejajar di kanan, item jadwal/tugas/presensi yang sudah selesai tidak tampil di daftar aktif, dan carousel autoplay dihardening.",
+        "Jadwal Ruang Kelas dikelompokkan per mata kuliah dengan expand/collapse, date strip menjadi indikator non-clickable, sesi mempunyai tombol Presensi + Salin Link, dan jadwal batal dikunci agar tidak aktif kembali dari UI normal.",
+        "Absensi dikelompokkan per mata kuliah/kegiatan lalu sesi; nama mata kuliah dipetakan dari source_schedule_id dan sesi selesai/closed dikeluarkan dari daftar aktif.",
+        "Materi, Tugas, dan Pengumuman memakai attachment queue yang dapat ditambah berkali-kali hingga 12 item; mendukung foto, video kecil, PDF/file, serta beberapa link referensi.",
+        "Chat mobile memakai left drawer room yang bisa buka/tutup, input dan icon diperbesar, dan tombol Kembali ke Kelas memperbaiki context-loop ke kelas asal.",
+        "Daftar kelas, badge visibility/member count, Hero/Status Kelas, Link Kelas + copy, Timeline bounded scroll, Light Mode, dan layout mobile 100% dipoles kembali.",
+        "Analitik XLSX menambah matrix presensi per sesi dan rekap yang lebih cepat dibaca dosen tanpa menjejali layar aplikasi.",
+        "Schema tetap 15; backend perlu redeploy untuk schedule lock, active-only public preview, multi-link attachment, dan limit upload transport yang diperbesar. Tidak ada migration schema."
+      ]
+    },
+    {
       "version": "6.6.0",
       "build": "20260926.260",
       "date": "2026-09-26",

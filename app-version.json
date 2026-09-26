@@ -1,7 +1,7 @@
 {
-  "version": "6.6.0",
-  "build": "20260926.260",
+  "version": "6.6.1",
+  "build": "20260927.261",
   "schema": 15,
-  "release_date": "2026-09-26",
-  "release_note": "Patch 3 final live-readiness: attendance flex (status, media, optional late tracking), custom public slug, public academic preview, academic attachments, analytics XLSX consolidation, timeline and responsive polish."
+  "release_date": "2026-09-27",
+  "release_note": "Cleanup patch: landing compact rows, active-only academic views, schedule/attendance grouping, repeatable attachment queue, chat mobile drawer/back-context, class list polish, light/responsive cleanup."
 }

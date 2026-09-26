@@ -3,6 +3,7 @@ import { api } from '../core/api.js';
 import { esc, svg, toast, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
+import { go } from '../core/router.js';
 import { compressImageFile, blobToDataUrl, formatBytes } from '../core/media.js';
 
 let activeClassId = '';
@@ -48,15 +49,22 @@ export function renderMessages() {
       <div><div class="eyebrow">RUANG KOMUNIKASI</div><h1>Pesan Kelas</h1><p>Chat kelas yang ringkas, cepat, dan fokus untuk koordinasi belajar.</p></div>
       <div class="page-actions message-context-actions">${sessionStorage.getItem('kelasku_message_origin')==='class' ? `<button type="button" id="message-back-class" class="btn btn-secondary">${svg('i-back')} Kembali ke Kelas</button>` : ''}<span class="phase-badge">CLASS CHAT</span></div>
     </div>
-    <section class="message-layout panel">
+    <section class="message-layout panel" id="message-layout">
+      <button type="button" class="message-room-drawer-toggle" id="message-room-drawer-toggle" aria-label="Buka daftar room"><span class="material-symbols-rounded">menu_open</span><span>Room</span></button>
+      <button type="button" class="message-room-scrim" id="message-room-scrim" aria-label="Tutup daftar room" hidden></button>
       <aside class="message-room-list" id="message-room-list">${state.messageRooms?.length ? '' : roomSkeleton()}</aside>
       <div class="message-conversation" id="message-conversation"><div class="message-empty">Pilih kelas untuk membuka percakapan.</div></div>
     </section>`;
   document.getElementById('app').innerHTML = appShell({ active: 'messages', content, hideSearch: true });
   bindAppShell();
+  const messageLayout=document.getElementById('message-layout');
+  const messageScrim=document.getElementById('message-room-scrim');
+  const setRoomDrawer=open=>{messageLayout?.classList.toggle('rooms-open',Boolean(open));if(messageScrim)messageScrim.hidden=!open;};
+  document.getElementById('message-room-drawer-toggle')?.addEventListener('click',()=>setRoomDrawer(!messageLayout?.classList.contains('rooms-open')));
+  messageScrim?.addEventListener('click',()=>setRoomDrawer(false));
   document.getElementById('message-back-class')?.addEventListener('click', () => {
     const classId = sessionStorage.getItem('kelasku_message_origin_class') || activeClassId;
-    if (classId) { state.selectedClassId = classId; sessionStorage.setItem('kelasku_selected_class', classId); sessionStorage.setItem('kelasku_class_tab','messages'); }
+    if (classId) { state.selectedClassId = classId; sessionStorage.setItem('kelasku_selected_class', classId); sessionStorage.setItem('kelasku_class_tab','overview'); }
     sessionStorage.removeItem('kelasku_message_origin');
     go('class');
   });
@@ -95,7 +103,7 @@ function drawRooms(items) {
   const previousScroll = root.scrollLeft;
   root.innerHTML = `<div class="message-room-head"><strong>Room Kelas</strong><small>${items.length} kelas</small></div>${items.length ? items.map(roomCard).join('') : '<div class="message-empty compact">Belum ada kelas.</div>'}`;
   root.scrollLeft = previousScroll;
-  root.querySelectorAll('[data-message-room]').forEach(btn => btn.onclick = () => openRoom(btn.dataset.messageRoom, { silent: Boolean(state.messagesByClass[btn.dataset.messageRoom]) }));
+  root.querySelectorAll('[data-message-room]').forEach(btn => btn.onclick = () => { openRoom(btn.dataset.messageRoom, { silent: Boolean(state.messagesByClass[btn.dataset.messageRoom]) }); document.getElementById('message-layout')?.classList.remove('rooms-open'); const scrim=document.getElementById('message-room-scrim'); if(scrim)scrim.hidden=true; });
 }
 
 function roomCard(item) {
