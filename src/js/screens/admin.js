@@ -247,6 +247,7 @@ function drawAdminSystem(data) {
         ${inputField('Onboarding Version','onboarding_version',config.onboarding_version || 1,'number')}
         ${inputField('Notification Poll (ms)','notification_poll_ms',config.notification_poll_ms || 60000,'number')}
         ${inputField('Max Upload (MB)','max_upload_mb',config.max_upload_mb || 10,'number')}
+        ${inputField('Skala Teks Global (%)','ui_text_scale',config.ui_text_scale || 100,'number')}
         ${selectField('Release Channel','release_channel',config.release_channel || 'stable',[['stable','Stable'],['beta','Beta'],['dev','Development']])}
         ${toggleConfig('Force Update','update_required',config.update_required,'Paksa user versi lama melakukan update.')}
         ${toggleConfig('Maintenance','maintenance',config.maintenance,'Tandai aplikasi sedang maintenance.')}
@@ -333,13 +334,17 @@ async function saveConfig(event) {
     RELEASE_CHANNEL: form.release_channel.value,
     RELEASE_NOTE: form.release_note.value,
     NOTIFICATION_POLL_MS: Number(form.notification_poll_ms.value || 60000),
-    MAX_UPLOAD_MB: Number(form.max_upload_mb.value || 10)
+    MAX_UPLOAD_MB: Number(form.max_upload_mb.value || 10),
+    UI_TEXT_SCALE: Math.max(90, Math.min(125, Number(form.ui_text_scale.value || 100)))
   };
 
   try {
     const data = await api('adminUpdateAppConfig', { values }, { onSlow: () => status.textContent = 'Masih diproses. Jangan klik dua kali.' });
     state.remoteConfig = data.config;
     localStorage.setItem('kelasku_app_config_cache', JSON.stringify(data.config));
+    const uiScale=Math.max(90,Math.min(125,Number(data.config?.ui_text_scale||100)))/100;
+    document.documentElement.style.setProperty('--kk-admin-text-scale', String(uiScale));
+    document.documentElement.style.setProperty('--kk-admin-font-bump', `${Math.round((uiScale-1)*100)/10}px`);
     status.textContent = 'Konfigurasi tersimpan ✓';
     toast('Konfigurasi aplikasi diperbarui.');
   } catch (err) { status.textContent = err.message; }

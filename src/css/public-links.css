@@ -62,3 +62,9 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
   .public-group-hero{min-height:50px;padding:8px 9px;gap:8px}.public-group-art{width:32px;height:32px}.public-group-count{font-size:8px}.public-group-title strong{font-size:9.5px}.public-link-card{min-height:50px}.public-link-copy strong{font-size:11.5px}.public-link-copy small{font-size:9.5px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.public-room-row-action{grid-template-columns:auto minmax(0,1fr)}.public-room-row-action .public-primary-action{grid-column:2;justify-self:start}.public-showcase-actions{display:grid}.public-promo-btn,.public-install-btn{width:100%}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* v6.5.0 — member information rows are real navigation targets */
+.public-room-clickable{text-decoration:none;color:inherit;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.public-room-clickable:hover{border-color:rgba(34,224,199,.32)!important;background:#0A315F!important}
+.public-room-clickable .public-row-arrow{margin-left:auto;color:#5E86AB;font-size:20px}
+.public-room-inline-link{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-decoration:none;color:inherit}.public-room-inline-link>div{display:grid;min-width:0}

@@ -236,9 +236,15 @@ function calendarMiniCard(item){const d=new Date(item.date);const p=safeDatePart
 function scheduleCard(item) {
   const d = new Date(item.start_at);
   const date = safeDateParts(d);
-  return `<article class="academic-row-card">
+  const state = String(item.schedule_state || 'NORMAL').toUpperCase();
+  const stateBadge = state === 'CANCELLED'
+    ? '<span class="schedule-state-badge cancelled">Dibatalkan</span>'
+    : state === 'CHANGED'
+      ? '<span class="schedule-state-badge changed">Diubah</span>'
+      : '';
+  return `<article class="academic-row-card schedule-row-${state.toLowerCase()}">
     <div class="academic-date-tile"><strong>${date.day}</strong><span>${date.month}</span></div>
-    <div class="academic-row-main"><div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(timeRange(item.start_at,item.end_at))}</span></div><h3>${esc(item.title)}</h3><p>${esc(item.description || item.location || 'Tanpa keterangan tambahan.')}</p>${item.location ? `<small>${svg('i-class')} ${esc(item.location)}</small>` : ''}</div>
+    <div class="academic-row-main"><div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(timeRange(item.start_at,item.end_at))}</span>${stateBadge}${item.recurrence_group_id?'<span class="soft-chip">Berulang</span>':''}</div><h3>${esc(item.title)}</h3><p>${esc(item.description || item.location || 'Tanpa keterangan tambahan.')}</p>${item.location ? `<small>${svg('i-class')} ${esc(item.location)}</small>` : ''}${item.change_note?`<small>${esc(item.change_note)}</small>`:''}</div>
   </article>`;
 }
 

@@ -167,6 +167,9 @@ function applyRemoteConfig(config) {
   if (!config) return;
   state.remoteConfig = config;
   writeJson('kelasku_app_config_cache', config);
+  const scale = Math.max(90, Math.min(125, Number(config.ui_text_scale || 100))) / 100;
+  document.documentElement.style.setProperty('--kk-admin-text-scale', String(scale));
+  document.documentElement.style.setProperty('--kk-admin-font-bump', `${Math.round((scale - 1) * 100) / 10}px`);
   checkForAppUpdate({ notify: true }).catch(() => {});
 }
 

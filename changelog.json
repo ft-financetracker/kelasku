@@ -1,6 +1,25 @@
 {
   "releases": [
     {
+      "version": "6.5.0",
+      "build": "20260925.250",
+      "date": "2026-09-25",
+      "title": "Academic Live Readiness",
+      "description": "Release kesiapan live untuk Ruang Kelas dan Akademik: detail-first UI, jadwal berulang/editable, materi multi-lampiran, analitik tersegmentasi, pengaturan role Owner-only, serta navigasi dan typography yang lebih rapi.",
+      "changes": [
+        "Pengumuman Ruang Kelas menjadi row compact yang dapat dibuka ke detail; pengelola dapat edit dan hapus/archive.",
+        "Jadwal mendukung pengulangan harian/mingguan/bulanan, edit satu kejadian atau kejadian berikutnya, serta badge Diubah/Dibatalkan.",
+        "Materi mendukung hingga 12 gambar per materi dengan status upload per file tanpa auto-preview dan lampiran dapat diunduh pengguna.",
+        "Absensi dirapikan agar visual konsisten dan analitik menampilkan kegiatan/mata kuliah dengan pagination.",
+        "Export Analitik berubah menjadi workbook Excel multi-sheet: ALL/SAYA, ANALISIS, dan sheet per mata kuliah/kegiatan; user biasa hanya memperoleh datanya sendiri.",
+        "Timeline dikembalikan ke navigasi utama Ruang Kelas dan submenu Akademik/Kelola diubah menjadi chip horizontal compact, bukan dropdown besar.",
+        "Role teknis kelas hanya dapat diubah Owner melalui Pengaturan Kelas yang kini memakai layout tab compact.",
+        "Super Admin dapat mengatur skala teks global 90–125 persen melalui APP_CONFIG.",
+        "Landing Link Kelas membuat item jadwal, tugas, presensi, dan pengumuman dapat diklik menuju room terkait.",
+        "Schema dinaikkan 13→14 untuk metadata recurrence/state jadwal dan attachments_json materi."
+      ]
+    },
+    {
       "version": "6.4.1",
       "build": "20260925.241",
       "date": "2026-09-25",
