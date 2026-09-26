@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.5.3-b253-live';
+const CACHE_NAME = 'kelasku-v6.5.4-b254-live';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -109,6 +109,23 @@ self.addEventListener('fetch', event => {
       const target = new URL('/links.html', self.location.origin);
       target.searchParams.set('c', slug);
       event.respondWith(Promise.resolve(Response.redirect(target.href, 302)));
+      return;
+    }
+
+    // Route aplikasi memakai app-shell cache-first. Ini menghindari round-trip
+    // GitHub Pages 404 setiap refresh /dashboard, /jadwal, /tugas, dst.
+    if (APP_ROUTE_PATHS.has(path)) {
+      event.respondWith(
+        caches.match('/index.html').then(async cached => {
+          const refresh = fetch('/index.html', { cache: 'no-store' })
+            .then(res => {
+              if (res && res.ok) caches.open(CACHE_NAME).then(cache => cache.put('/index.html', res.clone()));
+              return res;
+            })
+            .catch(() => null);
+          return cached || (await refresh) || caches.match('/index.html');
+        })
+      );
       return;
     }
 

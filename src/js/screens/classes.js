@@ -6,6 +6,8 @@ import { go } from '../core/router.js';
 
 let publicPage = 1;
 let publicQuery = '';
+let myClassesInFlight = null;
+const MY_CLASSES_TTL_MS = 60 * 1000;
 
 export function renderClasses() {
   const content = `
@@ -43,17 +45,33 @@ export function renderClasses() {
   loadMyClasses();
   loadPublicClasses(false);
 }
-async function loadMyClasses() {
-  try {
-    const data = await api('getMyClasses');
-    const next = data.items || [];
-    const changed = !sameData(state.myClasses, next);
-    state.myClasses = next;
-    localStorage.setItem('kelasku_classes_cache', JSON.stringify(state.myClasses));
-    if (changed || !document.querySelector('#class-grid .class-card')) drawMyClasses(state.myClasses);
-  } catch (err) {
-    document.getElementById('class-grid').innerHTML = `<div class="panel error-panel"><strong>Daftar kelas gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
-  }
+export async function prefetchMyClasses() {
+  return loadMyClasses(true);
+}
+async function loadMyClasses(background = false, force = false) {
+  const hadCache = Array.isArray(state.myClasses) && state.myClasses.length > 0;
+  const fresh = hadCache && (Date.now() - Number(state.myClassesAt || 0) < MY_CLASSES_TTL_MS);
+  if (!force && fresh) return state.myClasses;
+  if (myClassesInFlight) return myClassesInFlight;
+  myClassesInFlight = (async () => {
+    try {
+      const data = await api('getMyClasses');
+      const next = data.items || [];
+      const changed = !sameData(state.myClasses, next);
+      state.myClasses = next;
+      state.myClassesAt = Date.now();
+      localStorage.setItem('kelasku_classes_cache', JSON.stringify(state.myClasses));
+      localStorage.setItem('kelasku_classes_cache_at', String(state.myClassesAt));
+      const grid = document.getElementById('class-grid');
+      if (grid && (changed || !grid.querySelector('.class-list-row'))) drawMyClasses(state.myClasses);
+      return state.myClasses;
+    } catch (err) {
+      const grid = document.getElementById('class-grid');
+      if (!background && !hadCache && grid) grid.innerHTML = `<div class="panel error-panel"><strong>Daftar kelas gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+      return state.myClasses || [];
+    } finally { myClassesInFlight = null; }
+  })();
+  return myClassesInFlight;
 }
 
 function drawMyClasses(items) {
@@ -108,6 +126,7 @@ async function loadPublicClasses(force = false) {
   try {
     const data = await api('listPublicClasses', { page: publicPage, limit: 30, query: publicQuery });
     state.publicClasses = data;
+    if (publicPage === 1 && !publicQuery) { try { localStorage.setItem('kelasku_public_classes_cache', JSON.stringify(data)); } catch {} }
     drawPublicClasses(data);
   } catch (err) {
     if (!state.publicClasses?.items?.length) slot.innerHTML = `<div class="panel error-panel"><strong>Kelas umum gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
@@ -194,7 +213,9 @@ async function submitCreateClass(event) {
     state.selectedClassId = data.class.class_id;
     sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
     state.myClasses = [];
+    state.myClassesAt = 0;
     localStorage.removeItem('kelasku_classes_cache');
+    localStorage.removeItem('kelasku_classes_cache_at');
     go('class');
   } catch (err) { status.className='request-status error'; status.textContent=err.message; }
   finally { btn.disabled=false; btn.innerHTML=old; }
@@ -244,7 +265,7 @@ async function submitJoin(c, code) {
   try {
     const data = await api('joinClass', { class_id:c.class_id, code });
     if (data.status === 'JOINED' || data.status === 'ALREADY_MEMBER') {
-      closeModal(); toast(data.status === 'JOINED' ? 'Berhasil masuk kelas.' : 'Kamu sudah menjadi anggota.'); loadMyClasses();
+      closeModal(); toast(data.status === 'JOINED' ? 'Berhasil masuk kelas.' : 'Kamu sudah menjadi anggota.'); loadMyClasses(false,true);
     } else {
       status.className='request-status ok'; status.textContent='Permintaan bergabung sudah dikirim ke pengelola kelas.';
       btn.textContent='Menunggu Persetujuan'; btn.disabled=true;
@@ -260,7 +281,7 @@ function showModal(html) {
   el.onclick=e=>{ if(e.target===el) closeModal(); };
 }
 function closeModal(){ document.getElementById('phase-modal')?.remove(); }
-function classSkeleton(){ return [1,2,3].map(()=>'<div class="class-card skeleton class-card-skeleton"></div>').join(''); }
+function classSkeleton(){ return '<div class="panel fast-load-panel"><span class="status-dot"></span><div><strong>Menyiapkan daftar kelas…</strong><small>Cache kelas akan dipakai pada pembukaan berikutnya.</small></div></div>'; }
 
 function roleLabel(role) {
   const key = String(role || 'MEMBER').toUpperCase();

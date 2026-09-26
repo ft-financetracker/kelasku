@@ -1,6 +1,22 @@
 {
   "releases": [
     {
+      "version": "6.5.4",
+      "build": "20260926.254",
+      "date": "2026-09-26",
+      "title": "Live Performance Stabilization — Sat-Set Navigation",
+      "items": [
+        "Bootstrap user yang sudah memiliki session/cache tidak lagi ditahan delay 420 ms sebelum membuka route.",
+        "Academic Hub, daftar kelas, dan room pesan dipanaskan di background setelah login agar menu utama lebih cepat saat pertama dibuka.",
+        "Ruang Kelas menyimpan cache detail + akademik per kelas dan memanaskan Akademik, Timeline, serta Analitik setelah hero kelas tampil.",
+        "Cache akademik memakai stale-while-revalidate: setelah create/edit/absensi, data lama tetap tampil sambil refresh sehingga tidak kembali ke skeleton.",
+        "Request akademik, daftar kelas, detail kelas, timeline, dan analitik diberi dedupe in-flight untuk mencegah request ganda saat user berpindah cepat.",
+        "Skeleton besar pada Akademik, Ruang Kelas, Daftar Kelas, Pesan, Notifikasi, dan check-in Absensi diganti loader compact agar perceived performance lebih ringan.",
+        "PWA route /dashboard, /jadwal, /tugas, dan route aplikasi lain memakai app-shell cache-first sehingga refresh tidak menunggu round-trip 404 GitHub Pages.",
+        "Tidak ada perubahan API/database/schema; Apps Script v6.5.3 tetap kompatibel dan tidak perlu redeploy."
+      ]
+    },
+    {
       "version": "6.5.3",
       "build": "20260926.253",
       "date": "2026-09-26",

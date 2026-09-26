@@ -67,13 +67,17 @@ function drawSkeleton() {
   slot.innerHTML = `<div class="hello"><div><h1>Halo! 👋</h1><p>Menyiapkan dashboardmu…</p></div></div><section class="dashboard-summary-strip">${[1,2,3,4].map(() => '<div class="summary-mini skeleton" style="height:64px"></div>').join('')}</section><div class="dashboard-carousel skeleton" style="height:180px"></div><section class="dashboard-quick-actions">${[1,2,3,4,5].map(() => '<div class="dashboard-quick-action skeleton" style="height:66px"></div>').join('')}</section><section class="dash-grid"><div class="panel skeleton" style="height:240px"></div><div class="panel skeleton" style="height:240px"></div></section>`;
 }
 
-async function refreshDashboard() {
+async function refreshDashboard(force = false) {
+  const fresh = state.dashboard && (Date.now() - Number(state.dashboardAt || 0) < Number(C.DASHBOARD_CACHE_MS || 300000));
+  if (!force && fresh) return state.dashboard;
   try {
     const data = await api('getDashboard', {}, { onSlow: () => {} });
     const changed = !sameData(state.dashboard, data);
     state.dashboard = data;
+    state.dashboardAt = Date.now();
     state.user = data.user || state.user;
     localStorage.setItem('kelasku_dashboard_cache', JSON.stringify(data));
+    localStorage.setItem('kelasku_dashboard_cache_at', String(state.dashboardAt));
     localStorage.setItem('kelasku_user_cache', JSON.stringify(state.user));
     if (changed && currentRoute() === 'dashboard') drawDashboard(data);
   } catch (err) {

@@ -8,6 +8,7 @@ import { go } from '../core/router.js';
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
 let attendanceListPage = 1;
+let academicHubInFlight = null;
 const ATTENDANCE_LIST_PAGE_SIZE = 12;
 
 export function renderSchedule() {
@@ -70,6 +71,7 @@ function bindAcademicToolbar() {
 export async function loadAcademicHub(force = false) {
   const fresh = state.academicHub && (Date.now() - Number(state.academicHubAt || 0) < HUB_TTL_MS);
   if (!force && fresh) return state.academicHub;
+  if (academicHubInFlight) return academicHubInFlight;
 
   const refreshBtn = document.getElementById('academic-refresh');
   if (refreshBtn && force) {
@@ -77,38 +79,46 @@ export async function loadAcademicHub(force = false) {
     refreshBtn.innerHTML = '<span class="btn-spinner"></span><span>Memperbarui…</span>';
   }
 
-  try {
-    const hadCache = Boolean(state.academicHub);
-    const data = await api('getAcademicHub');
-    const changed = !sameData(state.academicHub, data);
-    state.academicHub = data;
-    state.academicHubAt = Date.now();
-    localStorage.setItem('kelasku_academic_cache', JSON.stringify(data));
-    localStorage.setItem('kelasku_academic_cache_at', String(state.academicHubAt));
-    if (changed || !hadCache) drawAcademicScreen(data);
-    return data;
-  } catch (err) {
-    if (!state.academicHub) {
-      const slot = document.getElementById('academic-slot');
-      if (slot) slot.innerHTML = errorPanel(err.message);
-    } else if (force) toast(err.message);
-    return state.academicHub;
-  } finally {
-    if (refreshBtn) {
-      refreshBtn.disabled = false;
-      refreshBtn.innerHTML = `${svg('i-refresh')} Refresh`;
+  academicHubInFlight = (async () => {
+    try {
+      const hadCache = Boolean(state.academicHub);
+      const data = await api('getAcademicHub');
+      const changed = !sameData(state.academicHub, data);
+      state.academicHub = data;
+      state.academicHubAt = Date.now();
+      localStorage.setItem('kelasku_academic_cache', JSON.stringify(data));
+      localStorage.setItem('kelasku_academic_cache_at', String(state.academicHubAt));
+      if (changed || !hadCache) drawAcademicScreen(data);
+      return data;
+    } catch (err) {
+      if (!state.academicHub) {
+        const slot = document.getElementById('academic-slot');
+        if (slot) slot.innerHTML = errorPanel(err.message);
+      } else if (force) toast(err.message);
+      return state.academicHub;
+    } finally {
+      if (refreshBtn) {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = `${svg('i-refresh')} Refresh`;
+      }
+      academicHubInFlight = null;
     }
-  }
+  })();
+  return academicHubInFlight;
 }
 
 export function invalidateAcademicClientCache(classId = '') {
-  state.academicHub = null;
+  // Stale-while-revalidate: pertahankan data lama agar navigasi tidak kembali ke skeleton.
+  // Timestamp dibuat stale sehingga screen berikutnya tetap refresh di background.
   state.academicHubAt = 0;
-  localStorage.removeItem('kelasku_academic_cache');
-  localStorage.removeItem('kelasku_academic_cache_at');
-  if (classId) delete state.classAcademic[classId];
-  state.dashboard = null;
-  localStorage.removeItem('kelasku_dashboard_cache');
+  localStorage.setItem('kelasku_academic_cache_at', '0');
+  if (classId) {
+    state.classAcademicAt ||= {};
+    state.classAcademicAt[classId] = 0;
+    try { localStorage.setItem('kelasku_class_academic_cache_at', JSON.stringify(state.classAcademicAt)); } catch {}
+  }
+  state.dashboardAt = 0;
+  localStorage.setItem('kelasku_dashboard_cache_at', '0');
 }
 
 function drawAcademicScreen(data) {
@@ -439,7 +449,7 @@ function emptyAcademic(title, copy, icon) {
 }
 
 function academicSkeleton() {
-  return `<div class="academic-summary-strip">${[1,2,3].map(()=>'<div class="skeleton" style="height:70px;border-radius:16px"></div>').join('')}</div><div class="academic-card-list">${[1,2,3,4].map(()=>'<div class="panel skeleton" style="height:104px"></div>').join('')}</div>`;
+  return `<div class="panel fast-load-panel" aria-live="polite"><span class="status-dot"></span><div><strong>Menyiapkan data akademik…</strong><small>Setelah terbuka sekali, data disimpan sementara agar pindah menu berikutnya lebih cepat.</small></div></div>`;
 }
 
 function errorPanel(message) { return `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(message)}</p></div>`; }

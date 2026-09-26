@@ -1,7 +1,7 @@
 {
-  "version": "6.5.3",
-  "build": "20260926.253",
+  "version": "6.5.4",
+  "build": "20260926.254",
   "schema": 14,
   "release_date": "2026-09-26",
-  "release_note": "Live stabilization: jadwal berulang kini jelas per sesi dan tetap editable, analitik kembali XLSX multi-sheet, Landing Page lebih compact dengan detail inline, link meeting hanya di Ruang Kelas, serta carousel infinite diperbaiki."
+  "release_note": "Live performance stabilization: cache-first dan stale-while-revalidate diperluas, Room Class memanaskan data akademik/timeline/analitik di background, skeleton besar diganti loader compact, bootstrap cache tidak lagi ditahan 420ms, dan PWA route memakai app-shell cache-first."
 }

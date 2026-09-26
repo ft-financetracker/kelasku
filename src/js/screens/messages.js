@@ -8,6 +8,7 @@ import { compressImageFile, blobToDataUrl, formatBytes } from '../core/media.js'
 let activeClassId = '';
 let sending = false;
 let loadingOlder = false;
+let messageRoomsInFlight = null;
 let replyTarget = null;
 let pendingMedia = null;
 let mediaRecorder = null;
@@ -18,6 +19,27 @@ let recordTimer = null;
 const deletingIds = new Set();
 const QUICK_EMOJI = ['😀','😂','😊','👍','🙏','🔥','✅','📚','🎯','❤️','👏','🤝'];
 const CONVERSATION_CACHE_PREFIX = 'kelasku_message_cache_';
+const MESSAGE_ROOMS_TTL_MS = 60 * 1000;
+
+async function getMessageRoomsCached(force = false) {
+  const cached = state.messageRooms || [];
+  const fresh = cached.length && (Date.now() - Number(state.messageRoomsAt || 0) < MESSAGE_ROOMS_TTL_MS);
+  if (!force && fresh) return cached;
+  if (messageRoomsInFlight) return messageRoomsInFlight;
+  messageRoomsInFlight = (async () => {
+    try {
+      const data = await api('getMessageRooms');
+      const rooms = data.items || [];
+      state.messageRooms = rooms;
+      state.messageRoomsAt = Date.now();
+      localStorage.setItem('kelasku_message_rooms_cache', JSON.stringify(rooms));
+      localStorage.setItem('kelasku_message_rooms_cache_at', String(state.messageRoomsAt));
+      return rooms;
+    } finally { messageRoomsInFlight = null; }
+  })();
+  return messageRoomsInFlight;
+}
+export function prefetchMessageRooms() { return getMessageRoomsCached(false); }
 
 export function renderMessages() {
   activeClassId = sessionStorage.getItem('kelasku_message_class') || activeClassId || '';
@@ -46,11 +68,9 @@ export function renderMessages() {
 
 async function hydrateMessagesPage(hasRoomCache, hasConversationCache) {
   try {
-    const data = await api('getMessageRooms');
-    const nextRooms = data.items || [];
-    const roomsChanged = !sameData(state.messageRooms || [], nextRooms);
-    state.messageRooms = nextRooms;
-    localStorage.setItem('kelasku_message_rooms_cache', JSON.stringify(nextRooms));
+    const previousRooms = state.messageRooms || [];
+    const nextRooms = await getMessageRoomsCached(false);
+    const roomsChanged = !sameData(previousRooms, nextRooms);
     if (roomsChanged || !hasRoomCache) drawRooms(nextRooms);
 
     if (!activeClassId && nextRooms.length) activeClassId = nextRooms[0].class_id;
@@ -765,7 +785,7 @@ function scrollBottom() {
   if (stream) requestAnimationFrame(() => stream.scrollTop = stream.scrollHeight);
 }
 
-function roomSkeleton() { return `<div class="message-room-head skeleton" style="height:40px"></div>${[1,2,3].map(() => '<div class="message-room-card skeleton" style="height:68px"></div>').join('')}`; }
-function conversationSkeleton() { return `<div class="message-conversation-head skeleton" style="height:58px"></div><div class="message-stream">${[1,2,3].map((_,i) => `<div class="message-bubble skeleton ${i%2?'mine':''}" style="height:66px"></div>`).join('')}</div>`; }
+function roomSkeleton() { return '<div class="fast-load-panel"><span class="status-dot"></span><div><strong>Menyiapkan room pesan…</strong><small>Room akan tersimpan agar pembukaan berikutnya instan.</small></div></div>'; }
+function conversationSkeleton() { return '<div class="fast-load-panel"><span class="status-dot"></span><div><strong>Membuka percakapan…</strong><small>Pesan yang sudah pernah dibuka akan memakai cache lokal.</small></div></div>'; }
 function roleLabel(role) { const x = String(role || 'MEMBER').toUpperCase(); return x === 'OWNER' ? 'Owner' : x === 'COORDINATOR' ? 'Koordinator' : x === 'MODERATOR' ? 'Moderator' : 'Member'; }
 function shortTime(value) { try { return new Intl.DateTimeFormat('id-ID', { hour:'2-digit', minute:'2-digit' }).format(new Date(value)); } catch { return ''; } }

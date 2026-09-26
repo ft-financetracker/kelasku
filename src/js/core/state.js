@@ -17,6 +17,7 @@ export const state = {
   identity: readJson('kelasku_identity_cache', null),
   remoteConfig: readJson('kelasku_app_config_cache'),
   dashboard: readJson('kelasku_dashboard_cache'),
+  dashboardAt: Number(localStorage.getItem('kelasku_dashboard_cache_at') || 0),
   notifications: readJson('kelasku_notification_cache', []),
   installPrompt: null,
   swReg: null,
@@ -25,17 +26,24 @@ export const state = {
   profileReturnRoute: '',
   selectedClassId: '',
   myClasses: readJson('kelasku_classes_cache', []),
+  myClassesAt: Number(localStorage.getItem('kelasku_classes_cache_at') || 0),
+  publicClasses: readJson('kelasku_public_classes_cache', null),
   settings: readJson('kelasku_settings_cache', null),
   settingsAt: Number(localStorage.getItem('kelasku_settings_cache_at') || 0),
   academicHub: readJson('kelasku_academic_cache', null),
   academicHubAt: Number(localStorage.getItem('kelasku_academic_cache_at') || 0),
-  classDetails: {},
-  classAcademic: {},
+  classDetails: readJson('kelasku_class_details_cache', {}),
+  classDetailsAt: readJson('kelasku_class_details_cache_at', {}),
+  classAcademic: readJson('kelasku_class_academic_cache', {}),
+  classAcademicAt: readJson('kelasku_class_academic_cache_at', {}),
   adminOverview: null,
   messageRooms: readJson('kelasku_message_rooms_cache', []),
+  messageRoomsAt: Number(localStorage.getItem('kelasku_message_rooms_cache_at') || 0),
   messagesByClass: {},
   classTimeline: {},
+  classTimelineAt: {},
   classAnalytics: {},
+  classAnalyticsAt: {},
   taskReviewCache: {}
 };
 
@@ -59,34 +67,50 @@ export function setIdentity(identity) {
 export function clearSession() {
   setSession('', null);
   state.dashboard = null;
+  state.dashboardAt = 0;
   state.identity = null;
   state.settings = null;
   state.settingsAt = 0;
   state.myClasses = [];
+  state.myClassesAt = 0;
+  state.publicClasses = null;
   state.notifications = [];
   localStorage.removeItem('kelasku_identity_cache');
   localStorage.removeItem('kelasku_dashboard_cache');
+  localStorage.removeItem('kelasku_dashboard_cache_at');
   localStorage.removeItem('kelasku_settings_cache');
   localStorage.removeItem('kelasku_settings_cache_at');
   localStorage.removeItem('kelasku_classes_cache');
+  localStorage.removeItem('kelasku_classes_cache_at');
+  localStorage.removeItem('kelasku_public_classes_cache');
   localStorage.removeItem('kelasku_notification_cache');
   state.academicHub = null;
   state.academicHubAt = 0;
   state.classDetails = {};
+  state.classDetailsAt = {};
   state.classAcademic = {};
+  state.classAcademicAt = {};
   state.adminOverview = null;
   state.messageRooms = [];
+  state.messageRoomsAt = 0;
   state.messagesByClass = {};
   state.classTimeline = {};
+  state.classTimelineAt = {};
   state.classAnalytics = {};
+  state.classAnalyticsAt = {};
   state.taskReviewCache = {};
   localStorage.removeItem('kelasku_message_rooms_cache');
+  localStorage.removeItem('kelasku_message_rooms_cache_at');
   try {
     Object.keys(sessionStorage).filter(key => key.startsWith('kelasku_message_cache_')).forEach(key => sessionStorage.removeItem(key));
     sessionStorage.removeItem('kelasku_message_class');
   } catch {}
   localStorage.removeItem('kelasku_academic_cache');
   localStorage.removeItem('kelasku_academic_cache_at');
+  localStorage.removeItem('kelasku_class_details_cache');
+  localStorage.removeItem('kelasku_class_details_cache_at');
+  localStorage.removeItem('kelasku_class_academic_cache');
+  localStorage.removeItem('kelasku_class_academic_cache_at');
   if (state.notificationTimer) clearInterval(state.notificationTimer);
   state.notificationTimer = null;
 }

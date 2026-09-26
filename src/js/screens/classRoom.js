@@ -22,6 +22,56 @@ const ANALYTICS_PAGE_SIZE = 15;
 const ANALYTICS_MEMBER_PAGE_SIZE = 15;
 const CLASS_ATTENDANCE_PAGE_SIZE = 10;
 const ATTENDANCE_MEMBER_PAGE_SIZE = 20;
+const CLASS_DETAIL_TTL_MS = 2 * 60 * 1000;
+const CLASS_ACADEMIC_TTL_MS = 90 * 1000;
+const classDetailInFlight = new Map();
+const classAcademicInFlight = new Map();
+const classTimelineInFlight = new Map();
+const classAnalyticsInFlight = new Map();
+let classWarmTimer = null;
+const classWarmAt = new Map();
+
+function cacheFresh(atMap, classId, ttl) {
+  return Date.now() - Number(atMap?.[classId] || 0) < ttl;
+}
+function persistClassCache(cacheKey, atKey, storageKey, storageAtKey, classId, data, maxClasses = 4) {
+  state[cacheKey] ||= {};
+  state[atKey] ||= {};
+  state[cacheKey][classId] = data;
+  state[atKey][classId] = Date.now();
+  const keep = Object.keys(state[atKey]).sort((a,b)=>Number(state[atKey][b]||0)-Number(state[atKey][a]||0)).slice(0,maxClasses);
+  Object.keys(state[cacheKey]).forEach(id => { if (!keep.includes(id)) delete state[cacheKey][id]; });
+  Object.keys(state[atKey]).forEach(id => { if (!keep.includes(id)) delete state[atKey][id]; });
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state[cacheKey]));
+    localStorage.setItem(storageAtKey, JSON.stringify(state[atKey]));
+  } catch {}
+}
+function markClassCacheStale(atKey, storageAtKey, classId) {
+  state[atKey] ||= {};
+  state[atKey][classId] = 0;
+  try { localStorage.setItem(storageAtKey, JSON.stringify(state[atKey])); } catch {}
+}
+function fastRoomLoader(label='Menyiapkan data…') {
+  return `<div class="panel fast-load-panel" aria-live="polite"><span class="status-dot"></span><div><strong>${esc(label)}</strong><small>Data akan disimpan sementara agar perpindahan menu berikutnya lebih cepat.</small></div></div>`;
+}
+function scheduleClassWarmup(classId) {
+  if (!classId || Date.now() - Number(classWarmAt.get(String(classId)) || 0) < 30000) return;
+  classWarmAt.set(String(classId), Date.now());
+  clearTimeout(classWarmTimer);
+  const warm = async () => {
+    if (!classId || String(state.selectedClassId) !== String(classId)) return;
+    await loadClassAcademic(true).catch(()=>{});
+    if (String(state.selectedClassId) !== String(classId)) return;
+    setTimeout(() => loadClassTimeline(true).catch(()=>{}), 220);
+    setTimeout(() => loadClassAnalytics(true).catch(()=>{}), 520);
+  };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => warm(), { timeout: 900 });
+  } else {
+    classWarmTimer = setTimeout(warm, 260);
+  }
+}
 
 export function renderClassRoom() {
   const classId = state.selectedClassId || sessionStorage.getItem('kelasku_selected_class') || '';
@@ -45,21 +95,36 @@ export function renderClassRoom() {
   loadClassDetail(Boolean(cached));
 }
 
-async function loadClassDetail(background = false) {
+async function loadClassDetail(background = false, force = false) {
+  const classId = String(state.selectedClassId || '');
   const slot = document.getElementById('class-room-slot');
-  try {
-    const data = await api('getClassDetail', { class_id: state.selectedClassId });
-    const previous = state.classDetails[state.selectedClassId];
-    const changed = !sameData(previous, data);
-    state.classDetails[state.selectedClassId] = data;
-    currentClassData = data;
-    if (changed || !background) drawClass(data, true);
-  } catch (err) {
-    if (!background && slot) {
-      slot.innerHTML = `<div class="panel error-panel"><strong>Kelas gagal dimuat.</strong><p>${esc(err.message)}</p><button class="btn btn-secondary" id="back-error">Kembali ke Kelas</button></div>`;
-      document.getElementById('back-error').onclick = () => go('classes');
+  const cached = state.classDetails[classId];
+  if (!force && cached && cacheFresh(state.classDetailsAt, classId, CLASS_DETAIL_TTL_MS)) return cached;
+  if (classDetailInFlight.has(classId)) return classDetailInFlight.get(classId);
+
+  const request = (async () => {
+    try {
+      const data = await api('getClassDetail', { class_id: classId });
+      const previous = state.classDetails[classId];
+      const changed = !sameData(previous, data);
+      persistClassCache('classDetails','classDetailsAt','kelasku_class_details_cache','kelasku_class_details_cache_at',classId,data);
+      if (String(state.selectedClassId) === classId) {
+        currentClassData = data;
+        if (changed || !background) drawClass(data, true);
+      }
+      return data;
+    } catch (err) {
+      if (!background && !cached && slot && String(state.selectedClassId) === classId) {
+        slot.innerHTML = `<div class="panel error-panel"><strong>Kelas gagal dimuat.</strong><p>${esc(err.message)}</p><button class="btn btn-secondary" id="back-error">Kembali ke Kelas</button></div>`;
+        document.getElementById('back-error').onclick = () => go('classes');
+      }
+      return cached || null;
+    } finally {
+      classDetailInFlight.delete(classId);
     }
-  }
+  })();
+  classDetailInFlight.set(classId, request);
+  return request;
 }
 
 function drawClass(data, preserveTab = true) {
@@ -106,6 +171,7 @@ function drawClass(data, preserveTab = true) {
   document.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = () => copyText(btn.dataset.copy));
   bindRoomNavigation(data);
   switchTab(desiredTab, data);
+  scheduleClassWarmup(state.selectedClassId);
 }
 
 function roomMainButton(key,icon,label,count=0){
@@ -158,7 +224,7 @@ function switchTab(tab, data) {
   if (tab === 'timeline') {
     const cached = state.classTimeline[state.selectedClassId];
     if (cached) drawTimeline(cached);
-    else slot.innerHTML = academicRoomSkeleton();
+    else slot.innerHTML = fastRoomLoader('Menyiapkan Timeline…');
     loadClassTimeline(Boolean(cached));
     return;
   }
@@ -166,7 +232,7 @@ function switchTab(tab, data) {
   if (tab === 'analytics') {
     const cached = state.classAnalytics[state.selectedClassId];
     if (cached) drawClassAnalytics(cached);
-    else slot.innerHTML = academicRoomSkeleton();
+    else slot.innerHTML = fastRoomLoader('Menyiapkan Analitik…');
     loadClassAnalytics(Boolean(cached));
     return;
   }
@@ -174,7 +240,7 @@ function switchTab(tab, data) {
   if (['announcements','schedule','tasks','materials','attendance'].includes(tab)) {
     const cached = state.classAcademic[state.selectedClassId];
     if (cached) drawAcademicTab(tab, cached);
-    else slot.innerHTML = academicRoomSkeleton();
+    else slot.innerHTML = fastRoomLoader('Menyiapkan data Akademik…');
     loadClassAcademic(Boolean(cached));
     return;
   }
@@ -187,18 +253,33 @@ function switchTab(tab, data) {
   bindTab(tab, data);
 }
 
-async function loadClassAcademic(background = false) {
-  try {
-    const data = await api('getClassAcademic', { class_id: state.selectedClassId });
-    const previous = state.classAcademic[state.selectedClassId];
-    const changed = !sameData(previous, data);
-    state.classAcademic[state.selectedClassId] = data;
-    if (changed && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) drawAcademicTab(activeTab, data);
-  } catch (err) {
-    if (!background && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) {
-      document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+async function loadClassAcademic(background = false, force = false) {
+  const classId = String(state.selectedClassId || '');
+  const cached = state.classAcademic[classId];
+  if (!force && cached && cacheFresh(state.classAcademicAt, classId, CLASS_ACADEMIC_TTL_MS)) return cached;
+  if (classAcademicInFlight.has(classId)) return classAcademicInFlight.get(classId);
+
+  const request = (async () => {
+    try {
+      const data = await api('getClassAcademic', { class_id: classId });
+      const previous = state.classAcademic[classId];
+      const changed = !sameData(previous, data);
+      persistClassCache('classAcademic','classAcademicAt','kelasku_class_academic_cache','kelasku_class_academic_cache_at',classId,data);
+      if (String(state.selectedClassId) === classId && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && (changed || !background)) {
+        drawAcademicTab(activeTab, data);
+      }
+      return data;
+    } catch (err) {
+      if (!background && !cached && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && String(state.selectedClassId) === classId) {
+        document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+      }
+      return cached || null;
+    } finally {
+      classAcademicInFlight.delete(classId);
     }
-  }
+  })();
+  classAcademicInFlight.set(classId, request);
+  return request;
 }
 
 function overviewHtml(data) {
@@ -230,17 +311,33 @@ function drawAcademicTab(tab, data) {
 }
 
 async function loadClassTimeline(background=false) {
-  try {
-    const data = await api('getClassTimeline',{class_id:state.selectedClassId,category:timelineCategory,limit:60});
-    const previous = state.classTimeline[state.selectedClassId];
-    const changed = !sameData(previous, data);
-    state.classTimeline[state.selectedClassId] = data;
-    if ((changed || !background) && activeTab === 'timeline') drawTimeline(data);
-  } catch (err) {
-    if (!background && activeTab === 'timeline') {
-      document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Timeline gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
-    }
-  }
+  const classId=String(state.selectedClassId||'');
+  const category=String(timelineCategory||'ALL');
+  const key=`${classId}:${category}`;
+  const cached=state.classTimeline[classId];
+  const freshAll = category === 'ALL' && cached && (Date.now() - Number(state.classTimelineAt?.[classId] || 0) < 60000);
+  if (freshAll) return cached;
+  if(classTimelineInFlight.has(key))return classTimelineInFlight.get(key);
+  const request=(async()=>{
+    try {
+      const data = await api('getClassTimeline',{class_id:classId,category,limit:60});
+      const previous = state.classTimeline[classId];
+      const changed = !sameData(previous, data);
+      if(String(state.selectedClassId)===classId && String(timelineCategory)===category){
+        state.classTimeline[classId] = data;
+        state.classTimelineAt[classId]=Date.now();
+        if ((changed || !background) && activeTab === 'timeline') drawTimeline(data);
+      }
+      return data;
+    } catch (err) {
+      if (!background && !cached && activeTab === 'timeline' && String(state.selectedClassId)===classId) {
+        document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Timeline gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+      }
+      return cached||null;
+    } finally { classTimelineInFlight.delete(key); }
+  })();
+  classTimelineInFlight.set(key,request);
+  return request;
 }
 
 function drawTimeline(data) {
@@ -306,7 +403,7 @@ function bindAcademicTab(tab,data) {
   if(tab==='attendance'&&p.can_manage_attendance) document.getElementById('create-attendance').onclick=openCreateAttendance;
   if(tab==='tasks') document.querySelectorAll('[data-review-task]').forEach(btn=>btn.onclick=()=>openTaskReview(btn.dataset.reviewTask));
   document.querySelectorAll('[data-archive-type]').forEach(btn=>btn.onclick=()=>archiveItem(btn.dataset.archiveType,btn.dataset.archiveId,btn));
-  document.querySelectorAll('[data-open-global-task]').forEach(btn=>btn.onclick=()=>openTaskModal(btn.dataset.openGlobalTask,data.tasks||[],{onSuccess:async()=>{delete state.classAcademic[state.selectedClassId];await loadClassAcademic(false);}}));
+  document.querySelectorAll('[data-open-global-task]').forEach(btn=>btn.onclick=()=>openTaskModal(btn.dataset.openGlobalTask,data.tasks||[],{onSuccess:async()=>{markClassCacheStale('classAcademicAt','kelasku_class_academic_cache_at',state.selectedClassId);await loadClassAcademic(false,true);}}));
   document.querySelectorAll('[data-attendance-id]').forEach(btn=>btn.onclick=()=>openAttendance(btn.dataset.attendanceId));
   document.querySelectorAll('[data-class-attendance-page]').forEach(btn=>btn.onclick=()=>{classAttendancePage=Number(btn.dataset.classAttendancePage)||1;drawAcademicTab('attendance',data);});
   document.querySelectorAll('[data-copy-attendance]').forEach(btn=>btn.onclick=()=>copyAttendanceLink(btn.dataset.copyAttendance));
@@ -415,7 +512,7 @@ function bindCreateForm(action){
   };
 }
 
-async function refreshAcademicAfterMutation(){invalidateAcademicClientCache(state.selectedClassId);delete state.classAcademic[state.selectedClassId];delete state.classAnalytics[state.selectedClassId];await loadClassAcademic(false);}
+async function refreshAcademicAfterMutation(){invalidateAcademicClientCache(state.selectedClassId);markClassCacheStale('classAcademicAt','kelasku_class_academic_cache_at',state.selectedClassId);state.classAnalyticsAt[state.selectedClassId]=0;await loadClassAcademic(false,true);}
 async function archiveItem(type,id,button){
   const ok=await confirmDialog({title:'Arsipkan item?',message:'Item akan disembunyikan dari kelas aktif. Data tidak dihapus permanen.',confirmText:'Arsipkan',danger:true}); if(!ok)return;
   const old=button?.innerHTML; if(button){button.disabled=true;button.innerHTML='<span class="btn-spinner"></span>';}
@@ -474,8 +571,27 @@ function attendanceRecordRow(r){return `<div class="attendance-record-row" data-
 async function saveAttendance(event,attendanceId){event.preventDefault();const btn=document.getElementById('attendance-save-btn'),status=document.getElementById('attendance-save-status'),old=btn.innerHTML;if(btn.disabled)return;const original=attendanceModalState?.data?.records||[];const draft=attendanceModalState?.draft||{};const records=original.map(row=>({user_id:row.user_id,attendance_status:draft[String(row.user_id)]?.attendance_status||row.attendance_status||'UNMARKED',note:draft[String(row.user_id)]?.note||''}));btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent=`Menyimpan ${records.length} anggota dalam satu request… Jangan klik dua kali.`;try{await api('saveAttendanceRecords',{attendance_id:attendanceId,records},{onSlow:()=>status.textContent='Masih menyimpan. Tombol tetap dikunci.'});toast('Absensi tersimpan.');attendanceModalState=null;closeModal();await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
 
 
-async function loadClassAnalytics(background=false){
-  try{const data=await api('getAttendanceAnalytics',{class_id:state.selectedClassId});const previous=state.classAnalytics[state.selectedClassId];const changed=!sameData(previous,data);state.classAnalytics[state.selectedClassId]=data;if((changed||!background)&&activeTab==='analytics')drawClassAnalytics(data);}catch(err){if(!background&&activeTab==='analytics')document.getElementById('room-content').innerHTML=`<div class="panel error-panel"><strong>Analitik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;}
+async function loadClassAnalytics(background=false,force=false){
+  const classId=String(state.selectedClassId||'');
+  const cached=state.classAnalytics[classId];
+  if(!force&&cached&&Date.now()-Number(state.classAnalyticsAt?.[classId]||0)<60000)return cached;
+  if(classAnalyticsInFlight.has(classId))return classAnalyticsInFlight.get(classId);
+  const request=(async()=>{
+    try{
+      const data=await api('getAttendanceAnalytics',{class_id:classId});
+      const previous=state.classAnalytics[classId];
+      const changed=!sameData(previous,data);
+      state.classAnalytics[classId]=data;
+      state.classAnalyticsAt[classId]=Date.now();
+      if(String(state.selectedClassId)===classId&&(changed||!background)&&activeTab==='analytics')drawClassAnalytics(data);
+      return data;
+    }catch(err){
+      if(!background&&!cached&&activeTab==='analytics'&&String(state.selectedClassId)===classId)document.getElementById('room-content').innerHTML=`<div class="panel error-panel"><strong>Analitik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+      return cached||null;
+    }finally{classAnalyticsInFlight.delete(classId);}
+  })();
+  classAnalyticsInFlight.set(classId,request);
+  return request;
 }
 function drawClassAnalytics(data){
   const slot=document.getElementById('room-content');if(!slot)return;
@@ -836,16 +952,15 @@ async function saveClassLinks(data){
   finally{btn.disabled=false;btn.innerHTML=old;}
 }
 
-async function saveClassProfile(){const form=document.getElementById('class-settings-form'),btn=document.getElementById('save-class-profile'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{await api('updateClassProfile',{class_id:state.selectedClassId,name:form.name.value,description:form.description.value,institution:form.institution.value,study_program:form.study_program.value,cohort:form.cohort.value,semester:form.semester.value});toast('Identitas kelas tersimpan.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
-async function saveClassSettings(event){event.preventDefault();const form=event.currentTarget,btn=document.getElementById('save-class-settings'),status=document.getElementById('class-settings-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan pengaturan…';const payload={class_id:state.selectedClassId,visibility:form.visibility.value,join_approval:form.join_approval.checked,join_code_enabled:form.join_code_enabled.checked,member_list_visible:form.member_list_visible.checked,allow_member_posts:form.allow_member_posts.checked,allow_member_uploads:form.allow_member_uploads.checked,allow_member_invites:form.allow_member_invites.checked};try{await api('updateClassSettings',payload,{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});status.className='request-status ok';status.textContent='Tersimpan ✓';toast('Pengaturan kelas tersimpan.');delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
-async function regenerateJoinCode(){const ok=await confirmDialog({title:'Generate ulang Join Code?',message:'Kode lama langsung tidak dapat dipakai. Pastikan anggota baru menerima kode terbaru.',confirmText:'Generate Ulang',danger:true});if(!ok)return;const btn=document.getElementById('regen-code'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';try{const data=await api('regenerateJoinCode',{class_id:state.selectedClassId});toast('Join Code baru: '+data.join_code);delete state.classDetails[state.selectedClassId];await loadClassDetail(false);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
+async function saveClassProfile(){const form=document.getElementById('class-settings-form'),btn=document.getElementById('save-class-profile'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{await api('updateClassProfile',{class_id:state.selectedClassId,name:form.name.value,description:form.description.value,institution:form.institution.value,study_program:form.study_program.value,cohort:form.cohort.value,semester:form.semester.value});toast('Identitas kelas tersimpan.');markClassCacheStale('classDetailsAt','kelasku_class_details_cache_at',state.selectedClassId);await loadClassDetail(false,true);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
+async function saveClassSettings(event){event.preventDefault();const form=event.currentTarget,btn=document.getElementById('save-class-settings'),status=document.getElementById('class-settings-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan pengaturan…';const payload={class_id:state.selectedClassId,visibility:form.visibility.value,join_approval:form.join_approval.checked,join_code_enabled:form.join_code_enabled.checked,member_list_visible:form.member_list_visible.checked,allow_member_posts:form.allow_member_posts.checked,allow_member_uploads:form.allow_member_uploads.checked,allow_member_invites:form.allow_member_invites.checked};try{await api('updateClassSettings',payload,{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});status.className='request-status ok';status.textContent='Tersimpan ✓';toast('Pengaturan kelas tersimpan.');markClassCacheStale('classDetailsAt','kelasku_class_details_cache_at',state.selectedClassId);await loadClassDetail(false,true);}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
+async function regenerateJoinCode(){const ok=await confirmDialog({title:'Generate ulang Join Code?',message:'Kode lama langsung tidak dapat dipakai. Pastikan anggota baru menerima kode terbaru.',confirmText:'Generate Ulang',danger:true});if(!ok)return;const btn=document.getElementById('regen-code'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';try{const data=await api('regenerateJoinCode',{class_id:state.selectedClassId});toast('Join Code baru: '+data.join_code);markClassCacheStale('classDetailsAt','kelasku_class_details_cache_at',state.selectedClassId);await loadClassDetail(false,true);}catch(err){toast(err.message);}finally{btn.disabled=false;btn.innerHTML=old;}}
 
 async function copyAttendanceLink(token){if(!token)return toast('Link absensi belum tersedia.');await copyText(attendanceLink(token));}
 function attendanceLink(token){return primaryUrl('/absensi',{a:String(token||'')}).toString();}
 async function copyText(text){try{await navigator.clipboard.writeText(text||'');toast('Tautan/kode disalin.');}catch{toast('Gagal menyalin otomatis.');}}
 
-function academicRoomSkeleton(){return `<div class="academic-card-list">${[1,2,3].map(()=>'<div class="panel skeleton" style="height:104px"></div>').join('')}</div>`;}
-function roomSkeleton(){return `<div class="class-hero panel skeleton" style="height:190px"></div><div class="panel skeleton" style="height:300px;margin-top:16px"></div>`;}
+function roomSkeleton(){return fastRoomLoader('Membuka Ruang Kelas…');}
 function detail(label,value){return `<div class="detail-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;}
 function roleLabel(role){const key=String(role||'MEMBER').toUpperCase();if(key==='COORDINATOR')return 'Koordinator';if(key==='OWNER')return 'Owner';if(key==='MODERATOR')return 'Moderator';return 'Member';}
 function initials(name){return String(name||'K').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'K';}

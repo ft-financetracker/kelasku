@@ -1,5 +1,5 @@
 /**
- * KelasKu — Application Entry Point v6.5.3
+ * KelasKu — Application Entry Point v6.5.4
  * ============================================================
  * Phase 6 memperdalam Academic Workflow: review tugas, analitik absensi, kalender, dan report.
  * Bootstrap tetap compound: config + user + settings + dashboard.
@@ -21,13 +21,13 @@ import { renderSetup } from './screens/setup.js';
 import { renderDashboard } from './screens/dashboard.js';
 import { renderAccount } from './screens/account.js';
 import { renderSettings } from './screens/settings.js';
-import { renderClasses } from './screens/classes.js';
+import { renderClasses, prefetchMyClasses } from './screens/classes.js';
 import { renderClassRoom } from './screens/classRoom.js';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
-import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance } from './screens/academic.js';
+import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
 import { renderAttendanceLanding } from './screens/attendanceLanding.js';
-import { renderMessages } from './screens/messages.js';
+import { renderMessages, prefetchMessageRooms } from './screens/messages.js';
 import { renderNotifications } from './screens/notifications.js';
 
 const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
@@ -72,6 +72,21 @@ initInstallCapture();
 registerServiceWorker();
 startUpdateWatcher();
 
+let coreWarmToken = '';
+function scheduleCoreWarmup() {
+  if (!state.sessionToken || coreWarmToken === state.sessionToken) return;
+  coreWarmToken = state.sessionToken;
+  const run = async () => {
+    await loadAcademicHub(false).catch(()=>{});
+    await sleep(120);
+    await prefetchMyClasses().catch(()=>{});
+    await sleep(120);
+    await prefetchMessageRooms().catch(()=>{});
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(() => run(), { timeout: 1200 });
+  else setTimeout(run, 450);
+}
+
 async function boot() {
   renderSplash('Menyiapkan KelasKu…');
 
@@ -81,7 +96,9 @@ async function boot() {
       return null;
     });
 
-  await sleep(420);
+  // User yang sudah punya session + cache tidak perlu ditahan di splash.
+  // Delay kecil hanya dipakai untuk jalur belum-login agar transisi awal tetap halus.
+  if (!state.sessionToken) await sleep(180);
 
   if (!state.sessionToken) {
     if (initialUrlRoute && !['auth','onboarding','splash'].includes(initialUrlRoute)) {
@@ -133,7 +150,9 @@ async function boot() {
 
   if (data.dashboard) {
     state.dashboard = data.dashboard;
+    state.dashboardAt = Date.now();
     writeJson('kelasku_dashboard_cache', data.dashboard);
+    localStorage.setItem('kelasku_dashboard_cache_at', String(state.dashboardAt));
   }
 
   // Jangan paksa route ulang setelah bootstrap selesai bila user sudah berpindah
@@ -146,6 +165,7 @@ function routeReadyUser() {
   if (!state.user) return;
   if (!state.user.profile_complete) return go('profile');
   if (shouldShowAppSetup()) return go('setup');
+  scheduleCoreWarmup();
 
   const currentUrl = new URL(window.location.href);
   if (currentUrl.searchParams.get('a') || currentUrl.searchParams.get('attendance')) return go('attendance-link');

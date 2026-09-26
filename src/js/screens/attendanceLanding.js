@@ -34,7 +34,7 @@ async function checkIn(){
 }
 
 function clearAttendanceQuery(){const url=new URL(window.location.href);url.searchParams.delete('a');url.searchParams.delete('attendance');history.replaceState({},'',url.pathname+(url.search||''));}
-function landingSkeleton(){return `<div class="panel skeleton" style="height:270px"></div><div class="panel skeleton" style="height:180px;margin-top:14px"></div>`;}
+function landingSkeleton(){return '<div class="panel fast-load-panel"><span class="status-dot"></span><div><strong>Memeriksa sesi absensi…</strong><small>Identitas dan status sesi sedang diverifikasi.</small></div></div>';}
 function formatDateTime(v){try{return new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));}catch{return v||'-';}}
 function formatTime(v){try{return new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date(v));}catch{return '-';}}
 function dayPart(v){try{return new Intl.DateTimeFormat('id-ID',{day:'2-digit'}).format(new Date(v));}catch{return '--';}}
