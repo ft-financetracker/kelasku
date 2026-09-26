@@ -1,6 +1,22 @@
 {
   "releases": [
     {
+      "version": "6.5.3",
+      "build": "20260926.253",
+      "date": "2026-09-26",
+      "title": "Live Stabilization — Session Schedule, XLSX & Landing UX",
+      "items": [
+        "Jadwal berulang sekarang menampilkan nomor sesi/pertemuan; satu seri dapat membuat banyak sesi dan setiap sesi dapat diedit/batalkan sendiri atau bersama sesi berikutnya.",
+        "Absensi otomatis tetap dibuat satu sesi terpisah per pertemuan sehingga rekap per sesi dan per mata kuliah tetap jelas.",
+        "Analitik disederhanakan menjadi tab Ringkasan, Anggota, Kegiatan, dan Detail agar halaman tidak penuh sekaligus.",
+        "Export analitik kembali ke XLSX multi-sheet: ALL/SAYA, ANALISIS, serta sheet per mata kuliah/kegiatan yang berisi rekap anggota, rekap per sesi, dan detail record.",
+        "Landing Page bagian informasi kelas dipadatkan; item Jadwal/Tugas/Informasi dapat dibuka detail langsung di halaman, Presensi tetap punya CTA login/check-in.",
+        "Link Zoom/Meet yang disimpan di field lokasi hanya dibuka dari Ruang Kelas setelah login; Landing hanya menampilkan Pertemuan online.",
+        "Carousel Kenal KelasKu diperbaiki agar auto-play terus berjalan 1→2→…→6→1 tanpa berhenti karena hover/focus.",
+        "Backend berubah tanpa perubahan schema; schema tetap 14."
+      ]
+    },
+    {
       "version": "6.5.2",
       "build": "20260926.252",
       "date": "2026-09-26",

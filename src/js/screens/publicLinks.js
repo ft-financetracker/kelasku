@@ -7,6 +7,8 @@ const params = new URLSearchParams(location.search);
 const rawCode = (params.get('c') || '').trim();
 let deferredInstallPrompt = null;
 let showcaseTimer = null;
+let currentPublicAcademic = null;
+let currentPublicClassId = '';
 
 const PLATFORM = {
   WHATSAPP: ['WhatsApp', 'chat', 'Ruang komunikasi dan grup kelas'],
@@ -120,12 +122,13 @@ function memberAcademicHub(academic={}, classId='') {
   const tasks=(academic.tasks||[]).filter(x=>x.submission_status!=='SUBMITTED' && (!x.deadline || isFuture(x.deadline))).sort(byDate('deadline')).slice(0,4);
   const attendance=(academic.attendance_sessions||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3);
   const announcements=(academic.announcements||[]).slice(0,4);
+  const safeLocation=value=>/^https?:\/\//i.test(String(value||'').trim())?'Pertemuan online':String(value||'').trim();
 
   const panels = {
-    schedule: `${roomList(schedules,'Belum ada jadwal mendatang.',x=>`<a href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title || 'Jadwal Kelas')}</strong><small>${esc(fmtDate(x.start_at))}${x.location?` · ${esc(x.location)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`)}<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Lihat jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`,
-    tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<a href="/ruang-kelas" data-open-class-tab="tasks" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`),
-    attendance: roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title || 'Presensi Kelas')}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi sedang aktif'}</small></div></a><a href="/absensi?a=${encodeURIComponent(x.public_token||'')}" class="public-primary-action">Isi Presensi</a></div>`),
-    announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<a href="/ruang-kelas" data-open-class-tab="announcements" data-class-id="${esc(classId)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></a>`)
+    schedule: `${roomList(schedules,'Belum ada jadwal mendatang.',x=>`<button type="button" data-public-open-detail="schedule" data-public-item-id="${esc(x.schedule_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title || 'Jadwal Kelas')}</strong><small>${esc(fmtDate(x.start_at))}${x.location?` · ${esc(safeLocation(x.location))}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)}<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Lihat jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`,
+    tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<button type="button" data-public-open-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
+    attendance: roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-public-open-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title || 'Presensi Kelas')}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi sedang aktif'}</small></div></button><a href="/absensi?a=${encodeURIComponent(x.public_token||'')}" class="public-primary-action">Isi Presensi</a></div>`),
+    announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
 
   const tabs = [
@@ -135,7 +138,7 @@ function memberAcademicHub(academic={}, classId='') {
     ['announcements','campaign','Informasi']
   ];
   return `<section class="public-room-hub">
-    <div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Akses ruang kelas.</h2><p>Pilih room untuk melihat informasi yang dibutuhkan.</p></div></div>
+    <div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Akses ruang kelas.</h2><p>Pilih room, lalu klik item untuk melihat detail tanpa meninggalkan halaman.</p></div></div>
     <nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav>
     <div class="public-room-panels">${Object.entries(panels).map(([key,html],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${html}</div>`).join('')}</div>
   </section>`;
@@ -148,14 +151,15 @@ function academicLoading() {
 function guestAcademicHub(loggedIn) {
   const tabs=[['schedule','calendar_month','Jadwal'],['tasks','checklist','Tugas'],['attendance','done_all','Presensi'],['announcements','campaign','Informasi']];
   const copy={
-    schedule:['Jadwal Kelas','Lihat agenda dan perubahan jadwal setelah masuk ke kelas.'],
-    tasks:['Tugas Kelas','Deadline dan status tugas tersedia untuk anggota kelas.'],
-    attendance:['Presensi Kelas','Link presensi tetap mewajibkan login agar identitas kehadiran valid.'],
-    announcements:['Informasi Kelas','Pengumuman internal tersedia setelah akun memiliki akses kelas.']
+    schedule:['Jadwal Kelas','Agenda dan perubahan jadwal tersedia setelah masuk.'],
+    tasks:['Tugas Kelas','Deadline dan progres tugas ada di Ruang Kelas.'],
+    attendance:['Presensi Kelas','Presensi membutuhkan login agar identitas kehadiran valid.'],
+    announcements:['Informasi Kelas','Pengumuman internal tersedia untuk anggota kelas.']
   };
-  const panels=tabs.map(([key,icon])=>{const c=copy[key];return `<div class="public-room-panel" data-public-room-panel="${key}" ${key!=='schedule'?'hidden':''}><button type="button" class="public-room-row public-room-clickable public-room-guest-row" data-public-login-required="${key}"><span class="public-room-row-icon material-symbols-rounded">${icon}</span><div><strong>${c[0]}</strong><small>${c[1]}</small></div><span class="material-symbols-rounded public-row-arrow">${key==='attendance'?'login':'chevron_right'}</span></button><div class="public-guest-hint">${loggedIn?'Akun ini belum memiliki akses anggota ke kelas ini.':'Belum login? Link publik kelas tetap tersedia di bagian Link Cepat di bawah.'}</div></div>`;}).join('');
-  return `<section class="public-room-hub"><div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Kenali ruang kelas.</h2><p>Room tetap dapat dilihat. Data internal baru dibuka setelah login dan memiliki akses.</p></div></div><nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${panels}</div></section>`;
+  const panels=tabs.map(([key,icon])=>{const c=copy[key];return `<div class="public-room-panel" data-public-room-panel="${key}" ${key!=='schedule'?'hidden':''}><button type="button" class="public-room-row public-room-clickable public-room-guest-row" data-public-login-required="${key}"><span class="public-room-row-icon material-symbols-rounded">${icon}</span><div><strong>${c[0]}</strong><small>${c[1]}</small></div><span class="material-symbols-rounded public-row-arrow">${key==='attendance'?'login':'arrow_forward'}</span></button></div>`;}).join('');
+  return `<section class="public-room-hub"><div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Akses ruang kelas.</h2><p>${loggedIn?'Akun ini belum menjadi anggota kelas.':'Room dapat dijelajahi; data internal dibuka setelah login.'}</p></div></div><nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${panels}</div></section>`;
 }
+
 function showPublicNotice(message){
   let notice=document.getElementById('public-notice');
   if(!notice){notice=document.createElement('div');notice.id='public-notice';notice.className='public-notice';document.body.appendChild(notice);}
@@ -175,6 +179,8 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   const loggedIn=Boolean(state.sessionToken && state.user);
   const sourceGroups=isMember?groupsFromItems(memberData.class_links||[]):(data.groups||{});
   const sections=ORDERED.filter(key=>Array.isArray(sourceGroups[key])&&sourceGroups[key].length).map(key=>groupSection(key,sourceGroups[key])).join('');
+  currentPublicAcademic = isMember ? (academic || {}) : null;
+  currentPublicClassId = cls.class_id || '';
   const infoSection = isMember
     ? memberAcademicHub(academic||{},cls.class_id||'')
     : (membershipLoading ? academicLoading() : guestAcademicHub(loggedIn));
@@ -186,6 +192,22 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   bindInteractions();
 }
 
+function closePublicDetail(){document.getElementById('public-detail-overlay')?.remove();}
+function showPublicAcademicDetail(type,id){
+  const academic=currentPublicAcademic||{};let item=null,title='',meta='',body='',action='';
+  if(type==='schedule'){
+    item=(academic.schedules||[]).find(x=>String(x.schedule_id)===String(id));if(!item)return;
+    title=item.title||'Jadwal Kelas';const online=/^https?:\/\//i.test(String(item.location||'').trim());meta=`${fmtDate(item.start_at)}${item.end_at?` — ${fmtDate(item.end_at)}`:''}`;body=`${item.description?`<p>${esc(item.description)}</p>`:''}<div class="public-detail-meta"><span class="material-symbols-rounded">location_on</span><span>${esc(online?'Pertemuan online':(item.location||'Lokasi belum ditentukan'))}</span></div>`;action=`<a href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(currentPublicClassId)}" class="public-primary-action public-detail-action">Buka Ruang Kelas</a>`;
+  }else if(type==='task'){
+    item=(academic.tasks||[]).find(x=>String(x.task_id)===String(id));if(!item)return;title=item.title||'Tugas';meta=item.deadline?`Deadline ${fmtDate(item.deadline)}`:'Tanpa deadline';body=`<p>${esc(item.description||'Tidak ada deskripsi tambahan.')}</p>${item.submission_status?`<div class="public-detail-meta"><span class="material-symbols-rounded">task_alt</span><span>Status: ${esc(item.submission_status)}</span></div>`:''}`;action=`<a href="/ruang-kelas" data-open-class-tab="tasks" data-class-id="${esc(currentPublicClassId)}" class="public-primary-action public-detail-action">Buka Tugas</a>`;
+  }else if(type==='announcement'){
+    item=(academic.announcements||[]).find(x=>String(x.announcement_id)===String(id));if(!item)return;title=item.title||'Informasi';meta=item.published_at?fmtDate(item.published_at):'Informasi kelas';body=`<p>${esc(item.body||'Tidak ada isi tambahan.')}</p>`;action=`<a href="/ruang-kelas" data-open-class-tab="announcements" data-class-id="${esc(currentPublicClassId)}" class="public-primary-action public-detail-action">Buka Pengumuman</a>`;
+  }else if(type==='attendance'){
+    item=(academic.attendance_sessions||[]).find(x=>String(x.attendance_id)===String(id));if(!item)return;title=item.title||'Presensi';meta=item.start_at?fmtDate(item.start_at):'Sesi aktif';body='<p>Presensi menggunakan akun KelasKu agar identitas dan riwayat kehadiran tetap valid.</p>';action=item.public_token?`<a href="/absensi?a=${encodeURIComponent(item.public_token)}" class="public-primary-action public-detail-action">Isi Presensi</a>`:'';
+  }
+  closePublicDetail();const overlay=document.createElement('div');overlay.id='public-detail-overlay';overlay.className='public-detail-overlay';overlay.innerHTML=`<div class="public-detail-card"><div class="public-detail-head"><div><span class="public-kicker">DETAIL KELAS</span><h3>${esc(title)}</h3><small>${esc(meta)}</small></div><button type="button" data-public-detail-close class="public-detail-close"><span class="material-symbols-rounded">close</span></button></div><div class="public-detail-body">${body}</div>${action?`<div class="public-detail-actions">${action}</div>`:''}</div>`;document.body.appendChild(overlay);overlay.addEventListener('click',e=>{if(e.target===overlay)closePublicDetail();});overlay.querySelector('[data-public-detail-close]')?.addEventListener('click',closePublicDetail);overlay.querySelectorAll('[data-open-class-tab]').forEach(link=>link.addEventListener('click',()=>{sessionStorage.setItem('kelasku_selected_class',link.dataset.classId||'');sessionStorage.setItem('kelasku_class_tab',link.dataset.openClassTab||'overview');}));
+}
+
 function bindInteractions(){
   document.querySelectorAll('[data-open-class-tab]').forEach(link=>link.addEventListener('click',()=>{
     const id=link.dataset.classId||'';
@@ -194,6 +216,8 @@ function bindInteractions(){
       sessionStorage.setItem('kelasku_class_tab',link.dataset.openClassTab||'overview');
     }
   }));
+
+  document.querySelectorAll('[data-public-open-detail]').forEach(btn=>btn.addEventListener('click',()=>showPublicAcademicDetail(btn.dataset.publicOpenDetail,btn.dataset.publicItemId)));
 
   document.querySelectorAll('[data-public-room]').forEach(btn=>btn.addEventListener('click',()=>{
     const key=btn.dataset.publicRoom;
@@ -250,62 +274,22 @@ function bindInteractions(){
 }
 
 function bindShowcase(){
-  if(showcaseTimer){ clearInterval(showcaseTimer); showcaseTimer=null; }
-  const track=document.getElementById('public-showcase-track');
-  if(!track)return;
-
-  const originals=[...track.querySelectorAll('.public-device-card')];
-  if(!originals.length)return;
-
-  // 3 set identik: [clone 1..6] [asli 1..6] [clone 1..6].
-  // User selalu melihat gerakan ke arah yang dipilih; saat masuk set clone,
-  // posisi di-recenter secara instan ke card identik sehingga tidak ada animasi balik 6 -> 1.
-  const before=document.createDocumentFragment();
-  const after=document.createDocumentFragment();
-  originals.forEach(card=>{
-    const a=card.cloneNode(true); a.dataset.loopClone='before'; a.setAttribute('aria-hidden','true'); before.appendChild(a);
-    const b=card.cloneNode(true); b.dataset.loopClone='after'; b.setAttribute('aria-hidden','true'); after.appendChild(b);
-  });
-  track.insertBefore(before,track.firstChild);
-  track.appendChild(after);
-
-  let settlingTimer=null;
-  const stride=()=>{
-    const cards=track.querySelectorAll('.public-device-card');
-    if(cards.length<2)return (cards[0]?.getBoundingClientRect().width||260)+9;
-    return Math.max(1,cards[1].offsetLeft-cards[0].offsetLeft);
-  };
-  const middleStart=()=>originals[0].offsetLeft;
-  const setWidth=()=>stride()*originals.length;
-  const recenter=()=>{
-    const start=middleStart();
-    const width=setWidth();
-    if(!width)return;
-    const x=track.scrollLeft;
-    const tolerance=Math.max(3,stride()*.15);
-    if(x>=start+width-tolerance) track.scrollLeft=x-width;
-    else if(x<start-tolerance) track.scrollLeft=x+width;
-  };
-  const move=direction=>track.scrollBy({left:direction*stride(),behavior:'smooth'});
-  const next=()=>move(1);
-
-  // Mulai dari set tengah agar next maupun previous dapat loop tanpa ujung.
-  requestAnimationFrame(()=>{ track.scrollLeft=middleStart(); });
-  track.addEventListener('scroll',()=>{
-    clearTimeout(settlingTimer);
-    settlingTimer=setTimeout(recenter,180);
-  },{passive:true});
-
-  document.querySelector('[data-showcase-prev]')?.addEventListener('click',()=>move(-1));
+  if(showcaseTimer){clearInterval(showcaseTimer);showcaseTimer=null;}
+  const track=document.getElementById('public-showcase-track');if(!track)return;
+  const originals=[...track.querySelectorAll('.public-device-card')];if(!originals.length)return;
+  originals.forEach(card=>{const clone=card.cloneNode(true);clone.dataset.loopClone='after';clone.setAttribute('aria-hidden','true');track.appendChild(clone);});
+  const count=originals.length;let index=0;let resetTimer=null;let resumeTimer=null;let userInteracting=false;
+  const cards=()=>[...track.querySelectorAll('.public-device-card')];
+  const goTo=(target,smooth=true)=>{const list=cards();const card=list[target];if(!card)return;track.scrollTo({left:card.offsetLeft,behavior:smooth?'smooth':'auto'});};
+  const next=()=>{if(userInteracting)return;index+=1;goTo(index,true);if(index===count){clearTimeout(resetTimer);resetTimer=setTimeout(()=>{index=0;goTo(0,false);},650);}};
+  const prev=()=>{if(index<=0){index=count;goTo(count,false);requestAnimationFrame(()=>{index=count-1;goTo(index,true);});}else{index-=1;goTo(index,true);}};
+  document.querySelector('[data-showcase-prev]')?.addEventListener('click',prev);
   document.querySelector('[data-showcase-next]')?.addEventListener('click',next);
-
-  const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-  if(reduced)return;
-  const start=()=>{ if(!showcaseTimer)showcaseTimer=setInterval(()=>{if(document.visibilityState==='visible')next();},4500); };
-  const stop=()=>{ if(showcaseTimer){clearInterval(showcaseTimer);showcaseTimer=null;} };
-  ['pointerenter','focusin','touchstart'].forEach(event=>track.addEventListener(event,stop,{passive:true}));
-  ['pointerleave','focusout','touchend'].forEach(event=>track.addEventListener(event,start,{passive:true}));
-  start();
+  const start=()=>{if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;if(!showcaseTimer)showcaseTimer=setInterval(()=>{if(document.visibilityState==='visible')next();},3800);};
+  const pauseBriefly=()=>{userInteracting=true;if(showcaseTimer){clearInterval(showcaseTimer);showcaseTimer=null;}clearTimeout(resumeTimer);resumeTimer=setTimeout(()=>{userInteracting=false;start();},5000);};
+  track.addEventListener('pointerdown',pauseBriefly,{passive:true});track.addEventListener('touchstart',pauseBriefly,{passive:true});
+  track.addEventListener('scroll',()=>{if(userInteracting){clearTimeout(resumeTimer);resumeTimer=setTimeout(()=>{const first=cards()[0];const stride=(cards()[1]?.offsetLeft||0)-(first?.offsetLeft||0)||260;index=Math.max(0,Math.min(count-1,Math.round(track.scrollLeft/stride)));userInteracting=false;start();},1200);}},{passive:true});
+  goTo(0,false);start();
 }
 
 async function handleInstall(){

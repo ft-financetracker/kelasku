@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.5.2-b252-live';
+const CACHE_NAME = 'kelasku-v6.5.3-b253-live';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -29,6 +29,7 @@ const APP_SHELL = [
   '/src/js/core/preferences.js',
   '/src/js/core/dialog.js',
   '/src/js/core/media.js',
+  '/src/js/core/xlsx.js',
   '/src/js/screens/splash.js',
   '/src/js/screens/onboarding.js',
   '/src/js/screens/auth.js',
