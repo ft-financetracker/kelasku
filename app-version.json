@@ -1,7 +1,7 @@
 {
-  "version": "6.6.9",
-  "build": "20260927.269",
+  "version": "6.7.0",
+  "build": "20260927.270",
   "schema": 17,
   "release_date": "2026-09-27",
-  "release_note": "Landing Link Hub: tab periode/kelas fleksibel dan hardening link Anggota (Private) agar URL tidak pernah dikirim ke guest/non-member."
+  "release_note": "Nested Link Manager + locked private link previews + return-to-origin login flow."
 }

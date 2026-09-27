@@ -30,7 +30,7 @@ import { renderAttendanceLanding } from './screens/attendanceLanding.js';
 import { renderMessages, prefetchMessageRooms } from './screens/messages.js';
 import { renderNotifications } from './screens/notifications.js';
 
-const authGuard = renderer => () => state.sessionToken ? renderer() : go('auth');
+const authGuard = renderer => () => { if(state.sessionToken)return renderer(); const route=currentRoute(); if(route&&route!=='auth')sessionStorage.setItem('kelasku_post_auth_route',route); return go('auth',{replace:true}); };
 
 registerRoute('splash', () => renderSplash());
 registerRoute('onboarding', renderOnboarding);
@@ -54,7 +54,7 @@ registerRoute('messages', authGuard(renderMessages));
 registerRoute('notifications', authGuard(renderNotifications));
 function adminGuard(renderer) {
   return () => {
-    if (!state.sessionToken) return go('auth');
+    if (!state.sessionToken) { const route=currentRoute(); if(route&&route!=='auth')sessionStorage.setItem('kelasku_post_auth_route',route); return go('auth',{replace:true}); }
     if (String(state.user?.global_role || '') !== 'SUPER_ADMIN') return go('dashboard');
     renderer();
   };

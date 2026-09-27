@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.6.9-b269-period-links-security';
+const CACHE_NAME = 'kelasku-v6.7.0-b270-links-manager-return-flow';
 const APP_SHELL = [
   '/',
   '/index.html',

@@ -24,7 +24,7 @@ const PLATFORM = {
 const ORDERED = ['WHATSAPP','ZOOM','GOOGLE_MEET','GOOGLE_DRIVE','YOUTUBE','TELEGRAM','WEBSITE','OTHER'];
 const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const classCode = rawCode;
-const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_${classCode.toLowerCase()}` : '';
+const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v670_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
 const fmtDate = value => { try { return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value)); } catch { return value || '-'; } };
 const isFuture = value => value && new Date(value).getTime() >= Date.now();
@@ -61,6 +61,18 @@ function samePublicData(a,b){
   try{return JSON.stringify(a)===JSON.stringify(b);}catch{return false;}
 }
 
+function publicReturnPath(){
+  const path=`${location.pathname}${location.search}`;
+  return path.startsWith('/')&&!path.startsWith('//')?path:'/';
+}
+function loginAndReturnToPublic(){
+  const back=publicReturnPath();
+  try{sessionStorage.setItem('kelasku_post_auth_url',back);}catch{}
+  const loginUrl=new URL('/login',location.origin);
+  loginUrl.searchParams.set('return',back);
+  location.assign(loginUrl.toString());
+}
+
 function groupsFromItems(items=[]) {
   return items.reduce((acc,item) => {
     const key = PLATFORM[item.platform] ? item.platform : 'OTHER';
@@ -94,16 +106,18 @@ function groupSection(key, items, scope='default') {
   const [label, icon, copy] = PLATFORM[key] || PLATFORM.OTHER;
   const visible = items.slice(0,3);
   const extra = items.slice(3);
-  // Icon item sengaja berbeda dari icon kategori. Kategori = platform/room,
-  // item = link yang dibuka dari room tersebut.
   const cards = arr => arr.map(item => {
     const isPrivate=String(item.visibility||'PUBLIC').toUpperCase()==='MEMBER';
-    return `<a class="public-link-card ${isPrivate?'is-member-link':''}" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-      <span class="public-link-icon material-symbols-rounded">${isPrivate?'lock':'link'}</span>
-      <span class="public-link-copy"><strong>${esc(item.label)}</strong>${item.description?`<small>${esc(item.description)}</small>`:''}</span>
+    const locked=Boolean(item.locked || (isPrivate && !String(item.url||'').trim()));
+    const inner=`
+      <span class="public-link-icon material-symbols-rounded">${locked?'lock':(isPrivate?'lock':'link')}</span>
+      <span class="public-link-copy"><strong>${esc(item.label)}</strong>${locked?'<small>Khusus anggota kelas</small>':(item.description?`<small>${esc(item.description)}</small>`:'')}</span>
       ${isPrivate?'<span class="public-link-private-badge">ANGGOTA</span>':''}
-      <span class="material-symbols-rounded public-link-arrow">arrow_outward</span>
-    </a>`;
+      <span class="material-symbols-rounded public-link-arrow">${locked?'login':'arrow_outward'}</span>`;
+    if(locked){
+      return `<button type="button" class="public-link-card is-member-link is-locked-link" data-private-link-login data-private-link-label="${esc(item.label)}">${inner}</button>`;
+    }
+    return `<a class="public-link-card ${isPrivate?'is-member-link':''}" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`;
   }).join('');
   const safeScope=String(scope||'default').replace(/[^a-z0-9_-]/gi,'-').toLowerCase();
   const panelId = `public-group-panel-${safeScope}-${key.toLowerCase()}`;
@@ -123,11 +137,15 @@ function groupSection(key, items, scope='default') {
 function linkPeriodUi(items=[]) {
   const buckets=linkSectionBuckets(items);
   if(!buckets.length) return {nav:'',panels:''};
-  const nav=`<section class="public-link-period-switch" aria-label="Periode link kelas"><div class="public-link-period-copy"><span class="public-kicker">PERIODE / KELAS</span><strong>Pilih kelompok link</strong></div><div class="public-link-period-tabs">${buckets.map((bucket,index)=>`<button type="button" class="public-link-period-tab ${index===0?'active':''}" data-public-link-period="${esc(bucket.key)}" aria-selected="${index===0?'true':'false'}">${esc(bucket.label)}</button>`).join('')}</div></section>`;
+  const nav=`<section class="public-link-period-switch" aria-label="Kelompok link kelas">
+    <button type="button" class="public-period-arrow" data-period-scroll="prev" aria-label="Tab sebelumnya"><span class="material-symbols-rounded">chevron_left</span></button>
+    <div class="public-link-period-tabs" data-period-tabs>${buckets.map((bucket,index)=>`<button type="button" class="public-link-period-tab ${index===0?'active':''}" data-public-link-period="${esc(bucket.key)}" aria-selected="${index===0?'true':'false'}">${esc(bucket.label)}</button>`).join('')}</div>
+    <button type="button" class="public-period-arrow" data-period-scroll="next" aria-label="Tab berikutnya"><span class="material-symbols-rounded">chevron_right</span></button>
+  </section>`;
   const panels=buckets.map((bucket,index)=>{
     const groups=groupsFromItems(bucket.items);
-    const content=ORDERED.filter(key=>Array.isArray(groups[key])&&groups[key].length).map(key=>groupSection(key,groups[key],bucket.key)).join('');
-    return `<div class="public-link-period-panel" data-public-link-period-panel="${esc(bucket.key)}" ${index?'hidden':''}>${content}</div>`;
+    const body=ORDERED.filter(key=>Array.isArray(groups[key])&&groups[key].length).map(key=>groupSection(key,groups[key],bucket.key)).join('');
+    return `<div class="public-link-period-panel" data-public-link-period-panel="${esc(bucket.key)}" ${index?'hidden':''}>${body}</div>`;
   }).join('');
   return {nav,panels};
 }
@@ -240,7 +258,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   content.innerHTML = `${publicHero(cls)}
     ${infoSection}
     ${linkUi.nav}
-    <section class="public-section-block"><div class="public-section-head"><div><span class="public-kicker">LINK CEPAT</span><h2>Akses penting kelas</h2><p>Pilih periode/kelas, lalu buka kategori link yang dibutuhkan.</p></div></div>${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
+    <section class="public-section-block"><div class="public-section-head"><div><span class="public-kicker">LINK CEPAT</span><h2>Akses penting kelas</h2><p>Pilih tab, lalu buka kategori link yang dibutuhkan.</p></div></div>${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
     ${showcase()}`;
   bindInteractions();
 }
@@ -288,7 +306,29 @@ function bindInteractions(){
   document.querySelectorAll('[data-public-open-detail]').forEach(btn=>btn.addEventListener('click',()=>showPublicAcademicDetail(btn.dataset.publicOpenDetail,btn.dataset.publicItemId)));
   document.querySelectorAll('[data-public-quick-attendance]').forEach(btn=>btn.addEventListener('click',()=>showQuickAttendance(btn.dataset.publicQuickAttendance)));
   document.querySelectorAll('[data-guest-detail]').forEach(btn=>btn.addEventListener('click',()=>showPublicAcademicDetail(btn.dataset.guestDetail,btn.dataset.publicItemId)));
-  document.querySelectorAll('[data-locked-action]').forEach(btn=>btn.addEventListener('click',()=>showPublicNotice(Boolean(state.sessionToken&&state.user)?`${btn.dataset.lockedAction} hanya tersedia untuk anggota kelas ini.`:`Silakan login sebagai anggota kelas untuk membuka ${btn.dataset.lockedAction}.`)));
+  document.querySelectorAll('[data-locked-action]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(Boolean(state.sessionToken&&state.user)) return showPublicNotice(`${btn.dataset.lockedAction} hanya tersedia untuk anggota kelas ini.`);
+    loginAndReturnToPublic();
+  }));
+  document.querySelectorAll('[data-private-link-login]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(Boolean(state.sessionToken&&state.user)) return showPublicNotice(`${btn.dataset.privateLinkLabel||'Link'} khusus anggota kelas ini.`);
+    loginAndReturnToPublic();
+  }));
+  const periodTabs=document.querySelector('[data-period-tabs]');
+  const syncPeriodArrows=()=>{
+    if(!periodTabs)return;
+    const max=Math.max(0,periodTabs.scrollWidth-periodTabs.clientWidth-2);
+    const prev=document.querySelector('[data-period-scroll="prev"]'),next=document.querySelector('[data-period-scroll="next"]');
+    if(prev)prev.disabled=periodTabs.scrollLeft<=2;
+    if(next)next.disabled=periodTabs.scrollLeft>=max;
+  };
+  document.querySelectorAll('[data-period-scroll]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(!periodTabs)return;
+    periodTabs.scrollBy({left:(btn.dataset.periodScroll==='prev'?-1:1)*Math.max(180,periodTabs.clientWidth*.72),behavior:'smooth'});
+    setTimeout(syncPeriodArrows,260);
+  }));
+  periodTabs?.addEventListener('scroll',syncPeriodArrows,{passive:true});
+  requestAnimationFrame(syncPeriodArrows);
 
   document.querySelectorAll('[data-public-room]').forEach(btn=>btn.addEventListener('click',()=>{
     const key=btn.dataset.publicRoom;
@@ -321,7 +361,8 @@ function bindInteractions(){
     const loggedIn=Boolean(state.sessionToken && state.user);
     const room=String(btn.dataset.publicLoginRequired||'fitur');
     const labels={schedule:'Jadwal',tasks:'Tugas',attendance:'Presensi',announcements:'Informasi'};
-    showPublicNotice(loggedIn?`${labels[room]||'Konten'} hanya tersedia untuk anggota kelas ini.`:`Silakan login untuk membuka ${labels[room]||'fitur'} kelas. Link publik tetap bisa digunakan tanpa login.`);
+    if(loggedIn)return showPublicNotice(`${labels[room]||'Konten'} hanya tersedia untuk anggota kelas ini.`);
+    loginAndReturnToPublic();
   }));
 
   document.querySelectorAll('[data-public-link-period]').forEach(btn=>btn.addEventListener('click',()=>{

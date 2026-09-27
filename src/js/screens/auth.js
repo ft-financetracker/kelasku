@@ -4,6 +4,13 @@ import { esc, logo, svg } from '../core/utils.js';
 import { go } from '../core/router.js';
 import { shouldShowAppSetup } from '../core/pwa.js';
 
+function safePostAuthUrl(){
+  let raw='';try{raw=sessionStorage.getItem('kelasku_post_auth_url')||new URL(window.location.href).searchParams.get('return')||'';}catch{}
+  raw=String(raw||'').trim();
+  return raw.startsWith('/')&&!raw.startsWith('//')&&!raw.startsWith('/login')?raw:'';
+}
+function returnToExternalUrl(){const target=safePostAuthUrl();if(!target)return false;try{sessionStorage.removeItem('kelasku_post_auth_url');}catch{}window.location.assign(target);return true;}
+
 export function renderAuth() {
   const app = document.getElementById('app');
   const register = state.authMode === 'register';
@@ -98,6 +105,7 @@ async function submitAuth(event) {
     status.textContent = data.recovered ? 'Akun ditemukan. Session dipulihkan.' : 'Berhasil.';
     if (!data.user.profile_complete) go('profile');
     else if (shouldShowAppSetup()) go('setup');
+    else if (returnToExternalUrl()) return;
     else if (new URL(window.location.href).searchParams.get('attendance')) go('attendance-link');
     else {
       const pendingRoute = sessionStorage.getItem('kelasku_post_auth_route') || '';

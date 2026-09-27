@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "6.7.0",
+      "build": "20260927.270",
+      "date": "2026-09-27",
+      "title": "Link Hub Cleanup & Return-to-Origin Login",
+      "changes": [
+        "Landing Link Kelas memakai tab compact dari kiri dengan swipe/arrow dan hierarchy Tab → Kategori → Link.",
+        "Link Anggota tetap terlihat sebagai preview terkunci untuk guest, tetapi URL dan description private tidak dikirim backend sampai membership tervalidasi.",
+        "Pengaturan Link Kelas memakai nested accordion/card row; klik row untuk edit, drag handle untuk reorder, pagination 8 link per kategori.",
+        "Batas sementara: 60 link dan 12 tab per kelas.",
+        "Login/Register dari landing atau route terlindungi kembali otomatis ke halaman/menu asal setelah autentikasi selesai.",
+        "Schema tetap 17."
+      ]
+    },
+    {
       "version": "6.6.9",
       "build": "20260927.269",
       "date": "2026-09-27",

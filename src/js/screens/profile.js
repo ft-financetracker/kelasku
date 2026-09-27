@@ -134,6 +134,8 @@ async function submitProfile(event) {
 
     const returnRoute = state.profileReturnRoute;
     state.profileReturnRoute = '';
+    let postAuthUrl='';try{postAuthUrl=String(sessionStorage.getItem('kelasku_post_auth_url')||'');}catch{}
+    if(postAuthUrl.startsWith('/')&&!postAuthUrl.startsWith('//')&&!shouldShowAppSetup()){try{sessionStorage.removeItem('kelasku_post_auth_url');}catch{}window.location.assign(postAuthUrl);return;}
     go(returnRoute || (shouldShowAppSetup() ? 'setup' : (new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard')));
   } catch (err) {
     status.className = 'request-status error';

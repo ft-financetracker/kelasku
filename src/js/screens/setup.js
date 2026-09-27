@@ -2,12 +2,14 @@ import { svg, logo } from '../core/utils.js';
 import { installPWA, enableNotifications, getAppSetupState, shouldShowAppSetup, completeAppSetup } from '../core/pwa.js';
 import { go } from '../core/router.js';
 
+function finishSetupDestination(){let target='';try{target=String(sessionStorage.getItem('kelasku_post_auth_url')||'');}catch{}if(target.startsWith('/')&&!target.startsWith('//')){try{sessionStorage.removeItem('kelasku_post_auth_url');}catch{}window.location.assign(target);return true;}return false;}
+
 export function renderSetup() {
   const app = document.getElementById('app');
 
   // Jangan ganggu user lama: setup cukup sekali per perangkat.
   if (!shouldShowAppSetup()) {
-    go(new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard');
+    if(!finishSetupDestination())go(new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard');
     return;
   }
 
@@ -73,6 +75,6 @@ export function renderSetup() {
 
   document.getElementById('finish-setup').onclick = () => {
     completeAppSetup();
-    go(new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard');
+    if(!finishSetupDestination())go(new URL(window.location.href).searchParams.get('attendance') ? 'attendance-link' : 'dashboard');
   };
 }
