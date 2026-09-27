@@ -18,7 +18,7 @@
     location.replace(primary+path+location.search+location.hash);
     return;
   }
-  var routes={"/login":"auth","/lengkapi-profil":"profile","/setup":"setup","/dashboard":"dashboard","/profil":"account","/pengaturan":"settings","/tentang":"app-info","/kelas":"classes","/ruang-kelas":"class","/jadwal":"schedule","/tugas":"tasks","/materi":"materials","/pengumuman":"announcements","/absensi":"attendance","/pesan":"messages","/notifikasi":"notifications","/admin":"admin","/admin/pengguna":"admin-users","/admin/kelas":"admin-classes","/admin/sistem":"admin-system","/admin/audit":"admin-audit"};
+  var routes={"/login":"auth","/lengkapi-profil":"profile","/setup":"setup","/dashboard":"dashboard","/profil":"account","/pengaturan":"settings","/tentang":"app-info","/kelas":"classes","/join":"join","/ruang-kelas":"class","/jadwal":"schedule","/tugas":"tasks","/materi":"materials","/pengumuman":"announcements","/absensi":"attendance","/pesan":"messages","/notifikasi":"notifications","/admin":"admin","/admin/pengguna":"admin-users","/admin/kelas":"admin-classes","/admin/sistem":"admin-system","/admin/audit":"admin-audit"};
   var normalized=path.length>1?path.replace(/\/+$/,''):path;
   var route=routes[normalized.toLowerCase()];
   if(route){

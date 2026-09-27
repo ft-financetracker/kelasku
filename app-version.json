@@ -1,7 +1,7 @@
 {
-  "version": "6.6.3",
-  "build": "20260927.263",
+  "version": "6.6.4",
+  "build": "20260927.264",
   "schema": 15,
   "release_date": "2026-09-27",
-  "release_note": "Student quick-access cleanup: class landing becomes the primary schedule/presence surface, active attendance can be submitted directly by logged-in members, schedule keeps completed sessions with status badges, attendance cards align with schedule, and analytics counts only sessions that have started while preserving total planned sessions."
+  "release_note": "Tambah role Pengajar/Pengamat untuk monitoring tanpa masuk roster Absensi/Tugas peserta, serta Link Bergabung langsung yang selalu menunggu approval."
 }

@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.6.3-b263-student-flow';
+const CACHE_NAME = 'kelasku-v6.6.4-b264-roles-join';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -57,7 +57,7 @@ const APP_SHELL = [
 
 const APP_ROUTE_PATHS = new Set([
   '/', '/login', '/lengkapi-profil', '/setup', '/dashboard', '/profil', '/pengaturan', '/tentang',
-  '/kelas', '/ruang-kelas', '/jadwal', '/tugas', '/materi', '/pengumuman', '/absensi', '/pesan',
+  '/kelas', '/join', '/ruang-kelas', '/jadwal', '/tugas', '/materi', '/pengumuman', '/absensi', '/pesan',
   '/notifikasi', '/admin', '/admin/pengguna', '/admin/kelas', '/admin/sistem', '/admin/audit'
 ]);
 

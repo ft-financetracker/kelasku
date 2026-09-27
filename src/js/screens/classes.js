@@ -48,6 +48,41 @@ export function renderClasses() {
 export async function prefetchMyClasses() {
   return loadMyClasses(true);
 }
+
+export function renderJoinLink() {
+  const url = new URL(window.location.href);
+  const ref = String(url.searchParams.get('c') || url.searchParams.get('class') || url.searchParams.get('slug') || '').trim();
+  const content = `<div class="page-head"><div><div class="eyebrow">KELASKU • LINK BERGABUNG</div><h1>Gabung Kelas</h1><p>Satu klik untuk mengajukan bergabung. Persetujuan tetap berada pada pengelola kelas.</p></div></div><section class="panel join-link-panel" id="join-link-panel"><div class="fast-load-panel"><span class="status-dot"></span><div><strong>Menyiapkan kelas…</strong><small>Memeriksa link bergabung.</small></div></div></section>`;
+  document.getElementById('app').innerHTML = appShell({ active: 'classes', content, searchPlaceholder: 'Cari kelas…' });
+  bindAppShell();
+  if (!ref) return drawJoinLinkError('Link bergabung tidak lengkap.');
+  loadJoinLinkPreview(ref);
+}
+
+async function loadJoinLinkPreview(ref) {
+  const slot = document.getElementById('join-link-panel');
+  if (!slot) return;
+  try {
+    const data = await api('getJoinClassPreview', { ref });
+    const c = data.class || {};
+    const status = String(c.membership_status || '').toUpperCase();
+    const already = status === 'ACTIVE';
+    const pending = status === 'PENDING';
+    slot.innerHTML = `<div class="join-link-card"><span class="class-symbol">${svg('i-class')}</span><div class="join-link-copy"><span class="eyebrow">${esc(c.institution || 'KELASKU')}</span><h2>${esc(c.name || 'Kelas')}</h2><p>${esc(c.study_program || '')}${c.cohort ? `${c.study_program?' · ':''}Angkatan ${esc(c.cohort)}` : ''}</p><div class="join-link-meta"><span>${esc(c.class_code || '')}</span><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count||0)?`<span>${Number(c.member_count)} anggota</span>`:''}</div></div></div><div id="join-link-status" class="request-status ${pending?'ok':''}">${pending?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="page-actions join-link-actions">${already?'<button type="button" id="join-link-open" class="btn btn-primary">Buka Kelas</button>':`<button type="button" id="join-link-submit" class="btn btn-primary" ${pending?'disabled':''}>${pending?'Menunggu Persetujuan':'Ajukan Bergabung'}</button>`}<button type="button" id="join-link-classes" class="btn btn-secondary">Daftar Kelas</button></div>`;
+    document.getElementById('join-link-classes')?.addEventListener('click',()=>go('classes'));
+    document.getElementById('join-link-open')?.addEventListener('click',()=>{state.selectedClassId=c.class_id;sessionStorage.setItem('kelasku_selected_class',c.class_id);go('class');});
+    document.getElementById('join-link-submit')?.addEventListener('click',()=>submitJoinLink(ref,c));
+  } catch (err) { drawJoinLinkError(err.message); }
+}
+
+async function submitJoinLink(ref,c) {
+  const btn=document.getElementById('join-link-submit'), status=document.getElementById('join-link-status');
+  if(!btn||btn.disabled)return; const old=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="btn-spinner"></span><span>Mengirim…</span>';
+  status.className='request-status progress'; status.textContent='Mengirim permintaan ke pengelola kelas…';
+  try{const data=await api('requestJoinByLink',{ref});if(data.status==='ALREADY_MEMBER'){state.selectedClassId=c.class_id;sessionStorage.setItem('kelasku_selected_class',c.class_id);toast('Kamu sudah menjadi anggota kelas.');return go('class');}status.className='request-status ok';status.textContent='Permintaan terkirim. Tinggal menunggu persetujuan pengelola.';btn.textContent='Menunggu Persetujuan';state.myClassesAt=0;}catch(err){status.className='request-status error';status.textContent=err.message;btn.disabled=false;btn.innerHTML=old;}}
+
+function drawJoinLinkError(message){const slot=document.getElementById('join-link-panel');if(slot)slot.innerHTML=`<div class="search-empty">${esc(message||'Link bergabung tidak tersedia.')}</div><div class="page-actions"><button type="button" id="join-link-back" class="btn btn-secondary">Kembali ke Daftar Kelas</button></div>`;document.getElementById('join-link-back')?.addEventListener('click',()=>go('classes'));}
+
 async function loadMyClasses(background = false, force = false) {
   const hadCache = Array.isArray(state.myClasses) && state.myClasses.length > 0;
   const fresh = hadCache && (Date.now() - Number(state.myClassesAt || 0) < MY_CLASSES_TTL_MS);
@@ -286,8 +321,10 @@ function classSkeleton(){ return '<div class="panel fast-load-panel"><span class
 
 function roleLabel(role) {
   const key = String(role || 'MEMBER').toUpperCase();
-  if (key === 'COORDINATOR') return 'Ketua Kelas';
+  if (key === 'COORDINATOR') return 'Koordinator';
   if (key === 'OWNER') return 'Owner';
   if (key === 'MODERATOR') return 'Moderator';
+  if (key === 'TEACHER') return 'Pengajar';
+  if (key === 'OBSERVER') return 'Pengamat';
   return 'Member';
 }

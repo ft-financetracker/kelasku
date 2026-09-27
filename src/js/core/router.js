@@ -18,6 +18,7 @@ const ROUTE_PATHS = Object.freeze({
   settings: '/pengaturan',
   'app-info': '/tentang',
   classes: '/kelas',
+  join: '/join',
   class: '/ruang-kelas',
   schedule: '/jadwal',
   tasks: '/tugas',

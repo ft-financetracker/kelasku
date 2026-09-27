@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "6.6.4",
+      "build": "20260927.264",
+      "date": "2026-09-27",
+      "title": "Monitoring Roles & Direct Join Link",
+      "changes": [
+        "Role Pengajar dan Pengamat ditambahkan tanpa mengubah struktur membership existing.",
+        "Pengajar/Pengamat dapat melihat data akademik, daftar peserta, detail Absensi, dan Analitik, tetapi tidak masuk roster Absensi, Tugas, ranking, atau pemilihan peserta.",
+        "Owner dapat mengubah role anggota menjadi Pengajar/Pengamat dari Pengaturan Kelas.",
+        "Link Bergabung langsung tersedia dari Ringkasan/Pengaturan: /join?c=<slug-atau-class-code>; guest diarahkan login lalu kembali ke halaman join.",
+        "Join melalui link selalu membuat request PENDING agar tetap menunggu approval pengelola.",
+        "Schema tetap 15; backend perlu redeploy dan syncKelasKuRelease(), tanpa migration."
+      ]
+    },
+    {
       "version": "6.6.3",
       "build": "20260927.263",
       "date": "2026-09-27",

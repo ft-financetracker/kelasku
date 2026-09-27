@@ -1553,3 +1553,11 @@ html[data-theme="light"] .attendance-availability-note{background:#FFF8E8;border
 .schedule-phase-badge{display:inline-flex;align-items:center;min-height:24px;padding:3px 7px;border-radius:999px;font-size:.68rem;font-weight:850;white-space:nowrap}.schedule-phase-badge.ongoing{color:#062f2b;background:#5eead4;border:1px solid #5eead4}.schedule-phase-badge.done{color:#a9bdd2;background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.18)}.schedule-session-row.phase-done{opacity:.78}.schedule-session-row.phase-done:hover{opacity:1}.schedule-date-chip.is-ongoing{box-shadow:inset 0 0 0 1px rgba(34,224,199,.45)}
 .attendance-series-card .attendance-course-head{padding:11px 13px!important}.attendance-series-card .schedule-session-copy small{white-space:normal}.attendance-room-v663 .attendance-course-list{display:grid;gap:9px}.attendance-room-v663 .schedule-session-row.is-open{border-left:3px solid var(--tosca)}.attendance-room-v663 .schedule-session-row.is-locked{opacity:.68}.attendance-room-v663 .attendance-window-chip{justify-self:end}
 @media(max-width:700px){.schedule-phase-badge{font-size:.64rem;padding:3px 6px}.schedule-session-row .attendance-window-chip{font-size:.64rem}.attendance-room-v663 .schedule-session-main{grid-template-columns:auto minmax(0,1fr) auto auto!important}}
+
+
+/* v6.6.4 — Monitoring roles + direct join link */
+.role-teacher{color:#BDEBFF;background:rgba(14,165,233,.13);border-color:rgba(56,189,248,.28)}
+.role-observer{color:#F7D9A8;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.26)}
+.join-class-url{margin-top:8px}.join-class-url small{display:block;margin-top:3px;color:var(--muted);font-size:.76rem;line-height:1.45}
+.join-link-panel{padding:18px}.join-link-card{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}.join-link-copy h2{margin:4px 0;font-size:1.25rem}.join-link-copy p{margin:0;color:var(--muted)}.join-link-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:.78rem;color:var(--muted)}.join-link-actions{margin-top:16px;justify-content:flex-start}
+@media(max-width:640px){.join-link-panel{padding:14px}.join-link-card{align-items:start}.join-link-copy h2{font-size:1.08rem}.join-link-actions{display:grid;grid-template-columns:1fr}.join-link-actions .btn{width:100%}}
