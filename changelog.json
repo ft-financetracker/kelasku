@@ -1,6 +1,18 @@
 {
   "releases": [
     {
+      "version": "6.7.2",
+      "build": "20260927.272",
+      "date": "2026-09-27",
+      "title": "PWA Landing Integration Hotfix",
+      "changes": [
+        "Room Class memiliki tombol Landing Kelas yang membuka landing publik di window PWA yang sama.",
+        "Popup Gabung Kelas menampilkan tombol Lihat Landing Kelas sehingga calon anggota dapat melihat informasi kelas sebelum join.",
+        "Landing Kelas tetap menggunakan manifest dan Service Worker KelasKu yang sama; landing adalah bagian dari PWA KelasKu, bukan aplikasi PWA terpisah per kelas.",
+        "Schema tetap 17 dan Apps Script tidak berubah."
+      ]
+    },
+    {
       "version": "6.7.1",
       "build": "20260927.271",
       "date": "2026-09-27",

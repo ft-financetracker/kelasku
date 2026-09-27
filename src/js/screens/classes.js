@@ -9,6 +9,13 @@ let publicQuery = '';
 let myClassesInFlight = null;
 const MY_CLASSES_TTL_MS = 60 * 1000;
 
+function publicLandingUrl(c={}) {
+  const origin=String(window.KELASKU_CONFIG?.PRIMARY_ORIGIN || window.location.origin).replace(/\/$/,'');
+  const slug=String(c.public_slug||'').trim().toLowerCase();
+  const ref=slug || String(c.class_code||'').replace(/^KLS-/i,'');
+  return slug ? `${origin}/${encodeURIComponent(slug)}` : `${origin}/links.html?c=${encodeURIComponent(ref)}`;
+}
+
 export function renderClasses() {
   const content = `
     <div class="page-head">
@@ -318,7 +325,8 @@ function openJoinPreview(c, code = '') {
 function joinPreviewHtml(c, code) {
   const viaJoin = String(c.match_type || '').toUpperCase() === 'JOIN_CODE' || (code && code.toUpperCase() !== String(c.class_code || '').toUpperCase());
   const waiting = String(c.membership_status || '').toUpperCase() === 'PENDING';
-  return `<div class="join-preview panel"><span class="class-symbol">${svg('i-class')}</span><div><h3>${esc(c.name)}</h3><p>${esc(c.institution || '')} ${c.cohort?'· '+esc(c.cohort):''}</p><small>${esc(c.class_code || '')} · ${esc(c.visibility || '')}</small></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Join Code valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><button id="confirm-join-btn" class="btn btn-primary btn-block" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button>`;
+  const landingUrl=publicLandingUrl(c);
+  return `<div class="join-preview panel"><span class="class-symbol">${svg('i-class')}</span><div><h3>${esc(c.name)}</h3><p>${esc(c.institution || '')} ${c.cohort?'· '+esc(c.cohort):''}</p><small>${esc(c.class_code || '')} · ${esc(c.visibility || '')}</small></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Join Code valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="join-preview-actions"><button id="confirm-join-btn" class="btn btn-primary" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button><a class="btn btn-secondary" href="${esc(landingUrl)}"><span class="material-symbols-rounded">open_in_new</span> Lihat Landing Kelas</a></div>`;
 }
 
 async function submitJoin(c, code) {

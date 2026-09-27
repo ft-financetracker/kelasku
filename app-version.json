@@ -1,7 +1,7 @@
 {
-  "version": "6.7.1",
-  "build": "20260927.271",
+  "version": "6.7.2",
+  "build": "20260927.272",
   "schema": 17,
   "release_date": "2026-09-27",
-  "release_note": "Pre-live polish: link landing consistency, collapsible Link Kelas settings, horizontal settings tabs, and reliable PWA update flow."
+  "release_note": "PWA landing integration: Landing Kelas can be opened directly from Room Class and join preview while staying inside the installed KelasKu PWA."
 }

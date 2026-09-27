@@ -130,7 +130,7 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 
 
 /* ============================================================
-   v6.7.1 — Pre-live landing polish only
+   v6.7.2 — PWA landing integration only
    ============================================================ */
 .public-link-card{color:var(--text)!important;font:inherit!important;text-align:left!important}
 .public-link-card.is-locked-link .public-link-copy strong{color:var(--text)!important;font-weight:700}
