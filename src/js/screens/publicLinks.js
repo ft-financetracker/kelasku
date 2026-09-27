@@ -69,19 +69,45 @@ function groupsFromItems(items=[]) {
   }, {});
 }
 
-function groupSection(key, items) {
+function linkSectionLabel(item={}) {
+  const label=String(item.section_label||'').trim();
+  return label || 'Umum';
+}
+
+function linkSectionKey(label='',index=0) {
+  const clean=String(label||'umum').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,32);
+  return `${clean||'umum'}-${index+1}`;
+}
+
+function linkSectionBuckets(items=[]) {
+  const order=[];
+  const map={};
+  items.forEach(item=>{
+    const label=linkSectionLabel(item);
+    if(!map[label]){map[label]=[];order.push(label);}
+    map[label].push(item);
+  });
+  return order.map((label,index)=>({label,key:linkSectionKey(label,index),items:map[label]}));
+}
+
+function groupSection(key, items, scope='default') {
   const [label, icon, copy] = PLATFORM[key] || PLATFORM.OTHER;
   const visible = items.slice(0,3);
   const extra = items.slice(3);
   // Icon item sengaja berbeda dari icon kategori. Kategori = platform/room,
   // item = link yang dibuka dari room tersebut.
-  const cards = arr => arr.map(item => `<a class="public-link-card" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
-    <span class="public-link-icon material-symbols-rounded">link</span>
-    <span class="public-link-copy"><strong>${esc(item.label)}</strong>${item.description?`<small>${esc(item.description)}</small>`:''}</span>
-    <span class="material-symbols-rounded public-link-arrow">arrow_outward</span>
-  </a>`).join('');
-  const panelId = `public-group-panel-${key.toLowerCase()}`;
-  return `<section class="public-link-group" data-public-group="${key}">
+  const cards = arr => arr.map(item => {
+    const isPrivate=String(item.visibility||'PUBLIC').toUpperCase()==='MEMBER';
+    return `<a class="public-link-card ${isPrivate?'is-member-link':''}" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">
+      <span class="public-link-icon material-symbols-rounded">${isPrivate?'lock':'link'}</span>
+      <span class="public-link-copy"><strong>${esc(item.label)}</strong>${item.description?`<small>${esc(item.description)}</small>`:''}</span>
+      ${isPrivate?'<span class="public-link-private-badge">ANGGOTA</span>':''}
+      <span class="material-symbols-rounded public-link-arrow">arrow_outward</span>
+    </a>`;
+  }).join('');
+  const safeScope=String(scope||'default').replace(/[^a-z0-9_-]/gi,'-').toLowerCase();
+  const panelId = `public-group-panel-${safeScope}-${key.toLowerCase()}`;
+  return `<section class="public-link-group" data-public-group="${key}" data-public-group-scope="${esc(safeScope)}">
     <button type="button" class="public-group-hero platform-${key.toLowerCase()}" data-public-group-toggle="${key}" aria-expanded="false" aria-controls="${panelId}">
       <span class="public-group-art"><span class="material-symbols-rounded">${icon}</span></span>
       <span class="public-group-title"><span class="public-kicker">${esc(label)}</span><strong>${esc(copy)}</strong></span>
@@ -92,6 +118,18 @@ function groupSection(key, items) {
       ${extra.length?`<button class="public-show-more" type="button" data-show-more="${key}"><span>Lihat ${extra.length} link lainnya</span><span class="material-symbols-rounded">expand_more</span></button>`:''}
     </div>
   </section>`;
+}
+
+function linkPeriodUi(items=[]) {
+  const buckets=linkSectionBuckets(items);
+  if(!buckets.length) return {nav:'',panels:''};
+  const nav=`<section class="public-link-period-switch" aria-label="Periode link kelas"><div class="public-link-period-copy"><span class="public-kicker">PERIODE / KELAS</span><strong>Pilih kelompok link</strong></div><div class="public-link-period-tabs">${buckets.map((bucket,index)=>`<button type="button" class="public-link-period-tab ${index===0?'active':''}" data-public-link-period="${esc(bucket.key)}" aria-selected="${index===0?'true':'false'}">${esc(bucket.label)}</button>`).join('')}</div></section>`;
+  const panels=buckets.map((bucket,index)=>{
+    const groups=groupsFromItems(bucket.items);
+    const content=ORDERED.filter(key=>Array.isArray(groups[key])&&groups[key].length).map(key=>groupSection(key,groups[key],bucket.key)).join('');
+    return `<div class="public-link-period-panel" data-public-link-period-panel="${esc(bucket.key)}" ${index?'hidden':''}>${content}</div>`;
+  }).join('');
+  return {nav,panels};
 }
 
 function publicHero(cls) {
@@ -188,8 +226,11 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   syncPublicMetadata(cls);
   const isMember=Boolean(memberData);
   const loggedIn=Boolean(state.sessionToken && state.user);
-  const sourceGroups=isMember?groupsFromItems(memberData.class_links||[]):(data.groups||{});
-  const sections=ORDERED.filter(key=>Array.isArray(sourceGroups[key])&&sourceGroups[key].length).map(key=>groupSection(key,sourceGroups[key])).join('');
+  // Guest hanya memakai `data.items` dari endpoint publik yang sudah disaring server-side.
+  // Fallback groups dipertahankan untuk cache/release lama, tetap hanya berisi PUBLIC links.
+  const publicItems=Array.isArray(data.items)?data.items:Object.values(data.groups||{}).flat();
+  const sourceItems=isMember?(memberData.class_links||[]):publicItems;
+  const linkUi=linkPeriodUi(sourceItems);
   currentPublicAcademic = isMember ? (academic || {}) : (data.public_academic || {});
   currentPublicClassId = cls.class_id || '';
   const infoSection = isMember
@@ -198,7 +239,8 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
 
   content.innerHTML = `${publicHero(cls)}
     ${infoSection}
-    <section class="public-section-block"><div class="public-section-head"><div><span class="public-kicker">LINK CEPAT</span><h2>Akses penting kelas</h2><p>Satu halaman untuk link yang paling sering dipakai.</p></div></div>${sections || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
+    ${linkUi.nav}
+    <section class="public-section-block"><div class="public-section-head"><div><span class="public-kicker">LINK CEPAT</span><h2>Akses penting kelas</h2><p>Pilih periode/kelas, lalu buka kategori link yang dibutuhkan.</p></div></div>${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
     ${showcase()}`;
   bindInteractions();
 }
@@ -280,6 +322,24 @@ function bindInteractions(){
     const room=String(btn.dataset.publicLoginRequired||'fitur');
     const labels={schedule:'Jadwal',tasks:'Tugas',attendance:'Presensi',announcements:'Informasi'};
     showPublicNotice(loggedIn?`${labels[room]||'Konten'} hanya tersedia untuk anggota kelas ini.`:`Silakan login untuk membuka ${labels[room]||'fitur'} kelas. Link publik tetap bisa digunakan tanpa login.`);
+  }));
+
+  document.querySelectorAll('[data-public-link-period]').forEach(btn=>btn.addEventListener('click',()=>{
+    const key=btn.dataset.publicLinkPeriod;
+    document.querySelectorAll('[data-public-link-period]').forEach(tab=>{
+      const active=tab===btn;
+      tab.classList.toggle('active',active);
+      tab.setAttribute('aria-selected',String(active));
+    });
+    document.querySelectorAll('[data-public-link-period-panel]').forEach(panel=>{panel.hidden=panel.dataset.publicLinkPeriodPanel!==key;});
+    // Saat pindah periode, tutup accordion kategori agar konteks tidak tercampur.
+    document.querySelectorAll('[data-public-group]').forEach(group=>{
+      const panel=group.querySelector('.public-group-panel');
+      const toggle=group.querySelector('[data-public-group-toggle]');
+      if(panel)panel.hidden=true;
+      if(toggle)toggle.setAttribute('aria-expanded','false');
+      group.classList.remove('open');
+    });
   }));
 
   // Accordion ala room/category: hero kategori tetap menjadi parent control,

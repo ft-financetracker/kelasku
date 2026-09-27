@@ -1,7 +1,7 @@
 {
-  "version": "6.6.8",
-  "build": "20260927.268",
-  "schema": 16,
+  "version": "6.6.9",
+  "build": "20260927.269",
+  "schema": 17,
   "release_date": "2026-09-27",
-  "release_note": "Hotfix: Super Admin tidak terkena batas sementara 3 kelas; akun biasa tetap maksimal 3 kelas yang dibuat."
+  "release_note": "Landing Link Hub: tab periode/kelas fleksibel dan hardening link Anggota (Private) agar URL tidak pernah dikirim ke guest/non-member."
 }

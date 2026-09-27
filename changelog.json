@@ -1,6 +1,19 @@
 {
   "releases": [
     {
+      "version": "6.6.9",
+      "build": "20260927.269",
+      "date": "2026-09-27",
+      "title": "Landing Link Period Tabs & Private Link Hardening",
+      "changes": [
+        "Landing Link Kelas memiliki tab periode/kelas fleksibel, misalnya Semester 1, Semester 2, Kelas 7, Kelas 8, atau Umum.",
+        "Pengelola dapat menentukan Tab/Periode per link dari Pengaturan Kelas tanpa mengubah kategori platform.",
+        "Link Anggota (Private) difilter server-side sebelum response publik dibentuk; URL private tidak dikirim ke guest/non-member sehingga tidak dapat ditemukan melalui Inspect/Network/DOM.",
+        "Anggota tervalidasi tetap dapat melihat link MEMBER dan mendapat badge Anggota pada landing.",
+        "Schema 17 menambahkan section_label pada 26_CLASS_LINKS tanpa mengubah visibility/link existing."
+      ]
+    },
+    {
       "version": "6.6.8",
       "build": "20260927.268",
       "date": "2026-09-27",
