@@ -52,9 +52,14 @@ export async function prefetchMyClasses() {
 export function renderJoinLink() {
   const url = new URL(window.location.href);
   const ref = String(url.searchParams.get('c') || url.searchParams.get('class') || url.searchParams.get('slug') || '').trim();
-  const content = `<div class="page-head"><div><div class="eyebrow">KELASKU • LINK BERGABUNG</div><h1>Gabung Kelas</h1><p>Satu klik untuk mengajukan bergabung. Persetujuan tetap berada pada pengelola kelas.</p></div></div><section class="panel join-link-panel" id="join-link-panel"><div class="fast-load-panel"><span class="status-dot"></span><div><strong>Menyiapkan kelas…</strong><small>Memeriksa link bergabung.</small></div></div></section>`;
-  document.getElementById('app').innerHTML = appShell({ active: 'classes', content, searchPlaceholder: 'Cari kelas…' });
-  bindAppShell();
+  const guest = !state.sessionToken;
+  const content = `<div class="page-head"><div><div class="eyebrow">KELASKU • LINK BERGABUNG</div><h1>Gabung Kelas</h1><p>Lihat informasi kelas terlebih dahulu. Akun hanya diperlukan saat benar-benar mengajukan bergabung.</p></div></div><section class="panel join-link-panel" id="join-link-panel"><div class="fast-load-panel"><span class="status-dot"></span><div><strong>Menyiapkan kelas…</strong><small>Memeriksa link bergabung.</small></div></div></section>`;
+  if (guest) {
+    document.getElementById('app').innerHTML = `<main class="public-join-page"><header class="public-join-brand"><img src="/assets/brand/logo-lockup.svg" alt="KelasKu"><span>Preview Kelas</span></header><div class="public-join-wrap">${content}</div></main>`;
+  } else {
+    document.getElementById('app').innerHTML = appShell({ active: 'classes', content, searchPlaceholder: 'Cari kelas…' });
+    bindAppShell();
+  }
   if (!ref) return drawJoinLinkError('Link bergabung tidak lengkap.');
   loadJoinLinkPreview(ref);
 }
@@ -62,13 +67,17 @@ export function renderJoinLink() {
 async function loadJoinLinkPreview(ref) {
   const slot = document.getElementById('join-link-panel');
   if (!slot) return;
+  const guest = !state.sessionToken;
   try {
-    const data = await api('getJoinClassPreview', { ref });
+    const data = await api(guest ? 'getPublicJoinClassPreview' : 'getJoinClassPreview', { ref }, guest ? { auth:false } : {});
     const c = data.class || {};
     const status = String(c.membership_status || '').toUpperCase();
     const already = status === 'ACTIVE';
     const pending = status === 'PENDING';
-    slot.innerHTML = `<div class="join-link-card"><span class="class-symbol">${svg('i-class')}</span><div class="join-link-copy"><span class="eyebrow">${esc(c.institution || 'KELASKU')}</span><h2>${esc(c.name || 'Kelas')}</h2><p>${esc(c.study_program || '')}${c.cohort ? `${c.study_program?' · ':''}Angkatan ${esc(c.cohort)}` : ''}</p><div class="join-link-meta"><span>${esc(c.class_code || '')}</span><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count||0)?`<span>${Number(c.member_count)} anggota</span>`:''}</div></div></div><div id="join-link-status" class="request-status ${pending?'ok':''}">${pending?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="page-actions join-link-actions">${already?'<button type="button" id="join-link-open" class="btn btn-primary">Buka Kelas</button>':`<button type="button" id="join-link-submit" class="btn btn-primary" ${pending?'disabled':''}>${pending?'Menunggu Persetujuan':'Ajukan Bergabung'}</button>`}<button type="button" id="join-link-classes" class="btn btn-secondary">Daftar Kelas</button></div>`;
+    const publicRef = String(c.public_slug || c.class_code || ref).replace(/^KLS-/i,'');
+    const infoUrl = `${String(window.KELASKU_CONFIG?.PRIMARY_ORIGIN || window.location.origin).replace(/\/$/,'')}/links.html?c=${encodeURIComponent(publicRef)}`;
+    slot.innerHTML = `<div class="join-link-card"><span class="class-symbol">${svg('i-class')}</span><div class="join-link-copy"><span class="eyebrow">${esc(c.institution || 'KELASKU')}</span><h2>${esc(c.name || 'Kelas')}</h2><p>${esc(c.study_program || '')}${c.cohort ? `${c.study_program?' · ':''}Angkatan ${esc(c.cohort)}` : ''}${c.semester ? ` · ${esc(c.semester)}` : ''}</p>${c.description?`<p class="join-link-description">${esc(c.description)}</p>`:''}<div class="join-link-meta"><span>${esc(c.class_code || '')}</span><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${Number(c.member_count||0)?`<span>${Number(c.member_count)} anggota</span>`:''}</div></div></div><div id="join-link-status" class="request-status ${pending?'ok':''}">${pending?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="page-actions join-link-actions">${guest?'<button type="button" id="join-link-auth" class="btn btn-primary">Masuk / Daftar untuk Bergabung</button>':already?'<button type="button" id="join-link-open" class="btn btn-primary">Buka Kelas</button>':`<button type="button" id="join-link-submit" class="btn btn-primary" ${pending?'disabled':''}>${pending?'Menunggu Persetujuan':'Ajukan Bergabung'}</button>`}<a class="btn btn-secondary" href="${esc(infoUrl)}">Lihat Info Kelas</a>${guest?'':'<button type="button" id="join-link-classes" class="btn btn-secondary">Daftar Kelas</button>'}</div>${guest?'<p class="join-link-hint">Belum punya akun? Pilih <b>Masuk / Daftar</b>. Setelah selesai, KelasKu akan mengembalikanmu ke kelas ini.</p>':''}`;
+    document.getElementById('join-link-auth')?.addEventListener('click',()=>{sessionStorage.setItem('kelasku_post_auth_route','join');go('auth');});
     document.getElementById('join-link-classes')?.addEventListener('click',()=>go('classes'));
     document.getElementById('join-link-open')?.addEventListener('click',()=>{state.selectedClassId=c.class_id;sessionStorage.setItem('kelasku_selected_class',c.class_id);go('class');});
     document.getElementById('join-link-submit')?.addEventListener('click',()=>submitJoinLink(ref,c));
@@ -110,6 +119,7 @@ async function loadMyClasses(background = false, force = false) {
 }
 
 function drawMyClasses(items) {
+  syncCreateClassLimit(items);
   const grid = document.getElementById('class-grid');
   const count = document.getElementById('class-count');
   if (!grid) return;
@@ -123,6 +133,17 @@ function drawMyClasses(items) {
 
   grid.innerHTML = `<div class="class-table-head"><span>Kelas</span><span>Status</span><span></span></div>${items.map(c => classListRow(c, true)).join('')}`;
   bindClassRows(grid);
+}
+
+
+function syncCreateClassLimit(items = []) {
+  const btn = document.getElementById('create-class-btn');
+  if (!btn) return;
+  const owned = (items || []).filter(c => String(c.role || '').toUpperCase() === 'OWNER').length;
+  const full = owned >= 3;
+  btn.disabled = full;
+  btn.title = full ? 'Batas sementara tercapai: maksimal 3 kelas yang dibuat per akun.' : `Kamu sudah membuat ${owned}/3 kelas.`;
+  btn.innerHTML = full ? `${svg('i-lock')} Batas 3 Kelas` : `${svg('i-plus')} Buat Kelas`;
 }
 
 function classListRow(c, mine = false) {
@@ -220,6 +241,8 @@ function selectSearchClass(c, query = '') {
 }
 
 function openCreateClass() {
+  const owned = (state.myClasses || []).filter(c => String(c.role || '').toUpperCase() === 'OWNER').length;
+  if (owned >= 3) { toast('Batas sementara: maksimal 3 kelas yang dibuat per akun.'); return; }
   showModal(`
     <div class="modal-head"><div><div class="eyebrow">Buat Kelas</div><h2>Kelas baru</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
     <form id="create-class-form">

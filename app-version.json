@@ -1,7 +1,7 @@
 {
-  "version": "6.6.5",
-  "build": "20260927.265",
+  "version": "6.6.6",
+  "build": "20260927.266",
   "schema": 15,
   "release_date": "2026-09-27",
-  "release_note": "Tambah role Pengajar/Pengamat untuk monitoring tanpa masuk roster Absensi/Tugas peserta, serta Link Bergabung langsung yang selalu menunggu approval."
+  "release_note": "Pre-live guardrails: public Join preview untuk guest, batas sementara 3 kelas buatan per akun, rekap kegiatan 1 row yang dapat dibuka ke peserta berurutan, dan histori presensi tetap aman saat role berubah ke Pengajar/Pengamat."
 }

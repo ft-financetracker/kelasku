@@ -42,7 +42,7 @@ registerRoute('account', authGuard(renderAccount));
 registerRoute('settings', authGuard(renderSettings));
 registerRoute('app-info', authGuard(renderAppInfo));
 registerRoute('classes', authGuard(renderClasses));
-registerRoute('join', authGuard(renderJoinLink));
+registerRoute('join', renderJoinLink);
 registerRoute('class', authGuard(renderClassRoom));
 registerRoute('schedule', authGuard(renderSchedule));
 registerRoute('tasks', authGuard(renderTasks));
@@ -102,6 +102,11 @@ async function boot() {
   if (!state.sessionToken) await sleep(180);
 
   if (!state.sessionToken) {
+    if (initialUrlRoute === 'join') {
+      go('join', { replace: true });
+      bootstrapPromise.then(data => { if (data) { applyRemoteConfig(data.config); forceUpdateRequired(); } });
+      return;
+    }
     if (initialUrlRoute && !['auth','onboarding','splash'].includes(initialUrlRoute)) {
       sessionStorage.setItem('kelasku_post_auth_route', initialUrlRoute);
     }

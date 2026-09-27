@@ -1,6 +1,19 @@
 {
   "releases": [
     {
+      "version": "6.6.6",
+      "build": "20260927.266",
+      "date": "2026-09-27",
+      "title": "Pre-Live Guardrails & Analytics Drilldown",
+      "changes": [
+        "Rekap Kegiatan tetap satu row per mata pelajaran/kegiatan; klik row membuka rekap peserta sesuai urutan Anggota Kelas tanpa mengubahnya menjadi card.",
+        "Presensi historis yang sudah ditandai tetap dihitung ketika seorang anggota kemudian diubah menjadi Pengajar/Pengamat; sesi berikutnya tidak memasukkan mereka sebagai peserta.",
+        "Batas sementara pembuatan kelas ditetapkan maksimal 3 kelas ACTIVE yang dimiliki/di-Owner oleh satu akun; bergabung ke kelas lain tidak dibatasi aturan ini.",
+        "Link /join?c=... kini dapat dipreview tanpa login. Guest melihat identitas kelas terlebih dahulu dan baru diminta Masuk/Daftar saat menekan aksi bergabung.",
+        "Schema tetap 15; backend perlu redeploy karena guardrail createClass, public join preview, dan preservasi histori analitik. Tidak perlu migration."
+      ]
+    },
+    {
       "version": "6.6.5",
       "build": "20260927.265",
       "date": "2026-09-27",
