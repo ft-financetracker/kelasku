@@ -1,6 +1,19 @@
 {
   "releases": [
     {
+      "version": "6.6.5",
+      "build": "20260927.265",
+      "date": "2026-09-27",
+      "title": "Check-in Focus & Landing Schedule Cleanup",
+      "changes": [
+        "Direct attendance/check-in page diubah menjadi focused layout tanpa sidebar penuh agar satu tugas utama—presensi—lebih jelas di desktop dan mobile.",
+        "Typography, status choice, media kehadiran, note, dan submit action pada direct check-in diperbesar dan dipadatkan.",
+        "Landing kelas tidak lagi menggandakan jadwal yang sama dengan Presensi Aktif; schedule yang terkait active attendance disembunyikan dari list jadwal.",
+        "Landing Jadwal menampilkan 4 item awal dengan kontrol Lihat semua jadwal / Lipat jadwal.",
+        "Patch kumulatif tetap membawa role Pengajar/Pengamat + Direct Join Link dari v6.6.4; schema tetap 15 dan tidak perlu migration."
+      ]
+    },
+    {
       "version": "6.6.4",
       "build": "20260927.264",
       "date": "2026-09-27",

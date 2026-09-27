@@ -122,16 +122,28 @@ function roomList(items, emptyText, renderItem) {
     : `<div class="public-room-empty"><span class="material-symbols-rounded">inbox</span><span>${esc(emptyText)}</span></div>`;
 }
 
+function renderPublicScheduleRows(items=[], {guest=false}={}) {
+  return items.map(x=>`<button type="button" ${guest?'data-guest-detail':'data-public-open-detail'}="schedule" data-public-item-id="${esc(x.schedule_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title || 'Jadwal Kelas')}</strong><small>${schedulePhase(x)==='ONGOING'?'Sedang berlangsung · ':''}${esc(fmtDate(x.start_at))}${x.location?` · ${esc(/^https?:\/\//i.test(String(x.location||'').trim())?'Pertemuan online':x.location)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`).join('');
+}
+
+function publicScheduleBlock(schedules=[], activeAttendance=null, {guest=false,classId=''}={}) {
+  const activeScheduleId=String(activeAttendance?.source_schedule_id||'');
+  const clean=schedules.filter(x=>!activeScheduleId || String(x.schedule_id)!==activeScheduleId);
+  const first=clean.slice(0,4),extra=clean.slice(4);
+  const list=clean.length?`<div class="public-room-list">${renderPublicScheduleRows(first,{guest})}${extra.length?`<div class="public-schedule-extra" hidden>${renderPublicScheduleRows(extra,{guest})}</div>`:''}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">event_busy</span><span>Belum ada jadwal aktif atau mendatang.</span></div>`;
+  const controls=`<div class="public-schedule-controls">${extra.length?`<button type="button" class="public-schedule-toggle" data-public-schedule-expand><span class="material-symbols-rounded">unfold_more</span><span>Lihat semua jadwal</span></button><button type="button" class="public-schedule-toggle" data-public-schedule-collapse hidden><span class="material-symbols-rounded">unfold_less</span><span>Lipat jadwal</span></button>`:''}${guest?'':`<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Buka jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`}</div>`;
+  return `${list}${controls}`;
+}
+
 function memberAcademicHub(academic={}, classId='') {
-  const schedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort).slice(0,5);
+  const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
   const attendance=(academic.attendance_sessions||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').sort(byDate('start_at')).slice(0,3);
   const announcements=(academic.announcements||[]).slice(0,4);
-  const safeLocation=value=>/^https?:\/\//i.test(String(value||'').trim())?'Pertemuan online':String(value||'').trim();
   const activeAttendance=attendance[0];
   const activeBanner=activeAttendance?`<div class="public-active-attendance"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> PRESENSI AKTIF</span><strong>${esc(activeAttendance.title||'Presensi Kelas')}</strong><small>${activeAttendance.start_at?esc(fmtDate(activeAttendance.start_at)):'Sedang dibuka'}${activeAttendance.my_status&&activeAttendance.my_status!=='UNMARKED'?` · Status: ${esc(publicAttendanceLabel(activeAttendance.my_status))}`:''}</small></div><button type="button" class="public-primary-action" data-public-quick-attendance="${esc(activeAttendance.attendance_id)}">Presensi Sekarang</button></div>`:'';
   const panels = {
-    schedule: `${activeBanner}${roomList(schedules,'Belum ada jadwal aktif atau mendatang.',x=>`<button type="button" data-public-open-detail="schedule" data-public-item-id="${esc(x.schedule_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title || 'Jadwal Kelas')}</strong><small>${schedulePhase(x)==='ONGOING'?'Sedang berlangsung · ':''}${esc(fmtDate(x.start_at))}${x.location?` · ${esc(safeLocation(x.location))}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)}<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Lihat jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`,
+    schedule: `${activeBanner}${publicScheduleBlock(allSchedules,activeAttendance,{guest:false,classId})}`,
     attendance: roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-public-open-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title || 'Presensi Kelas')}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi sedang aktif'}${x.my_status&&x.my_status!=='UNMARKED'?` · ${esc(publicAttendanceLabel(x.my_status))}`:''}</small></div></button><button type="button" data-public-quick-attendance="${esc(x.attendance_id)}" class="public-primary-action">Presensi</button></div>`),
     tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<button type="button" data-public-open-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
@@ -145,11 +157,12 @@ function academicLoading() {
 }
 
 function guestAcademicHub(loggedIn,academic={}) {
-  const schedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort).slice(0,5),tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
+  const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort);
+  const tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
   const activeAttendance=attendance[0];
   const activeBanner=activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> PRESENSI AKTIF</span><strong>${esc(activeAttendance.title||'Presensi Kelas')}</strong><small>Login sebagai anggota kelas untuk mengisi presensi.</small></div><button type="button" data-locked-action="Presensi" class="public-primary-action">Masuk untuk Presensi</button></div>`:'';
   const panels={
-    schedule:`${activeBanner}${roomList(schedules,'Belum ada jadwal publik aktif atau mendatang.',x=>`<button type="button" data-guest-detail="schedule" data-public-item-id="${esc(x.schedule_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">calendar_month</span><div><strong>${esc(x.title)}</strong><small>${schedulePhase(x)==='ONGOING'?'Sedang berlangsung · ':''}${esc(fmtDate(x.start_at))}${x.location?` · ${esc(x.location)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)}`,
+    schedule:`${activeBanner}${publicScheduleBlock(allSchedules,activeAttendance,{guest:true})}`,
     attendance:roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-guest-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title)}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi aktif'}</small></div></button><button type="button" data-locked-action="Presensi" class="public-primary-action">Login</button></div>`),
     tasks:roomList(tasks,'Belum ada tugas publik.',x=>`<button type="button" data-guest-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title)}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements:roomList(announcements,'Belum ada informasi publik.',x=>`<button type="button" data-guest-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title)}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
@@ -243,6 +256,23 @@ function bindInteractions(){
       item.setAttribute('aria-selected',String(active));
     });
     document.querySelectorAll('[data-public-room-panel]').forEach(panel=>{ panel.hidden=panel.dataset.publicRoomPanel!==key; });
+  }));
+
+  document.querySelectorAll('[data-public-schedule-expand]').forEach(btn=>btn.addEventListener('click',()=>{
+    const panel=btn.closest('[data-public-room-panel]')||btn.parentElement?.parentElement;
+    const extra=panel?.querySelector('.public-schedule-extra');
+    const collapse=panel?.querySelector('[data-public-schedule-collapse]');
+    if(extra)extra.hidden=false;
+    btn.hidden=true;
+    if(collapse)collapse.hidden=false;
+  }));
+  document.querySelectorAll('[data-public-schedule-collapse]').forEach(btn=>btn.addEventListener('click',()=>{
+    const panel=btn.closest('[data-public-room-panel]')||btn.parentElement?.parentElement;
+    const extra=panel?.querySelector('.public-schedule-extra');
+    const expand=panel?.querySelector('[data-public-schedule-expand]');
+    if(extra)extra.hidden=true;
+    btn.hidden=true;
+    if(expand)expand.hidden=false;
   }));
 
   document.querySelectorAll('[data-public-login-required]').forEach(btn=>btn.addEventListener('click',()=>{

@@ -1,6 +1,6 @@
 {
-  "version": "6.6.4",
-  "build": "20260927.264",
+  "version": "6.6.5",
+  "build": "20260927.265",
   "schema": 15,
   "release_date": "2026-09-27",
   "release_note": "Tambah role Pengajar/Pengamat untuk monitoring tanpa masuk roster Absensi/Tugas peserta, serta Link Bergabung langsung yang selalu menunggu approval."
