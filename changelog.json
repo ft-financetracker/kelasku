@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "6.6.8",
+      "build": "20260927.268",
+      "date": "2026-09-27",
+      "title": "Super Admin Class Limit Hotfix",
+      "changes": [
+        "Super Admin tidak lagi terkena batas sementara maksimal 3 kelas yang dibuat.",
+        "Akun biasa tetap dibatasi maksimal 3 kelas ACTIVE yang dimiliki sebagai Owner.",
+        "Validasi diperbaiki di frontend dan backend agar tidak dapat berbeda perilaku."
+      ]
+    },
+    {
       "version": "6.6.7",
       "build": "20260927.267",
       "date": "27 September 2026",

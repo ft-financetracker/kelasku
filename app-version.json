@@ -1,7 +1,7 @@
 {
-  "version": "6.6.7",
-  "build": "20260927.267",
+  "version": "6.6.8",
+  "build": "20260927.268",
   "schema": 16,
   "release_date": "2026-09-27",
-  "release_note": "Final pre-live: Feedback Center, session persistent, ganti password dari Profil, dan bulk onboarding BEA-3 2026."
+  "release_note": "Hotfix: Super Admin tidak terkena batas sementara 3 kelas; akun biasa tetap maksimal 3 kelas yang dibuat."
 }

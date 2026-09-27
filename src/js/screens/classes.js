@@ -139,10 +139,13 @@ function drawMyClasses(items) {
 function syncCreateClassLimit(items = []) {
   const btn = document.getElementById('create-class-btn');
   if (!btn) return;
+  const isSuperAdmin = String(state.user?.global_role || '').toUpperCase() === 'SUPER_ADMIN';
   const owned = (items || []).filter(c => String(c.role || '').toUpperCase() === 'OWNER').length;
-  const full = owned >= 3;
+  const full = !isSuperAdmin && owned >= 3;
   btn.disabled = full;
-  btn.title = full ? 'Batas sementara tercapai: maksimal 3 kelas yang dibuat per akun.' : `Kamu sudah membuat ${owned}/3 kelas.`;
+  btn.title = isSuperAdmin
+    ? `Super Admin: ${owned} kelas dimiliki, tanpa batas sementara.`
+    : (full ? 'Batas sementara tercapai: maksimal 3 kelas yang dibuat per akun.' : `Kamu sudah membuat ${owned}/3 kelas.`);
   btn.innerHTML = full ? `${svg('i-lock')} Batas 3 Kelas` : `${svg('i-plus')} Buat Kelas`;
 }
 
@@ -241,8 +244,9 @@ function selectSearchClass(c, query = '') {
 }
 
 function openCreateClass() {
+  const isSuperAdmin = String(state.user?.global_role || '').toUpperCase() === 'SUPER_ADMIN';
   const owned = (state.myClasses || []).filter(c => String(c.role || '').toUpperCase() === 'OWNER').length;
-  if (owned >= 3) { toast('Batas sementara: maksimal 3 kelas yang dibuat per akun.'); return; }
+  if (!isSuperAdmin && owned >= 3) { toast('Batas sementara: maksimal 3 kelas yang dibuat per akun.'); return; }
   showModal(`
     <div class="modal-head"><div><div class="eyebrow">Buat Kelas</div><h2>Kelas baru</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
     <form id="create-class-form">
