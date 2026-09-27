@@ -140,6 +140,22 @@ function drawSettings(s) {
           <div id="app-info-status" class="request-status"></div>`
       })}
 
+      ${admin ? settingsRoom({
+        id: 'feedback-admin', icon: 'i-chat', title: 'Feedback & Masukan',
+        copy: 'Khusus Super Admin: baca, filter, dan tindak lanjuti feedback pengguna.', count: 'Admin',
+        keywords: 'feedback saran masukan ide masalah respon pengguna admin',
+        body: `
+          <div class="admin-feedback-toolbar">
+            <input id="admin-feedback-q" class="control" placeholder="Cari nama, username, isi feedback…">
+            <select id="admin-feedback-status" class="control"><option value="ALL">Semua Status</option><option value="NEW">NEW</option><option value="READ">READ</option><option value="PROCESS">PROCESS</option><option value="DONE">DONE</option></select>
+            <select id="admin-feedback-type" class="control"><option value="ALL">Semua Jenis</option><option value="SUGGESTION">Saran</option><option value="IDEA">Ide</option><option value="ISSUE">Kendala</option><option value="APPRECIATION">Apresiasi</option></select>
+            <button id="admin-feedback-search" class="btn btn-secondary" type="button">Filter</button>
+          </div>
+          <div id="admin-feedback-meta" class="admin-result-meta">Buka room ini untuk memuat feedback.</div>
+          <div id="admin-feedback-list" class="admin-feedback-list"></div>
+          <div id="admin-feedback-pagination"></div>`
+      }) : ''}
+
       <div class="settings-savebar glass">
         <div><strong>Simpan Pengaturan</strong><span id="settings-status">Belum ada perubahan.</span></div>
         <button id="save-settings" class="btn btn-primary" type="submit">Simpan Semua</button>
@@ -161,6 +177,7 @@ function bindSettings() {
       panel.hidden = open;
       btn.classList.toggle('is-open', !open);
       btn.setAttribute('aria-expanded', String(!open));
+      if (id === 'feedback-admin' && !open) loadAdminFeedback();
     };
   });
 
@@ -203,6 +220,10 @@ function bindSettings() {
   document.getElementById('notif-from-settings').onclick = notificationFromSettings;
   const adminBtn = document.getElementById('open-admin');
   if (adminBtn) adminBtn.onclick = () => go('admin');
+  const feedbackSearch = document.getElementById('admin-feedback-search');
+  if (feedbackSearch) feedbackSearch.onclick = () => { feedbackPage = 1; loadAdminFeedback(); };
+  const feedbackQ = document.getElementById('admin-feedback-q');
+  if (feedbackQ) feedbackQ.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); feedbackPage = 1; loadAdminFeedback(); } };
 
   const search = document.getElementById('settings-search');
   const clear = document.getElementById('settings-clear-search');
@@ -374,3 +395,74 @@ function pwaStatusText(){ return getAppSetupState().installed ? 'Terpasang' : 'B
 function notificationStatusText(){ const p=getAppSetupState().notificationPermission; return p==='granted'?'Aktif':p==='denied'?'Diblokir':p==='unsupported'?'Tidak didukung':'Belum diaktifkan'; }
 function settingsSkeleton(){ return `<div class="settings-hub">${[1,2,3,4].map(()=>'<div class="panel skeleton settings-skeleton"></div>').join('')}</div>`; }
 function errorBox(msg){ return `<div class="panel error-panel"><strong>Pengaturan gagal dimuat.</strong><p>${esc(msg)}</p><button class="btn btn-secondary" onclick="location.reload()">Coba Lagi</button></div>`; }
+
+
+let feedbackPage = 1;
+const feedbackPageSize = 12;
+
+async function loadAdminFeedback(page = feedbackPage) {
+  const list = document.getElementById('admin-feedback-list');
+  const meta = document.getElementById('admin-feedback-meta');
+  if (!list || !meta || String(state.user?.global_role || '') !== 'SUPER_ADMIN') return;
+  feedbackPage = Math.max(1, Number(page || 1));
+  list.innerHTML = '<div class="feedback-admin-loading">Memuat feedback…</div>';
+  try {
+    const data = await api('adminListFeedback', {
+      query: document.getElementById('admin-feedback-q')?.value || '',
+      status: document.getElementById('admin-feedback-status')?.value || 'ALL',
+      type: document.getElementById('admin-feedback-type')?.value || 'ALL',
+      page: feedbackPage,
+      page_size: feedbackPageSize
+    });
+    feedbackPage = data.page;
+    meta.textContent = `${data.total} feedback • halaman ${data.page} dari ${data.total_pages}`;
+    list.innerHTML = data.items.length ? data.items.map(feedbackAdminRow).join('') : '<div class="feedback-admin-empty">Belum ada feedback pada filter ini.</div>';
+    bindFeedbackAdminRows();
+    drawFeedbackPagination(data);
+  } catch (err) {
+    list.innerHTML = `<div class="feedback-admin-empty">${esc(err.message)}</div>`;
+  }
+}
+
+function feedbackAdminRow(item) {
+  const emoji = ({LOVE:'😄',GOOD:'🙂',NEUTRAL:'😐',ISSUE:'😕',IDEA:'💡'})[item.reaction] || '💬';
+  const reply = item.want_reply ? ` • Balas: ${esc(item.email || '-')}` : ' • Cukup saran';
+  return `<article class="feedback-admin-row" data-feedback-id="${esc(item.feedback_id)}">
+    <div class="feedback-admin-head"><div><strong>${emoji} ${esc(item.name || item.username || 'User')}</strong><small>@${esc(item.username || '-')} • ${esc(item.kelasku_id || '-')} • v${esc(item.app_version || '-')}</small></div><span class="soft-chip">${esc(item.type || 'SUGGESTION')}</span></div>
+    <p>${esc(item.message || '')}</p>
+    <div class="feedback-admin-meta">${esc(item.created_at || '')}${reply}</div>
+    <div class="feedback-admin-actions">
+      <select class="control compact-control" data-feedback-status><option value="NEW" ${item.status==='NEW'?'selected':''}>NEW</option><option value="READ" ${item.status==='READ'?'selected':''}>READ</option><option value="PROCESS" ${item.status==='PROCESS'?'selected':''}>PROCESS</option><option value="DONE" ${item.status==='DONE'?'selected':''}>DONE</option></select>
+      <input class="control" data-feedback-note value="${esc(item.admin_note || '')}" placeholder="Catatan admin…">
+      <button class="btn btn-secondary" type="button" data-feedback-save>Simpan</button>
+    </div>
+  </article>`;
+}
+
+function bindFeedbackAdminRows() {
+  document.querySelectorAll('[data-feedback-save]').forEach(btn => {
+    btn.onclick = async () => {
+      const row = btn.closest('[data-feedback-id]');
+      const old = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-spinner"></span><span>Menyimpan…</span>';
+      try {
+        await api('adminUpdateFeedback', {
+          feedback_id: row.dataset.feedbackId,
+          status: row.querySelector('[data-feedback-status]').value,
+          admin_note: row.querySelector('[data-feedback-note]').value
+        });
+        toast('Feedback diperbarui.');
+      } catch (err) { toast(err.message); }
+      finally { btn.disabled = false; btn.innerHTML = old; }
+    };
+  });
+}
+
+function drawFeedbackPagination(data) {
+  const root = document.getElementById('admin-feedback-pagination');
+  if (!root) return;
+  if (data.total_pages <= 1) { root.innerHTML = ''; return; }
+  root.innerHTML = `<div class="feedback-pagination"><button type="button" class="btn btn-secondary" data-feedback-page="${Math.max(1,data.page-1)}" ${data.has_prev?'':'disabled'}>Sebelumnya</button><span>${data.page} / ${data.total_pages}</span><button type="button" class="btn btn-secondary" data-feedback-page="${Math.min(data.total_pages,data.page+1)}" ${data.has_next?'':'disabled'}>Berikutnya</button></div>`;
+  root.querySelectorAll('[data-feedback-page]').forEach(btn => btn.onclick = () => loadAdminFeedback(Number(btn.dataset.feedbackPage)));
+}

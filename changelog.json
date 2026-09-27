@@ -1,6 +1,25 @@
 {
   "releases": [
     {
+      "version": "6.6.7",
+      "build": "20260927.267",
+      "date": "27 September 2026",
+      "title": "Final Pre-Live Account & Feedback",
+      "description": "Feedback Center, persistent session, password management, dan bulk onboarding kelas tanpa mengubah fitur akademik lain.",
+      "groups": [
+        {
+          "label": "Finalisasi",
+          "items": [
+            "Feedback Profil tersimpan ke sheet 27_FEEDBACK.",
+            "Feedback Center Super Admin tersedia di Pengaturan.",
+            "Session menjadi long-lived dengan sliding refresh sampai user logout.",
+            "Ganti password tersedia dari Profil.",
+            "Helper bulk onboarding BEA-3 2026 ditambahkan secara idempotent."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.6.6",
       "build": "20260927.266",
       "date": "2026-09-27",

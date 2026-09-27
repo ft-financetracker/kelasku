@@ -1,7 +1,7 @@
 {
-  "version": "6.6.6",
-  "build": "20260927.266",
-  "schema": 15,
+  "version": "6.6.7",
+  "build": "20260927.267",
+  "schema": 16,
   "release_date": "2026-09-27",
-  "release_note": "Pre-live guardrails: public Join preview untuk guest, batas sementara 3 kelas buatan per akun, rekap kegiatan 1 row yang dapat dibuka ke peserta berurutan, dan histori presensi tetap aman saat role berubah ke Pengajar/Pengamat."
+  "release_note": "Final pre-live: Feedback Center, session persistent, ganti password dari Profil, dan bulk onboarding BEA-3 2026."
 }
