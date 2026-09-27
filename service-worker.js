@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.0-b270-links-manager-return-flow';
+const CACHE_NAME = 'kelasku-v6.7.1-b271-prelive-update-polish';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -112,20 +112,19 @@ self.addEventListener('fetch', event => {
       return;
     }
 
-    // Route aplikasi memakai app-shell cache-first. Ini menghindari round-trip
-    // GitHub Pages 404 setiap refresh /dashboard, /jadwal, /tugas, dst.
+    // Refresh/direct navigation harus network-first agar build baru langsung terambil.
+    // Cache tetap menjadi fallback offline, sehingga PWA tidak perlu dihapus untuk update.
     if (APP_ROUTE_PATHS.has(path)) {
-      event.respondWith(
-        caches.match('/index.html').then(async cached => {
-          const refresh = fetch('/index.html', { cache: 'no-store' })
-            .then(res => {
-              if (res && res.ok) caches.open(CACHE_NAME).then(cache => cache.put('/index.html', res.clone()));
-              return res;
-            })
-            .catch(() => null);
-          return cached || (await refresh) || caches.match('/index.html');
-        })
-      );
+      event.respondWith((async()=>{
+        try {
+          const fresh = await fetch('/index.html', { cache: 'no-store' });
+          if (fresh && fresh.ok) {
+            caches.open(CACHE_NAME).then(cache => cache.put('/index.html', fresh.clone()));
+            return fresh;
+          }
+        } catch {}
+        return (await caches.match('/index.html')) || Response.error();
+      })());
       return;
     }
 

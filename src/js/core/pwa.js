@@ -9,10 +9,24 @@ const UPDATE_PENDING_KEY = 'kelasku_pending_update';
 let updateTimer = null;
 let updateWatchBound = false;
 
+function hideGlobalUpdateNotice(){ document.getElementById('kelasku-global-update-notice')?.remove(); }
+function showGlobalUpdateNotice(version, releaseNote=''){
+  let bar=document.getElementById('kelasku-global-update-notice');
+  if(!bar){ bar=document.createElement('div'); bar.id='kelasku-global-update-notice'; bar.className='global-update-notice'; document.body.appendChild(bar); }
+  bar.innerHTML=`<span class="material-symbols-rounded">system_update</span><span class="global-update-copy"><strong>Update KelasKu v${String(version||'terbaru')}</strong><small>${String(releaseNote||'Versi baru siap dipasang.')}</small></span><button type="button" class="btn btn-primary" data-global-update-now>Update</button>`;
+  bar.querySelector('[data-global-update-now]')?.addEventListener('click',()=>updateApp());
+}
+
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    state.swReg = await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+    state.swReg = await navigator.serviceWorker.register('/service-worker.js', { scope: '/', updateViaCache: 'none' });
+    state.swReg.addEventListener('updatefound',()=>{
+      const worker=state.swReg?.installing;
+      worker?.addEventListener('statechange',()=>{
+        if(worker.state==='installed' && navigator.serviceWorker.controller) checkForAppUpdate({notify:false}).catch(()=>{});
+      });
+    });
     state.swReg.update().catch(() => {});
     return state.swReg;
   } catch (err) {
@@ -136,6 +150,7 @@ export async function checkForAppUpdate({ notify = true } = {}) {
   const available = semverCmp(C.APP_VERSION, remoteVersion) < 0;
 
   if (available) {
+    showGlobalUpdateNotice(remoteVersion, releaseNote);
     state.remoteConfig = {
       ...(state.remoteConfig || {}),
       current_version: remoteVersion,
@@ -154,6 +169,8 @@ export async function checkForAppUpdate({ notify = true } = {}) {
       );
       localStorage.setItem(UPDATE_NOTICE_KEY, remoteVersion);
     }
+  } else {
+    hideGlobalUpdateNotice();
   }
 
   window.dispatchEvent(new CustomEvent('kelasku-update-check', { detail: { available, version: remoteVersion, build, releaseNote } }));

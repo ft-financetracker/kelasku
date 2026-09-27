@@ -1,6 +1,19 @@
 {
   "releases": [
     {
+      "version": "6.7.1",
+      "build": "20260927.271",
+      "date": "2026-09-27",
+      "title": "Pre-Live UI & Update Hotfix",
+      "changes": [
+        "Locked Link Kelas di landing memakai typography/color yang sama dengan link lain; icon lock/action dibesarkan dan dirapikan.",
+        "Pengaturan Kelas memakai tab horizontal compact pada desktop dan mobile.",
+        "Kelompok Link Kelas benar-benar dapat collapse; semua tab link default tertutup agar halaman tidak penuh.",
+        "PWA update flow diperkuat: global update notice, service worker updateViaCache none, cache-buster 6.7.1, dan refresh route network-first agar versi baru tidak memerlukan hapus aplikasi/cache manual.",
+        "Schema tetap 17 dan Apps Script tidak berubah."
+      ]
+    },
+    {
       "version": "6.7.0",
       "build": "20260927.270",
       "date": "2026-09-27",
