@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "6.6.3",
+      "build": "20260927.263",
+      "date": "2026-09-27",
+      "title": "Student Quick Access & Attendance Flow",
+      "changes": [
+        "Class landing is the primary student entry point: active schedule first, active attendance highlighted, public information remains visible without login.",
+        "Logged-in class members can submit attendance directly from the class landing page without navigating into the full app attendance screen.",
+        "Schedule groups keep completed sessions as history with Berlangsung/Selesai badges; open attendance remains actionable even when the scheduled meeting has ended.",
+        "Attendance room now follows the same card/group language as Schedule and prioritizes OPEN sessions before UPCOMING sessions.",
+        "Attendance analytics separates total planned sessions from records whose session time has started; attendance percentage ignores future UNMARKED rows.",
+        "XLSX analysis keeps the full session matrix but summary metrics use only progressed sessions/records."
+      ]
+    },
+    {
       "version": "6.6.2",
       "build": "20260927.262",
       "date": "2026-09-27",

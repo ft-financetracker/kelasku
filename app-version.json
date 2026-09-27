@@ -1,7 +1,7 @@
 {
-  "version": "6.6.2",
-  "build": "20260927.262",
+  "version": "6.6.3",
+  "build": "20260927.263",
   "schema": 15,
   "release_date": "2026-09-27",
-  "release_note": "Urgent attendance cleanup: schedule/attendance groups default collapsed, inactive sessions locked, compact attendance form with member status, and simplified lecturer-friendly XLSX matrix."
+  "release_note": "Student quick-access cleanup: class landing becomes the primary schedule/presence surface, active attendance can be submitted directly by logged-in members, schedule keeps completed sessions with status badges, attendance cards align with schedule, and analytics counts only sessions that have started while preserving total planned sessions."
 }
