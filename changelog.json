@@ -1,6 +1,19 @@
 {
   "releases": [
     {
+      "version": "6.7.3",
+      "build": "20260927.273",
+      "date": "2026-09-27",
+      "title": "Attendance Hierarchy Cleanup",
+      "changes": [
+        "Menu Absensi global sekarang difilter hanya berdasarkan Kelas dan Mata Pelajaran/Kegiatan; dropdown sesi per pertemuan dihapus agar tetap scalable saat data bertambah besar.",
+        "Daftar Absensi global memakai hierarchy Kelas → Mata Pelajaran/Kegiatan → Sesi dengan accordion/collapse agar ribuan sesi tidak memenuhi layar.",
+        "Status sesi dibedakan jelas: Sudah Presensi, Belum Presensi, Belum Dibuka, dan Ditutup; sesi yang sedang OPEN dan belum diisi menyediakan aksi Isi Presensi.",
+        "Room Class → Absensi memakai bahasa visual/status yang sama dengan global Absensi: grouping per Mata Pelajaran/Kegiatan lalu sesi, dengan status compact dan responsive mobile.",
+        "Patch frontend-only; Schema tetap 17 dan Apps Script tidak berubah."
+      ]
+    },
+    {
       "version": "6.7.2",
       "build": "20260927.272",
       "date": "2026-09-27",

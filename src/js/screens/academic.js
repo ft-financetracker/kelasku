@@ -45,7 +45,7 @@ function renderAcademicShell(title, copy, active, icon) {
     <section class="academic-toolbar panel ${active === 'attendance' ? 'attendance-toolbar' : ''}">
       <div class="academic-search">${svg('i-search')}<input id="academic-search" placeholder="Cari ${esc(title.toLowerCase())}…" autocomplete="off"></div>
       <select id="academic-class-filter" class="control compact-control"><option value="ALL">Semua Kelas</option></select>
-      ${active === 'attendance' ? '<select id="academic-attendance-filter" class="control compact-control"><option value="ALL">Semua Jadwal / Mata Kuliah</option></select>' : ''}
+      ${active === 'attendance' ? '<select id="academic-attendance-filter" class="control compact-control"><option value="ALL">Semua Mata Pelajaran / Kegiatan</option></select>' : ''}
       <button type="button" id="academic-refresh" class="btn btn-secondary">${svg('i-refresh')} Refresh</button>
     </section>
     <div id="academic-slot">${state.academicHub ? '' : academicSkeleton()}</div>`;
@@ -167,30 +167,53 @@ function attendanceScheduleMap(data) {
   return map;
 }
 
+function attendanceCourseMeta(data, item, scheduleMap = attendanceScheduleMap(data)) {
+  const schedule = scheduleMap.get(String(item?.source_schedule_id || ''));
+  const rawTitle = String(schedule?.title || attendanceSubject(item) || 'Absensi Kelas').trim();
+  const title = rawTitle
+    .replace(/^absensi\s*[—–:-]?\s*/i, '')
+    .replace(/\s*[•·-]\s*sesi\s*\d+.*$/i, '')
+    .trim() || 'Absensi Kelas';
+  const recurrence = String(schedule?.recurrence_group_id || '').trim();
+  const key = `${String(item?.class_id || '')}::${recurrence || title.toLowerCase()}`;
+  return { schedule, title, key };
+}
+
+function attendanceSessionNoMap(data) {
+  const byCourse = new Map();
+  const scheduleMap = attendanceScheduleMap(data);
+  (data?.attendance || []).forEach(item => {
+    const meta = attendanceCourseMeta(data, item, scheduleMap);
+    if (!byCourse.has(meta.key)) byCourse.set(meta.key, []);
+    byCourse.get(meta.key).push({ item, schedule: meta.schedule });
+  });
+  const result = new Map();
+  byCourse.forEach(list => {
+    list.sort((a,b) => dateMs(a.schedule?.start_at || a.item.start_at, 0) - dateMs(b.schedule?.start_at || b.item.start_at, 0));
+    list.forEach((entry, index) => result.set(String(entry.item.attendance_id || ''), index + 1));
+  });
+  return result;
+}
+
 function hydrateAttendanceFilter(data, force = false) {
   const select = document.getElementById('academic-attendance-filter');
   if (!select || !data) return;
   const classId = String(document.getElementById('academic-class-filter')?.value || 'ALL');
   const scheduleMap = attendanceScheduleMap(data);
-  const rows = (data.attendance || []).filter(item => classId === 'ALL' || String(item.class_id) === classId);
   const optionMap = new Map();
-  let hasUnlinked = false;
-  rows.forEach(item => {
-    const scheduleId = String(item.source_schedule_id || '');
-    if (!scheduleId) { hasUnlinked = true; return; }
-    if (optionMap.has(scheduleId)) return;
-    const schedule = scheduleMap.get(scheduleId);
-    const label = schedule
-      ? `${schedule.title || 'Jadwal'} • ${shortDateTime(schedule.start_at || item.start_at)}`
-      : `${attendanceSubject(item)} • ${shortDateTime(item.start_at)}`;
-    optionMap.set(scheduleId, label);
+  (data.attendance || []).forEach(item => {
+    if (classId !== 'ALL' && String(item.class_id) !== classId) return;
+    const meta = attendanceCourseMeta(data, item, scheduleMap);
+    if (!optionMap.has(meta.key)) {
+      const label = classId === 'ALL' ? `${item.class_name || 'KelasKu'} • ${meta.title}` : meta.title;
+      optionMap.set(meta.key, label);
+    }
   });
-  const fingerprint = `${classId}|${[...optionMap.entries()].map(([id,label])=>`${id}:${label}`).join('|')}|${hasUnlinked}`;
+  const fingerprint = `${classId}|${[...optionMap.entries()].map(([id,label])=>`${id}:${label}`).join('|')}`;
   if (!force && select.dataset.fingerprint === fingerprint) return;
   const previous = select.value || 'ALL';
-  select.innerHTML = '<option value="ALL">Semua Jadwal / Mata Kuliah</option>'
-    + [...optionMap.entries()].map(([id,label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('')
-    + (hasUnlinked ? '<option value="UNLINKED">Tanpa Jadwal / Manual</option>' : '');
+  select.innerHTML = '<option value="ALL">Semua Mata Pelajaran / Kegiatan</option>'
+    + [...optionMap.entries()].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('');
   select.dataset.fingerprint = fingerprint;
   if ([...select.options].some(option => option.value === previous)) select.value = previous;
   else select.value = 'ALL';
@@ -198,31 +221,34 @@ function hydrateAttendanceFilter(data, force = false) {
 
 function filteredAttendanceItems(data) {
   const scheduleMap = attendanceScheduleMap(data);
-  const selectedSchedule = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
+  const sessionNoMap = attendanceSessionNoMap(data);
+  const selectedCourse = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
   const query = String(document.getElementById('academic-search')?.value || '').trim().toLowerCase();
   const classId = String(document.getElementById('academic-class-filter')?.value || 'ALL');
   return (data?.attendance || []).map(item => {
-    const schedule = scheduleMap.get(String(item.source_schedule_id || ''));
+    const meta = attendanceCourseMeta(data, item, scheduleMap);
+    const schedule = meta.schedule;
     return {
       ...item,
       schedule_title: schedule?.title || attendanceSubject(item),
       schedule_start_at: schedule?.start_at || item.start_at,
-      schedule_location: schedule?.location || ''
+      schedule_location: schedule?.location || '',
+      attendance_course_key: meta.key,
+      attendance_course_title: meta.title,
+      attendance_session_no: sessionNoMap.get(String(item.attendance_id || '')) || 0
     };
   }).filter(item => {
     if (classId !== 'ALL' && String(item.class_id) !== classId) return false;
-    const sourceId = String(item.source_schedule_id || '');
-    if (selectedSchedule === 'UNLINKED' && sourceId) return false;
-    if (!['ALL','UNLINKED'].includes(selectedSchedule) && sourceId !== selectedSchedule) return false;
+    if (selectedCourse !== 'ALL' && String(item.attendance_course_key) !== selectedCourse) return false;
     if (!query) return true;
-    const hay = [item.title,item.schedule_title,item.description,item.body,item.location,item.schedule_location,item.class_name].join(' ').toLowerCase();
+    const hay = [item.title,item.attendance_course_title,item.description,item.body,item.location,item.schedule_location,item.class_name].join(' ').toLowerCase();
     return hay.includes(query);
   });
 }
 
 function attendanceSubject(item) {
   const title = String(item?.title || '').trim();
-  return title.replace(/^absensi\s*[—–:-]?\s*/i,'').trim() || 'Absensi Kelas';
+  return title.replace(/^absensi\s*[—–:-]?\s*/i,'').replace(/\s*[•·-]\s*sesi\s*\d+.*$/i,'').trim() || 'Absensi Kelas';
 }
 
 function schedulesHtml(items, tasks = []) {
@@ -313,43 +339,105 @@ function announcementCard(item) {
   </article>`;
 }
 
-function attendanceHtml(items) {
-  if (!items.length) return emptyAcademic('Tidak ada data pada filter ini', 'Pilih Semua Jadwal atau jadwal/mata kuliah lain untuk melihat riwayat absensi.', 'i-check');
-  const counts = items.reduce((acc, item) => {
-    const key = String(item.my_status || 'UNMARKED').toUpperCase();
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
-  const totalPages=Math.max(1,Math.ceil(items.length/ATTENDANCE_LIST_PAGE_SIZE));attendanceListPage=Math.min(Math.max(1,attendanceListPage),totalPages);
-  const pageItems=items.slice((attendanceListPage-1)*ATTENDANCE_LIST_PAGE_SIZE,attendanceListPage*ATTENDANCE_LIST_PAGE_SIZE);
-  return `<section class="academic-list-layout">
-    <div class="academic-attendance-scope"><span>${svg('i-calendar')}</span><div><strong>Tracker Absensi</strong><small>${items.length} sesi sesuai filter kelas + jadwal/mata kuliah.</small></div></div>
-    <div class="academic-summary-strip">
-      <div><strong>${counts.PRESENT || 0}</strong><span>Hadir</span></div>
-      <div><strong>${(counts.SICK || 0) + (counts.PERMIT || 0)}</strong><span>Sakit / Izin</span></div>
-      <div><strong>${counts.ABSENT || 0}</strong><span>Alpa</span></div>
-    </div>
-    <div class="academic-card-list">${pageItems.map(attendanceCard).join('')}</div>
-    ${attendanceListPagination(attendanceListPage,totalPages,items.length)}
-  </section>`;
-}
-function attendanceListPagination(page,totalPages,total){
-  if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} sesi</span></div>`;
-  const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-academic-attendance-page="${i}" class="${i===page?'active':''}">${i}</button>`);
-  return `<div class="table-pagination"><span>${total} sesi • Halaman ${page}/${totalPages}</span><div><button type="button" data-academic-attendance-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-academic-attendance-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;
+function attendanceUiState(item) {
+  const status = String(item?.my_status || 'UNMARKED').toUpperCase();
+  const windowStatus = String(item?.window_status || '').toUpperCase();
+  if (status === 'PRESENT') return { key:'done', label:'Hadir', group:'done', icon:'check_circle' };
+  if (status === 'SICK') return { key:'open', label:'Sakit', group:'done', icon:'sick' };
+  if (status === 'PERMIT') return { key:'open', label:'Izin', group:'done', icon:'assignment' };
+  if (status === 'ABSENT') return { key:'overdue', label:'Alpa', group:'done', icon:'cancel' };
+  if (windowStatus === 'OPEN') return { key:'waiting', label:'Belum presensi', group:'waiting', icon:'schedule' };
+  if (windowStatus === 'UPCOMING') return { key:'locked', label:'Belum dibuka', group:'upcoming', icon:'lock_clock' };
+  return { key:'closed', label:'Ditutup', group:'closed', icon:'lock' };
 }
 
-function attendanceCard(item) {
-  const status = attendanceStatusMeta(item.my_status);
-  return `<article class="academic-row-card">
-    <span class="academic-type-icon">${svg('i-check')}</span>
-    <span class="academic-row-main">
-      <span class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDateTime(item.start_at))}</span></span>
-      <strong class="academic-row-title">${esc(item.schedule_title || attendanceSubject(item))}</strong>
-      <span class="academic-attendance-session">${esc(item.title || 'Absensi')}${item.schedule_location ? ` • ${esc(item.schedule_location)}` : ''}</span>
-      <span class="academic-row-copy">${esc(item.my_note || 'Tidak ada catatan.')}</span>
-    </span>
-    <span class="academic-status-pill status-${status.key}">${esc(status.label)}</span>
+function attendanceSessionLabel(item) {
+  const no = Number(item.attendance_session_no || 0);
+  if (no) return `Sesi ${String(no).padStart(2,'0')}`;
+  const m = String(item.title || '').match(/sesi\s*(\d+)/i);
+  return m ? `Sesi ${String(Number(m[1])).padStart(2,'0')}` : 'Sesi';
+}
+
+function attendanceHtml(items) {
+  if (!items.length) return emptyAcademic('Tidak ada data pada filter ini', 'Pilih kelas atau mata pelajaran/kegiatan lain untuk melihat riwayat absensi.', 'i-check');
+  const states = items.map(attendanceUiState);
+  const done = states.filter(x=>x.group==='done').length;
+  const waiting = states.filter(x=>x.group==='waiting').length;
+  const upcoming = states.filter(x=>x.group==='upcoming').length;
+  const classMap = new Map();
+  items.forEach(item => {
+    const classKey = String(item.class_id || 'UNKNOWN');
+    if (!classMap.has(classKey)) classMap.set(classKey, { id: classKey, name: item.class_name || 'KelasKu', items: [], courses: new Map() });
+    const cls = classMap.get(classKey);
+    cls.items.push(item);
+    const courseKey = String(item.attendance_course_key || `${classKey}::${item.attendance_course_title || 'Absensi'}`);
+    if (!cls.courses.has(courseKey)) cls.courses.set(courseKey, { key: courseKey, title: item.attendance_course_title || attendanceSubject(item), items: [] });
+    cls.courses.get(courseKey).items.push(item);
+  });
+  const selectedClass = String(document.getElementById('academic-class-filter')?.value || 'ALL');
+  const selectedCourse = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
+  const query = String(document.getElementById('academic-search')?.value || '').trim();
+  const classCards = [...classMap.values()].sort((a,b)=>a.name.localeCompare(b.name)).map((cls,ci)=>{
+    const classWaiting = cls.items.filter(x=>attendanceUiState(x).group==='waiting').length;
+    const classDone = cls.items.filter(x=>attendanceUiState(x).group==='done').length;
+    const classUpcoming = cls.items.filter(x=>attendanceUiState(x).group==='upcoming').length;
+    const autoOpen = selectedClass !== 'ALL' || selectedCourse !== 'ALL' || Boolean(query) || classWaiting > 0;
+    const classPanelId = `attendance-class-${ci}`;
+    const courses = [...cls.courses.values()].sort((a,b)=>{
+      const aw=a.items.some(x=>attendanceUiState(x).group==='waiting')?0:1,bw=b.items.some(x=>attendanceUiState(x).group==='waiting')?0:1;
+      return aw-bw || a.title.localeCompare(b.title);
+    }).map((course,cx)=>{
+      const courseDone=course.items.filter(x=>attendanceUiState(x).group==='done').length;
+      const courseWaiting=course.items.filter(x=>attendanceUiState(x).group==='waiting').length;
+      const courseUpcoming=course.items.filter(x=>attendanceUiState(x).group==='upcoming').length;
+      const courseOpen = selectedCourse === course.key || Boolean(query) || courseWaiting > 0;
+      const coursePanelId=`attendance-course-${ci}-${cx}`;
+      const ordered=[...course.items].sort((a,b)=>{
+        const rank={waiting:0,done:1,upcoming:2,closed:3};
+        const ar=rank[attendanceUiState(a).group]??9,br=rank[attendanceUiState(b).group]??9;
+        return ar-br || dateMs(b.schedule_start_at||b.start_at,0)-dateMs(a.schedule_start_at||a.start_at,0);
+      });
+      return `<section class="attendance-hub-course ${courseOpen?'open':''}">
+        <button type="button" class="attendance-hub-course-head" data-global-attendance-course-toggle aria-expanded="${courseOpen?'true':'false'}" aria-controls="${coursePanelId}">
+          <span class="attendance-hub-course-copy"><span class="eyebrow">MATA PELAJARAN / KEGIATAN</span><strong>${esc(course.title)}</strong><small>${course.items.length} sesi${courseDone?` · ${courseDone} sudah`:''}${courseWaiting?` · ${courseWaiting} perlu presensi`:''}${courseUpcoming?` · ${courseUpcoming} belum dibuka`:''}</small></span>
+          <span class="attendance-hub-head-side"><span class="material-symbols-rounded">how_to_reg</span><span class="material-symbols-rounded attendance-hub-chevron">expand_more</span></span>
+        </button>
+        <div class="attendance-hub-session-list" id="${coursePanelId}" ${courseOpen?'':'hidden'}>${ordered.map(attendanceHubSessionRow).join('')}</div>
+      </section>`;
+    }).join('');
+    return `<section class="attendance-hub-class ${autoOpen?'open':''}">
+      <button type="button" class="attendance-hub-class-head" data-global-attendance-class-toggle aria-expanded="${autoOpen?'true':'false'}" aria-controls="${classPanelId}">
+        <span class="academic-type-icon attendance-icon">${svg('i-class')}</span>
+        <span class="attendance-hub-class-copy"><strong>${esc(cls.name)}</strong><small>${cls.courses.size} mata pelajaran/kegiatan · ${classDone} sudah${classWaiting?` · ${classWaiting} perlu presensi`:''}${classUpcoming?` · ${classUpcoming} belum dibuka`:''}</small></span>
+        <span class="material-symbols-rounded attendance-hub-chevron">expand_more</span>
+      </button>
+      <div class="attendance-hub-course-list" id="${classPanelId}" ${autoOpen?'':'hidden'}>${courses}</div>
+    </section>`;
+  }).join('');
+  return `<section class="academic-list-layout attendance-hub-v673">
+    <div class="academic-summary-strip attendance-hub-summary">
+      <div><strong>${done}</strong><span>Sudah Presensi</span></div>
+      <div><strong>${waiting}</strong><span>Belum Presensi</span></div>
+      <div><strong>${upcoming}</strong><span>Belum Dibuka</span></div>
+      <div><strong>${items.length}</strong><span>Total Sesi</span></div>
+    </div>
+    <div class="attendance-hub-note"><span class="material-symbols-rounded">account_tree</span><span>Kelas → mata pelajaran/kegiatan → sesi. Buka hanya bagian yang dibutuhkan.</span></div>
+    <div class="attendance-hub-class-list">${classCards}</div>
+  </section>`;
+}
+
+function attendanceHubSessionRow(item) {
+  const ui = attendanceUiState(item);
+  const date = safeDateParts(new Date(item.schedule_start_at || item.start_at));
+  const canOpen = ui.group === 'waiting' && Boolean(item.public_token);
+  const statusDetail = ui.group === 'done'
+    ? `${ui.label}${item.my_channel ? ` • ${String(item.my_channel).toUpperCase()==='YOUTUBE'?'YouTube':String(item.my_channel).charAt(0)+String(item.my_channel).slice(1).toLowerCase()}` : ''}`
+    : ui.label;
+  return `<article class="attendance-hub-session state-${ui.group}">
+    <span class="academic-date-tile compact"><strong>${esc(date.day)}</strong><span>${esc(date.month)}</span></span>
+    <span class="attendance-hub-session-copy"><span><b>${esc(attendanceSessionLabel(item))}</b><i>${esc(shortDateTime(item.schedule_start_at || item.start_at))}</i></span><small>${esc(item.schedule_location || item.my_note || 'Tidak ada catatan tambahan.')}</small></span>
+    <span class="attendance-hub-status status-${ui.group}"><span class="material-symbols-rounded">${ui.icon}</span>${esc(statusDetail)}</span>
+    ${canOpen?`<button type="button" class="session-action-btn attendance-hub-action" data-global-attendance-token="${esc(item.public_token)}"><span class="material-symbols-rounded">how_to_reg</span><span>Isi Presensi</span></button>`:''}
   </article>`;
 }
 
@@ -359,14 +447,24 @@ function attendanceStatusMeta(value) {
   if (key === 'SICK') return { key:'open', label:'Sakit' };
   if (key === 'PERMIT') return { key:'open', label:'Izin' };
   if (key === 'ABSENT') return { key:'overdue', label:'Alpa' };
-  return { key:'open', label:'Belum Dinilai' };
+  return { key:'open', label:'Belum' };
 }
 
 function bindAcademicRows() {
   document.querySelectorAll('[data-open-task]').forEach(btn => btn.onclick = () => openTaskModal(btn.dataset.openTask));
   document.querySelectorAll('[data-open-url]').forEach(btn => btn.onclick = () => openExternal(btn.dataset.openUrl));
   document.querySelectorAll('[data-academic-attendance-page]').forEach(btn => btn.onclick = () => { attendanceListPage = Number(btn.dataset.academicAttendancePage) || 1; drawAcademicScreen(state.academicHub); });
+  document.querySelectorAll('[data-global-attendance-class-toggle]').forEach(btn => btn.onclick = () => { const panel=document.getElementById(btn.getAttribute('aria-controls')); const opening=panel?.hidden!==false; if(panel)panel.hidden=!opening; btn.closest('.attendance-hub-class')?.classList.toggle('open',opening); btn.setAttribute('aria-expanded',String(opening)); });
+  document.querySelectorAll('[data-global-attendance-course-toggle]').forEach(btn => btn.onclick = () => { const panel=document.getElementById(btn.getAttribute('aria-controls')); const opening=panel?.hidden!==false; if(panel)panel.hidden=!opening; btn.closest('.attendance-hub-course')?.classList.toggle('open',opening); btn.setAttribute('aria-expanded',String(opening)); });
+  document.querySelectorAll('[data-global-attendance-token]').forEach(btn => btn.onclick = () => openGlobalAttendance(btn.dataset.globalAttendanceToken));
   document.getElementById('academic-open-classes')?.addEventListener('click', () => go('classes'));
+}
+
+function openGlobalAttendance(token=''){
+  const clean=String(token||'').trim(); if(!clean)return;
+  const url=new URL(window.location.href); url.pathname='/absensi'; url.searchParams.set('a',clean); url.searchParams.delete('attendance');
+  try{window.history.pushState({kelaskuRoute:'attendance-link'},'',url.pathname+url.search);}catch{}
+  go('attendance-link',{replace:true});
 }
 
 function academicAttachmentLinks(items=[]){if(!items.length)return '';return `<div class="task-supporting-list"><strong>Lampiran Pendukung</strong>${items.map((a,i)=>`<a href="${esc(a.download_url||a.url||'#')}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-rounded">${a.type==='LINK'?'link':String(a.mime_type||'').startsWith('image/')?'image':'description'}</span><span>${esc(a.filename||`Lampiran ${i+1}`)}</span><span class="material-symbols-rounded">open_in_new</span></a>`).join('')}</div>`;}

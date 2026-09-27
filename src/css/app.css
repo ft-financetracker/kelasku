@@ -1626,3 +1626,93 @@ html[data-theme="light"] .class-link-tab-card,html[data-theme="light"] .class-li
 html[data-theme="light"] .class-settings-tabs{background:#f4f8fc!important;border-color:#dce8f3!important}html[data-theme="light"] .class-settings-tabs button{background:#fff!important;color:#5c748f!important;border-color:#dce8f3!important}html[data-theme="light"] .class-settings-tabs button.active{background:#eafbf6!important;color:#087b63!important;border-color:#bfeadf!important}html[data-theme="light"] .global-update-notice{background:#fff;color:#102744;border-color:#bfeadf}
 @media(max-width:760px){.class-settings-tabs{top:4px!important}.class-settings-tabs button{min-height:32px!important;padding:6px 10px!important;font-size:10.5px!important}.global-update-notice{bottom:88px;grid-template-columns:auto minmax(0,1fr) auto;width:calc(100% - 18px);padding:9px}.global-update-copy small{display:none}}
 \n\n/* ============================================================\n   v6.7.2 — PWA landing integration only\n   ============================================================ */\n.class-landing-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;border:1px solid rgba(53,230,210,.26);border-radius:10px;background:rgba(8,49,80,.48);color:var(--text,#f7fbff);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}\n.class-landing-btn .material-symbols-rounded{font-size:17px;color:var(--accent,#2fe0d0)}\n.class-landing-btn:hover{border-color:rgba(53,230,210,.5);background:rgba(10,66,98,.62)}\n.detail-row-link-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto}\n.detail-row-link-actions .small-btn{min-height:30px;padding:5px 9px;font-size:11px}\n.detail-row-link-actions .material-symbols-rounded{font-size:16px}\n.join-preview-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:12px}\n.join-preview-actions .btn{width:100%;justify-content:center}\n@media(max-width:720px){\n  .class-hero-bottomline{gap:8px}\n  .class-landing-btn{width:auto;min-height:30px;padding:5px 9px;font-size:11px}\n  .detail-row.detail-row-link{align-items:flex-start;gap:10px}\n  .detail-row-link-actions{align-self:center}\n  .join-preview-actions{grid-template-columns:1fr}\n}\n
+/* ============================================================
+   v6.7.3 — Attendance hierarchy cleanup
+   Scope: global Absensi + Room Class Absensi only
+   ============================================================ */
+.attendance-hub-v673{display:grid;gap:12px}
+.attendance-hub-summary{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin-bottom:0!important}
+.attendance-hub-summary>div{min-height:76px;padding:13px 15px!important}
+.attendance-hub-summary strong{font-size:1.28rem!important;line-height:1}
+.attendance-hub-summary span{font-size:.78rem!important;line-height:1.25}
+.attendance-hub-note{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid rgba(34,224,199,.12);border-radius:12px;background:rgba(34,224,199,.035);color:var(--muted);font-size:.8rem}
+.attendance-hub-note .material-symbols-rounded{font-size:18px;color:var(--tosca)}
+.attendance-hub-class-list{display:grid;gap:10px}
+.attendance-hub-class{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:rgba(5,25,55,.5)}
+.attendance-hub-class-head{appearance:none;width:100%;border:0;background:transparent;color:inherit;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px 14px;text-align:left;font:inherit;cursor:pointer}
+.attendance-hub-class.open .attendance-hub-class-head{border-bottom:1px solid var(--line)}
+.attendance-hub-class-copy{display:grid;gap:3px;min-width:0}
+.attendance-hub-class-copy strong{font-size:1rem;line-height:1.25}
+.attendance-hub-class-copy small{font-size:.79rem;line-height:1.35;color:var(--muted)}
+.attendance-hub-chevron{font-size:20px;transition:transform .18s ease}
+.attendance-hub-class.open>.attendance-hub-class-head .attendance-hub-chevron,.attendance-hub-course.open>.attendance-hub-course-head .attendance-hub-chevron{transform:rotate(180deg)}
+.attendance-hub-course-list{display:grid;gap:8px;padding:10px}
+.attendance-hub-course-list[hidden],.attendance-hub-session-list[hidden]{display:none!important}
+.attendance-hub-course{overflow:hidden;border:1px solid rgba(91,160,240,.13);border-radius:13px;background:rgba(8,31,67,.42)}
+.attendance-hub-course-head{appearance:none;width:100%;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;text-align:left;font:inherit;cursor:pointer}
+.attendance-hub-course.open .attendance-hub-course-head{border-bottom:1px solid rgba(91,160,240,.12)}
+.attendance-hub-course-copy{display:grid;gap:2px;min-width:0}
+.attendance-hub-course-copy .eyebrow{font-size:.66rem!important}
+.attendance-hub-course-copy strong{font-size:.94rem;line-height:1.3}
+.attendance-hub-course-copy small{font-size:.76rem;line-height:1.35;color:var(--muted)}
+.attendance-hub-head-side{display:flex;align-items:center;gap:7px;flex:0 0 auto;color:var(--tosca)}
+.attendance-hub-head-side>.material-symbols-rounded:first-child{font-size:19px}
+.attendance-hub-session-list{display:grid}
+.attendance-hub-session{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:68px;padding:8px 10px;border-bottom:1px solid rgba(91,160,240,.09)}
+.attendance-hub-session:last-child{border-bottom:0}
+.attendance-hub-session.state-waiting{box-shadow:inset 3px 0 var(--tosca)}
+.attendance-hub-session.state-done{box-shadow:inset 3px 0 #3B82F6}
+.attendance-hub-session.state-upcoming{box-shadow:inset 3px 0 #F59E0B}
+.attendance-hub-session.state-closed{box-shadow:inset 3px 0 #64748B;opacity:.82}
+.attendance-hub-session-copy{display:grid;gap:3px;min-width:0}
+.attendance-hub-session-copy>span{display:flex;align-items:center;gap:8px;min-width:0}
+.attendance-hub-session-copy b{font-size:.87rem;line-height:1.2}
+.attendance-hub-session-copy i{font-style:normal;font-size:.76rem;color:var(--muted);white-space:nowrap}
+.attendance-hub-session-copy small{font-size:.76rem;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attendance-hub-status{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:5px 8px;border-radius:999px;border:1px solid transparent;font-size:.72rem;font-weight:850;white-space:nowrap}
+.attendance-hub-status .material-symbols-rounded{font-size:15px}
+.attendance-hub-status.status-done{color:#9BE7FF;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.2)}
+.attendance-hub-status.status-waiting{color:#79F3D9;background:rgba(34,224,199,.08);border-color:rgba(34,224,199,.22)}
+.attendance-hub-status.status-upcoming{color:#F9D980;background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2)}
+.attendance-hub-status.status-closed{color:#A9BDD2;background:rgba(100,116,139,.09);border-color:rgba(100,116,139,.18)}
+.attendance-hub-action{min-width:108px;justify-content:center}
+.attendance-room-v673 .attendance-series-card .schedule-session-row.state-waiting{box-shadow:inset 3px 0 var(--tosca)}
+.attendance-room-v673 .attendance-series-card .schedule-session-row.state-done{box-shadow:inset 3px 0 #3B82F6}
+.attendance-room-v673 .attendance-series-card .schedule-session-row.state-upcoming{box-shadow:inset 3px 0 #F59E0B}
+.attendance-room-v673 .attendance-series-card .attendance-hub-status{margin-left:auto}
+
+html[data-theme="light"] .attendance-hub-class,html[data-theme="light"] .attendance-hub-course{background:#fff;color:#102744;border-color:#DCE8F3}
+html[data-theme="light"] .attendance-hub-note{background:#F4FFFC;border-color:#C9EFE7;color:#58728E}
+
+@media(max-width:900px){
+  .attendance-hub-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .attendance-hub-session{grid-template-columns:auto minmax(0,1fr) auto}
+  .attendance-hub-action{grid-column:2/4;width:max-content;min-width:0;margin-top:-2px}
+}
+@media(max-width:600px){
+  .academic-toolbar.attendance-toolbar{grid-template-columns:1fr!important}
+  .academic-toolbar.attendance-toolbar .academic-search{grid-column:auto}
+  .attendance-hub-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+  .attendance-hub-summary>div{min-height:68px;padding:11px 12px!important}
+  .attendance-hub-summary strong{font-size:1.15rem!important}
+  .attendance-hub-summary span{font-size:.74rem!important}
+  .attendance-hub-note{font-size:.76rem;padding:8px 10px}
+  .attendance-hub-class-head{padding:11px 10px;gap:9px}
+  .attendance-hub-class-head>.academic-type-icon{width:38px;height:38px}
+  .attendance-hub-class-copy strong{font-size:.94rem}
+  .attendance-hub-class-copy small{font-size:.74rem}
+  .attendance-hub-course-list{padding:7px;gap:7px}
+  .attendance-hub-course-head{padding:10px}
+  .attendance-hub-course-copy strong{font-size:.9rem}
+  .attendance-hub-course-copy small{font-size:.72rem}
+  .attendance-hub-session{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;min-height:64px;padding:8px}
+  .attendance-hub-session-copy>span{gap:6px;flex-wrap:wrap}
+  .attendance-hub-session-copy b{font-size:.84rem}
+  .attendance-hub-session-copy i,.attendance-hub-session-copy small{font-size:.72rem}
+  .attendance-hub-status{font-size:.67rem;padding:4px 6px;min-height:26px}
+  .attendance-hub-status .material-symbols-rounded{display:none}
+  .attendance-hub-action{grid-column:2/4;min-height:32px;font-size:.72rem}
+  .attendance-room-v673 .schedule-series-head{min-height:58px}
+  .attendance-room-v673 .schedule-session-main{grid-template-columns:auto minmax(0,1fr) auto auto!important}
+  .attendance-room-v673 .attendance-hub-status{font-size:.65rem;padding:4px 6px}
+}
