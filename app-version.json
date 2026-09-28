@@ -1,8 +1,8 @@
 {
-  "version": "6.7.17",
-  "build": "20260929.317",
+  "version": "6.7.18",
+  "build": "20260929.318",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Daftar Kelas precision: desktop title/actions/search hierarchy, mobile one-row search plus compact actions, refined class cards/KPI, compact join preview, minimal Material bottom navigation, and zero notification badge fix.",
-  "release_time_wib": "01:05 WIB"
+  "release_note": "Precision-only frontend patch: live dropdown class search, cleaner mobile Room Class hero, and reorganized Ringkasan with foldable information/status cards, class/join codes, and compact class links.",
+  "release_time_wib": "01:08 WIB"
 }

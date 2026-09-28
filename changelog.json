@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "6.7.18",
+      "build": "20260929.318",
+      "date": "2026-09-29",
+      "type": "FRONTEND",
+      "title": "Classes Search & Room Ringkasan Precision",
+      "summary": "Live class search dropdown; Room Class hero cleaned; Ringkasan codes/links reorganized with mobile foldable cards."
+    },
+    {
       "version": "6.7.17",
       "build": "20260929.317",
       "date": "2026-09-29",

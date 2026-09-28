@@ -7,6 +7,8 @@ import { go } from '../core/router.js';
 let publicPage = 1;
 let publicQuery = '';
 let myClassesInFlight = null;
+let classSearchTimer = null;
+let classSearchRequestSeq = 0;
 const MY_CLASSES_TTL_MS = 60 * 1000;
 
 function publicLandingUrl(c={}) {
@@ -23,7 +25,7 @@ export function renderClasses() {
         <div class="classes-title-block"><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
         <div class="classes-primary-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} <span>Masuk Kode</span></button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} <span>Buat Kelas</span></button></div>
         <div class="classes-search-panel">
-          <div class="class-search-box classes-search-row">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off"><button id="class-search-btn" class="btn btn-secondary classes-search-btn">Cari</button></div>
+          <div class="class-search-box classes-search-row">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off" aria-autocomplete="list" aria-controls="class-search-results"><button type="button" id="class-search-clear" class="classes-search-clear hidden" aria-label="Bersihkan pencarian"><span class="material-symbols-rounded">close</span></button></div>
           <div id="class-search-results" class="search-results hidden"></div>
         </div>
       </section>
@@ -45,8 +47,16 @@ export function renderClasses() {
 
   document.getElementById('create-class-btn').onclick = openCreateClass;
   document.getElementById('join-code-btn').onclick = openJoinCode;
-  document.getElementById('class-search-btn').onclick = runSearch;
-  document.getElementById('class-search-input').onkeydown = e => { if (e.key === 'Enter') runSearch(); };
+  const searchInput=document.getElementById('class-search-input');
+  const searchClear=document.getElementById('class-search-clear');
+  searchInput.oninput = () => scheduleLiveSearch();
+  searchInput.onkeydown = e => {
+    if (e.key === 'Escape') { hideSearchResults(); searchInput.blur(); }
+    if (e.key === 'Enter') { e.preventDefault(); runSearch(searchInput.value.trim()); }
+  };
+  searchInput.onfocus = () => { if(searchInput.value.trim().length>=2) scheduleLiveSearch(true); };
+  searchClear.onclick = () => { searchInput.value=''; searchClear.classList.add('hidden'); hideSearchResults(); searchInput.focus(); };
+  document.addEventListener('pointerdown', classSearchOutsideHandler, { once:false });
   document.getElementById('public-class-refresh').onclick = () => loadPublicClasses(true);
   bindClassSectionToggle('my-class-toggle','class-grid','kelasku_classes_mine_collapsed');
   bindClassSectionToggle('public-class-toggle','public-class-list','kelasku_classes_public_collapsed','public-class-pager');
@@ -251,25 +261,76 @@ function drawPublicClasses(data) {
   }
 }
 
-async function runSearch() {
+function classSearchOutsideHandler(e){
+  const panel=document.querySelector('.classes-search-panel');
+  if(panel && !panel.contains(e.target)) hideSearchResults();
+}
+
+function hideSearchResults(){
+  const box=document.getElementById('class-search-results');
+  if(box) box.classList.add('hidden');
+}
+
+function scheduleLiveSearch(immediate=false){
+  const input=document.getElementById('class-search-input');
+  const clear=document.getElementById('class-search-clear');
+  if(!input)return;
+  const query=input.value.trim();
+  clear?.classList.toggle('hidden',!query);
+  if(classSearchTimer)clearTimeout(classSearchTimer);
+  if(query.length<2){hideSearchResults();return;}
+  drawLocalSearchSuggestions(query);
+  classSearchTimer=setTimeout(()=>runSearch(query),immediate?0:220);
+}
+
+function localSearchPool(){
+  const map=new Map();
+  [...(state.myClasses||[]),...(state.publicClasses?.items||[])].forEach(item=>{
+    if(item?.class_id&&!map.has(String(item.class_id)))map.set(String(item.class_id),item);
+  });
+  return [...map.values()];
+}
+
+function drawLocalSearchSuggestions(query){
+  const q=String(query||'').toLowerCase();
+  const box=document.getElementById('class-search-results');
+  if(!box)return;
+  const hits=localSearchPool().filter(c=>[
+    c.name,c.class_code,c.institution,c.study_program,c.cohort
+  ].some(v=>String(v||'').toLowerCase().includes(q))).slice(0,6);
+  if(!hits.length)return;
+  box.classList.remove('hidden');
+  box.innerHTML=hits.map(searchCard).join('');
+  bindSearchRows(box,hits,query);
+}
+
+async function runSearch(queryOverride='') {
   const input = document.getElementById('class-search-input');
   const box = document.getElementById('class-search-results');
-  const query = input.value.trim();
-  if (query.length < 2) { box.classList.add('hidden'); return; }
+  const query = String(queryOverride || input?.value || '').trim();
+  if (!box || query.length < 2) { hideSearchResults(); return; }
+  const seq=++classSearchRequestSeq;
   box.classList.remove('hidden');
-  box.innerHTML = '<div class="search-loading"><span class="status-dot"></span>Mencari kelas…</div>';
+  if(!box.querySelector('[data-search-class]'))box.innerHTML = '<div class="search-loading"><span class="status-dot"></span>Mencari kelas…</div>';
   try {
     const data = await api('searchClasses', { query });
-    const items = data.items || [];
+    if(seq!==classSearchRequestSeq || String(input?.value||'').trim()!==query)return;
+    const items = (data.items || []).slice(0,8);
     box.innerHTML = items.length ? items.map(searchCard).join('') : '<div class="search-empty">Kelas tidak ditemukan.</div>';
-    box.querySelectorAll('[data-search-class]').forEach(btn => btn.onclick = () => selectSearchClass(items.find(x => x.class_id === btn.dataset.searchClass), query));
+    bindSearchRows(box,items,query);
   } catch (err) {
+    if(seq!==classSearchRequestSeq)return;
     box.innerHTML = `<div class="search-empty">${esc(err.message)}</div>`;
   }
 }
 
+function bindSearchRows(box,items,query){
+  box.querySelectorAll('[data-search-class]').forEach(btn => btn.onclick = () => selectSearchClass(items.find(x => String(x.class_id) === String(btn.dataset.searchClass)), query));
+}
+
 function searchCard(c) {
-  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon">${svg('i-class')}</span><span><strong>${esc(c.name)}</strong><small>${esc(c.class_code || '')} · ${esc(c.institution || '')}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
+  const meta=[c.class_code||'',c.institution||'',c.cohort?`Angkatan ${c.cohort}`:''].filter(Boolean).join(' · ');
+  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon">${svg('i-class')}</span><span class="search-class-inline"><strong>${esc(c.name)}</strong><small>${esc(meta)}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
 }
 
 function selectSearchClass(c, query = '') {

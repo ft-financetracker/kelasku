@@ -152,10 +152,6 @@ function drawClass(data, preserveTab = true) {
           <div class="class-badge-line class-badge-bottom"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
         </div>
       </div>
-      <aside class="class-hero-code-rail" aria-label="Kode kelas">
-        <div class="class-code-rail-item"><span>Class Code</span><i aria-hidden="true">:</i><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div>
-        ${p.can_manage_class ? `<div class="class-code-rail-item"><span>Join Code</span><i aria-hidden="true">:</i><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini" title="Salin Join Code">${svg('i-copy')}</button></div>`:''}
-      </aside>
     </section>
 
     <section class="room-navigation-shell" aria-label="Navigasi Ruang Kelas">
@@ -294,14 +290,30 @@ function overviewHtml(data) {
   const c=data.class||{}, p=data.permissions||{};
   const classUrl=publicClassLinksUrl(c.class_code||'',c.public_slug||''), joinUrl=joinClassUrl(c.class_code||'',c.public_slug||'');
   const leader=(data.members||[]).find(m=>m.is_class_leader);
-  return `<section class="room-overview room-overview-v64">
-    <div class="panel"><div class="panel-head"><div><div class="panel-title">Informasi Kelas</div><p class="panel-copy">Identitas utama dan struktur kelas.</p></div></div><div class="detail-list">
-      ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
-    </div></div>
-    <div class="panel"><div class="panel-head"><div><div class="panel-title">Status Kelas</div><p class="panel-copy">Status keanggotaan dan akses kelas saat ini.</p></div></div><div class="detail-list">
-      ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}<div class="detail-row"><span>Visibilitas</span><strong><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span></strong></div>${detail('Anggota aktif',String((data.members||[]).length))}${detail('Class Code',c.class_code||'-')}<div class="detail-row detail-row-link"><span>Link Kelas</span><strong>${esc(classUrl)}</strong><div class="detail-row-link-actions"><button type="button" class="icon-btn mini" id="overview-copy-class-link" title="Salin link kelas">${svg('i-copy')}</button><button type="button" class="btn btn-secondary small-btn" id="overview-open-class-link"><span class="material-symbols-rounded">open_in_new</span> Buka Landing</button></div></div><div class="detail-row detail-row-link"><span>Link Bergabung</span><strong>${esc(joinUrl)}</strong><button type="button" class="icon-btn mini" id="overview-copy-join-link" title="Salin link bergabung">${svg('i-copy')}</button></div>
-    </div></div>
-    ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Akses pengaturan dan pengelolaan anggota tanpa mengubah tampilan Ringkasan.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan Kelas</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota & Ketua Kelas</button></div></div>`:''}
+  const joinCodeTile=p.can_manage_class?`<div class="overview-code-tile"><span>Join Code</span><strong>${esc(c.join_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-join-code" title="Salin Join Code">${svg('i-copy')}</button></div>`:'';
+  return `<section class="room-overview room-overview-v68">
+    <details class="panel overview-fold-card overview-info-card" open>
+      <summary><span class="overview-fold-icon material-symbols-rounded">info</span><span><strong>Informasi Kelas</strong><small>Identitas utama dan struktur kelas.</small></span><span class="material-symbols-rounded overview-fold-chevron">expand_more</span></summary>
+      <div class="overview-fold-body"><div class="detail-list">
+        ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
+      </div></div>
+    </details>
+
+    <details class="panel overview-fold-card overview-status-card" open>
+      <summary><span class="overview-fold-icon material-symbols-rounded">verified_user</span><span><strong>Status Kelas</strong><small>Keanggotaan, akses, dan kode kelas.</small></span><span class="material-symbols-rounded overview-fold-chevron">expand_more</span></summary>
+      <div class="overview-fold-body"><div class="detail-list overview-status-list">
+        ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}<div class="detail-row"><span>Visibilitas</span><strong><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span></strong></div>${detail('Anggota aktif',String((data.members||[]).length))}
+      </div><div class="overview-code-grid"><div class="overview-code-tile"><span>Class Code</span><strong>${esc(c.class_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-class-code" title="Salin Class Code">${svg('i-copy')}</button></div>${joinCodeTile}</div></div>
+    </details>
+
+    ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel overview-setting-card"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Pengaturan dan pengelolaan anggota.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota</button></div></div>`:''}
+
+    <div class="overview-link-strip" aria-label="Link kelas">
+      <button type="button" class="overview-link-action" id="overview-open-class-link" title="${esc(classUrl)}"><span class="material-symbols-rounded">open_in_new</span><span><small>Link Kelas</small><strong>Buka Landing</strong></span></button>
+      <button type="button" class="overview-link-copy" id="overview-copy-class-link" title="Salin link kelas">${svg('i-copy')}</button>
+      <button type="button" class="overview-link-action" id="overview-copy-join-link" title="${esc(joinUrl)}"><span class="material-symbols-rounded">link</span><span><small>Link Bergabung</small><strong>Salin Link</strong></span></button>
+    </div>
+
     <div class="panel wide-panel class-exit-panel"><div><div class="panel-title">${p.is_owner?'Hapus Kelas':'Keluar dari Kelas'}</div><p class="panel-copy">${p.is_owner?'Kelas akan dinonaktifkan dari daftar aktif. Data dan histori tetap dipertahankan.':'Akses ke kelas akan dihentikan. Histori akademik yang sudah tercatat tetap tersimpan.'}</p></div><button type="button" id="class-exit-action" class="btn ${p.is_owner?'btn-danger':'btn-secondary'}">${p.is_owner?'Hapus Kelas':'Keluar Kelas'}</button></div>
   </section>`;
 }
@@ -1089,6 +1101,8 @@ function bindTab(tab,data) {
     document.querySelectorAll('[data-module-tab]').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.moduleTab,data));
     document.getElementById('quick-settings')?.addEventListener('click',()=>switchTab('settings',data));
     document.getElementById('quick-members')?.addEventListener('click',()=>switchTab('members',data));
+    document.getElementById('overview-copy-class-code')?.addEventListener('click',()=>copyText(data.class?.class_code||''));
+    document.getElementById('overview-copy-join-code')?.addEventListener('click',()=>copyText(data.class?.join_code||''));
     document.getElementById('overview-copy-class-link')?.addEventListener('click',()=>copyText(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.location.assign(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('overview-copy-join-link')?.addEventListener('click',()=>copyText(joinClassUrl(data.class?.class_code||'',data.class?.public_slug||'')));
