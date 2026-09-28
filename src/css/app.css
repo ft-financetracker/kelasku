@@ -10,7 +10,7 @@ body{min-height:100vh;background:
  radial-gradient(circle at 85% 5%,rgba(25,118,255,.24),transparent 26%),
  radial-gradient(circle at 12% 88%,rgba(34,224,199,.10),transparent 24%),
  linear-gradient(135deg,#06142F 0%,#082451 52%,#06142F 100%);overflow-x:hidden}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.204;background-image:linear-gradient(120deg,transparent 0 48%,rgba(25,118,255,.08) 49% 51%,transparent 52%),linear-gradient(120deg,transparent 0 72%,rgba(34,224,199,.06) 73% 74%,transparent 75%);background-size:520px 520px,780px 780px}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;background-image:linear-gradient(120deg,transparent 0 48%,rgba(25,118,255,.08) 49% 51%,transparent 52%),linear-gradient(120deg,transparent 0 72%,rgba(34,224,199,.06) 73% 74%,transparent 75%);background-size:520px 520px,780px 780px}
 button,input,select,textarea{font:inherit}.svg-sprite{position:absolute;width:0;height:0;overflow:hidden}
 .icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.app-root{min-height:100vh}.screen{min-height:100vh;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:center}
 .shell{width:min(1180px,100%);position:relative}.glass{background:linear-gradient(180deg,rgba(13,39,81,.84),rgba(6,24,54,.78));border:1px solid rgba(87,167,255,.28);box-shadow:var(--shadow);backdrop-filter:blur(20px);border-radius:var(--r)}
@@ -313,7 +313,7 @@ button,input,select,textarea{font:inherit}.svg-sprite{position:absolute;width:0;
 
 /* Personalization */
 html[data-font="inter"] body{font-family:Inter,Poppins,system-ui,sans-serif}html[data-font="system"] body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif}html[data-text-size="small"]{font-size:14px}html[data-text-size="large"]{font-size:17px}html[data-density="compact"] .panel{padding:14px}html[data-density="compact"] .nav-item{min-height:46px;padding-top:10px;padding-bottom:10px}html[data-density="compact"] .class-card{min-height:160px}
-html[data-theme="light"] body{background:linear-gradient(135deg,#EDF6FF,#F7FCFF 48%,#EAF9F6);color:#102744}html[data-theme="light"]{--text:#102744;--muted:#5E7692;--line:rgba(34,93,158,.17);--panel:rgba(255,255,255,.86)}html[data-theme="light"] body:before{opacity:.096}html[data-theme="light"] .sidebar,html[data-theme="light"] .bottom-nav{background:rgba(244,250,255,.94)}html[data-theme="light"] .panel,html[data-theme="light"] .class-card,html[data-theme="light"] .control,html[data-theme="light"] .search,html[data-theme="light"] .icon-btn{background:rgba(255,255,255,.78);color:#102744}html[data-theme="light"] .sidebar{border-color:rgba(47,107,174,.14)}html[data-theme="light"] .nav-item{color:#59718D}html[data-theme="light"] .sidebar-foot{background:rgba(222,239,255,.68)}html[data-theme="light"] .detail-row strong,html[data-theme="light"] .setting-row strong{color:#173454}html[data-theme="light"] .modal{background:#F6FBFF}
+html[data-theme="light"] body{background:linear-gradient(135deg,#EDF6FF,#F7FCFF 48%,#EAF9F6);color:#102744}html[data-theme="light"]{--text:#102744;--muted:#5E7692;--line:rgba(34,93,158,.17);--panel:rgba(255,255,255,.86)}html[data-theme="light"] body:before{opacity:.16}html[data-theme="light"] .sidebar,html[data-theme="light"] .bottom-nav{background:rgba(244,250,255,.94)}html[data-theme="light"] .panel,html[data-theme="light"] .class-card,html[data-theme="light"] .control,html[data-theme="light"] .search,html[data-theme="light"] .icon-btn{background:rgba(255,255,255,.78);color:#102744}html[data-theme="light"] .sidebar{border-color:rgba(47,107,174,.14)}html[data-theme="light"] .nav-item{color:#59718D}html[data-theme="light"] .sidebar-foot{background:rgba(222,239,255,.68)}html[data-theme="light"] .detail-row strong,html[data-theme="light"] .setting-row strong{color:#173454}html[data-theme="light"] .modal{background:#F6FBFF}
 
 /* ============================================================
    v2.0.0 — TRUCK DESK CTA GEOMETRY ADAPTATION
@@ -715,7 +715,7 @@ html[data-theme="light"] .academic-row-main h3,html[data-theme="light"] .academi
 /* LIGHT THEME — deliberately clean, bright and layered instead of faded dark UI. */
 html[data-theme="light"]{--text:#102744;--muted:#627B97;--line:rgba(40,94,153,.14);--panel:#FFFFFF;--shadow:0 18px 46px rgba(49,87,125,.11)}
 html[data-theme="light"] body{background:radial-gradient(circle at 88% 2%,rgba(25,118,255,.10),transparent 25%),radial-gradient(circle at 5% 92%,rgba(34,224,199,.09),transparent 24%),linear-gradient(135deg,#F3F8FE 0%,#FBFDFF 48%,#F0FAF8 100%);color:#102744}
-html[data-theme="light"] body:before{opacity:.06;background-image:linear-gradient(120deg,transparent 0 48%,rgba(25,118,255,.12) 49% 50%,transparent 51%),linear-gradient(120deg,transparent 0 73%,rgba(34,224,199,.10) 74% 74.5%,transparent 75%)}
+html[data-theme="light"] body:before{opacity:.1;background-image:linear-gradient(120deg,transparent 0 48%,rgba(25,118,255,.12) 49% 50%,transparent 51%),linear-gradient(120deg,transparent 0 73%,rgba(34,224,199,.10) 74% 74.5%,transparent 75%)}
 html[data-theme="light"] .sidebar{background:rgba(255,255,255,.93);border-color:#DCE8F4;box-shadow:10px 0 34px rgba(54,91,130,.055)}
 html[data-theme="light"] .sidebar-foot{background:#F3F8FD;border:1px solid #E0EBF5;color:#6A819B}
 html[data-theme="light"] .nav-item{color:#667E98}html[data-theme="light"] .nav-item:hover{color:#123F73;background:#F1F7FD;border-color:#E2ECF6}html[data-theme="light"] .nav-item.active{color:#087D78;background:linear-gradient(90deg,#E8FBF7,#EEF5FF);border-color:#CFEDE8}
@@ -1716,3 +1716,9 @@ html[data-theme="light"] .attendance-hub-note{background:#F4FFFC;border-color:#C
   .attendance-room-v673 .schedule-session-main{grid-template-columns:auto minmax(0,1fr) auto auto!important}
   .attendance-room-v673 .attendance-hub-status{font-size:.65rem;padding:4px 6px}
 }
+
+/* v6.7.5 — class appearance placeholder only (no backend/state changes) */
+.class-appearance-soon{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px;border:1px dashed rgba(91,160,240,.24);border-radius:14px;background:rgba(8,31,67,.42)}
+.class-appearance-soon>.material-symbols-rounded{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#0A315D;color:#22E0C7;font-size:22px}.class-appearance-soon>div{min-width:0}.class-appearance-soon strong{font-size:.93rem}.class-appearance-soon p{margin:3px 0 0;color:var(--muted);font-size:.8rem;line-height:1.45}
+html[data-theme="light"] .class-appearance-soon{background:#f8fbfe;border-color:#cdddeb}html[data-theme="light"] .class-appearance-soon>.material-symbols-rounded{background:#e9f7f4;color:#0c8d75}
+@media(max-width:680px){.class-appearance-soon{grid-template-columns:auto minmax(0,1fr);padding:11px;gap:9px}.class-appearance-soon>.soft-chip{grid-column:2;justify-self:start}.class-appearance-soon p{font-size:.76rem}}

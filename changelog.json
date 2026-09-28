@@ -1,33 +1,24 @@
 {
   "releases": [
     {
-      "version": "6.7.7",
-      "build": "20260928.277",
-      "date": "2026-09-28",
-      "schema": 17,
-      "title": "Pattern Visibility + Asset Cache-Bust Hotfix",
-      "changes": [
-        "Geometric background pattern visibility is reduced by 40% from the v6.7.5 baseline on the main app and public class landing.",
-        "Light Mode pattern intensity is reduced proportionally so it remains subtler than content cards.",
-        "Critical cache-bust fix: index.html and links.html asset query tokens now advance to v=6717, preventing browsers/PWA from reusing the previous v6.7.5 CSS/JS URLs.",
-        "Public landing Service Worker registration now uses updateViaCache none, matching the main PWA update strategy.",
-        "Frontend-only hotfix; Schema remains 17 and Apps Script is unchanged."
-      ]
-    },
-    {
       "version": "6.7.5",
-      "build": "20260927.275",
-      "date": "2026-09-27",
-      "schema": 17,
-      "title": "Landing Visual Polish — Image Heroes & Compact Showcase",
-      "changes": [
-        "Landing page only: Informasi Kelas, Link Cepat, and Kenal KelasKu section headers now use lightweight image banner assets instead of plain text-only section heads.",
-        "Latest KelasKu logo is placed only in the landing brand bar and footer with controlled sizing and spacing; it is not embedded into every banner image.",
-        "Semester/class period navigation remains a standalone strip between Informasi Kelas and Link Cepat.",
-        "Kenal KelasKu showcase is shorter and denser; CTA buttons remain one compact horizontal row on mobile when space permits.",
-        "Public class title hover uses a lightweight CSS-only micro-interaction without blur/filter effects.",
-        "Footer now shows KelasKu logo, app version, and release update time in WIB.",
-        "Frontend-only release; Schema remains 17 and Apps Script is unchanged."
+      "build": "20260928.275",
+      "date": "28 September 2026",
+      "title": "Landing Visual Polish",
+      "description": "Polish landing pre-live tanpa mengubah alur akademik: image section hero compact, showcase dipadatkan, logo lockup terbaru, footer versi/waktu WIB, dan placeholder tampilan kelas.",
+      "groups": [
+        {
+          "label": "Perbaikan",
+          "items": [
+            "Section header Informasi Kelas, Link Cepat, dan Kenal KelasKu menggunakan image hero ringan WebP.",
+            "Navigasi tab periode tetap strip terpisah di antara Informasi Kelas dan Link Cepat.",
+            "Kenal KelasKu dipadatkan; tombol aksi tidak lagi menumpuk vertikal di mobile.",
+            "Logo landing menggunakan lockup KelasKu terbaru dengan ukuran presisi.",
+            "Footer landing menampilkan versi dan waktu update WIB.",
+            "Pengaturan Kelas mendapat tab Tampilan dengan Hero Landing & Room Class berstatus SOON.",
+            "Export Absensi XLSX tetap memakai struktur v6.7.4: ANALISIS + ALL + satu matrix sheet per mapel/kegiatan."
+          ]
+        }
       ]
     },
     {
