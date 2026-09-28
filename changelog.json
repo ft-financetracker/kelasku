@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "6.7.12",
+      "build": "20260928.282",
+      "date": "2026-09-28",
+      "type": "HOTFIX",
+      "title": "Schedule Create Repair",
+      "summary": "Urgent hotfix Jadwal: tombol Tambah Jadwal kembali berfungsi dengan default waktu mulai dan selesai yang valid."
+    },
+    {
       "version": "6.7.11",
       "build": "20260928.281",
       "date": "2026-09-28",

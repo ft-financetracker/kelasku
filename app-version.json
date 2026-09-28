@@ -1,8 +1,8 @@
 {
-  "version": "6.7.11",
-  "build": "20260928.281",
+  "version": "6.7.12",
+  "build": "20260928.282",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Hotfix Room Class Anggota: memperbaiki menu Anggota yang gagal dibuka, merapikan card 2 baris, tombol keluarkan, badge jumlah, dan pagination.",
-  "release_time_wib": "17:05 WIB"
+  "release_note": "Urgent hotfix Jadwal: tombol Tambah Jadwal kembali berfungsi dengan default waktu mulai dan selesai yang valid.",
+  "release_time_wib": "17:12 WIB"
 }
