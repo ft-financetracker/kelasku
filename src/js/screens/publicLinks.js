@@ -191,6 +191,26 @@ function publicScheduleBlock(schedules=[], activeAttendance=null, {guest=false,c
   return `${list}${controls}`;
 }
 
+
+function publicVisualHeader(kind,title,copy,{withShowcaseNav=false}={}) {
+  const asset = {
+    info:'assets/landing/hero-info.webp',
+    links:'assets/landing/hero-links.webp',
+    showcase:'assets/landing/hero-showcase.webp'
+  }[kind] || 'assets/landing/hero-info.webp';
+  const icon = {info:'calendar_month',links:'link',showcase:'school'}[kind] || 'school';
+  const actions = withShowcaseNav ? `<div class="public-showcase-nav public-image-head-actions"><button type="button" data-showcase-prev aria-label="Sebelumnya"><span class="material-symbols-rounded">arrow_back</span></button><button type="button" data-showcase-next aria-label="Berikutnya"><span class="material-symbols-rounded">arrow_forward</span></button></div>` : '';
+  return `<div class="public-image-head public-image-${kind}">
+    <img src="${asset}" alt="" loading="${kind==='info'?'eager':'lazy'}" decoding="async">
+    <span class="public-image-head-shade" aria-hidden="true"></span>
+    <div class="public-image-head-content">
+      <span class="public-image-head-icon material-symbols-rounded">${icon}</span>
+      <div><h2>${esc(title)}</h2><p>${esc(copy)}</p></div>
+    </div>
+    ${actions}
+  </div>`;
+}
+
 function memberAcademicHub(academic={}, classId='') {
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
@@ -205,7 +225,7 @@ function memberAcademicHub(academic={}, classId='') {
     announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
   const tabs = [['schedule','calendar_month','Jadwal'],['attendance','done_all','Presensi'],['tasks','checklist','Tugas'],['announcements','campaign','Informasi']];
-  return `<section class="public-room-hub"><div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Akses ruang kelas.</h2><p>Jadwal aktif dan presensi tersedia dari satu link kelas. Tidak perlu menyimpan link presensi per sesi.</p></div></div><nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
+  return `<section class="public-room-hub">${publicVisualHeader('info','Akses ruang kelas.','Jadwal aktif dan presensi tersedia dari satu link kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
 function academicLoading() {
@@ -224,7 +244,7 @@ function guestAcademicHub(loggedIn,academic={}) {
     announcements:roomList(announcements,'Belum ada informasi publik.',x=>`<button type="button" data-guest-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title)}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
   const tabs=[['schedule','calendar_month','Jadwal'],['attendance','done_all','Presensi'],['tasks','checklist','Tugas'],['announcements','campaign','Informasi']];
-  return `<section class="public-room-hub"><div class="public-section-head public-room-head"><div><span class="public-kicker">INFORMASI KELAS</span><h2>Akses ruang kelas.</h2><p>Jadwal publik tetap terlihat. Presensi dan Zoom/Meet memerlukan login sebagai anggota kelas.</p></div></div><nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
+  return `<section class="public-room-hub">${publicVisualHeader('info','Akses ruang kelas.','Jadwal publik tetap terlihat. Presensi dan Zoom/Meet memerlukan login sebagai anggota kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
 function showPublicNotice(message){
@@ -235,7 +255,7 @@ function showPublicNotice(message){
 
 function showcase() {
   const slides=[['dashboard','Dashboard','Semua informasi penting dalam satu layar.'],['calendar_month','Jadwal','Agenda kelas lebih teratur.'],['checklist','Tugas','Deadline dan progres lebih jelas.'],['done_all','Presensi','Check-in dan riwayat kehadiran.'],['folder','Materi','Referensi kelas tetap rapi.'],['groups','Kelola Kelas','Koordinasi anggota dalam satu ruang.']];
-  return `<section class="public-showcase"><div class="public-section-head"><div><span class="public-kicker">KENAL KELASKU</span><h2>Satu ruang untuk kebutuhan kelas.</h2></div><div class="public-showcase-nav"><button type="button" data-showcase-prev aria-label="Sebelumnya"><span class="material-symbols-rounded">arrow_back</span></button><button type="button" data-showcase-next aria-label="Berikutnya"><span class="material-symbols-rounded">arrow_forward</span></button></div></div><div class="public-showcase-track" id="public-showcase-track">${slides.map(([icon,title,copy],i)=>`<article class="public-device-card"><div class="public-browser-bar"><i></i><i></i><i></i><span>klasku.my.id</span></div><div class="public-device-screen"><span class="material-symbols-rounded">${icon}</span><small>PREVIEW ${String(i+1).padStart(2,'0')}</small><strong>${title}</strong><p>${copy}</p><div class="public-mock-lines"><i></i><i></i><i></i></div></div></article>`).join('')}</div><div class="public-showcase-actions"><a href="/" class="public-promo-btn">Buka KelasKu <span class="material-symbols-rounded">arrow_forward</span></a><button id="public-install-btn" type="button" class="public-install-btn" hidden>Install KelasKu <span class="material-symbols-rounded">download</span></button></div></section>`;
+  return `<section class="public-showcase">${publicVisualHeader('showcase','Kenal KelasKu','Satu ruang untuk semua kebutuhan kelas.',{withShowcaseNav:true})}<div class="public-showcase-track" id="public-showcase-track">${slides.map(([icon,title,copy],i)=>`<article class="public-device-card"><div class="public-browser-bar"><i></i><i></i><i></i><span>klasku.my.id</span></div><div class="public-device-screen"><span class="material-symbols-rounded">${icon}</span><small>PREVIEW ${String(i+1).padStart(2,'0')}</small><strong>${title}</strong><p>${copy}</p><div class="public-mock-lines"><i></i><i></i><i></i></div></div></article>`).join('')}</div><div class="public-showcase-actions"><a href="/" class="public-promo-btn">Buka KelasKu <span class="material-symbols-rounded">arrow_forward</span></a><button id="public-install-btn" type="button" class="public-install-btn" hidden>Install KelasKu <span class="material-symbols-rounded">download</span></button></div></section>`;
 }
 
 function render(data, memberData=null, academic=null, { membershipLoading=false }={}) {
@@ -258,7 +278,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   content.innerHTML = `${publicHero(cls)}
     ${infoSection}
     ${linkUi.nav?`<div class="public-period-standalone">${linkUi.nav}</div>`:''}
-    <section class="public-section-block"><div class="public-section-head"><div><span class="public-kicker">LINK CEPAT</span><h2>Akses penting kelas</h2><p>Pilih tab, lalu buka kategori link yang dibutuhkan.</p></div></div>${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
+    <section class="public-section-block">${publicVisualHeader('links','Akses penting kelas','Pilih tab, lalu buka kategori link yang dibutuhkan.')}${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
     ${showcase()}`;
   bindInteractions();
 }
@@ -489,6 +509,15 @@ function syncPublicMetadata(cls={}) {
   if(metaDescription)metaDescription.content=description;
 }
 
+
+function syncPublicFooter(){
+  const cfg=window.KELASKU_CONFIG||{};
+  const version=document.getElementById('public-footer-version');
+  const updated=document.getElementById('public-footer-updated');
+  if(version)version.textContent=`Versi v${cfg.APP_VERSION||'—'}`;
+  if(updated)updated.textContent=`Update ${cfg.RELEASE_UPDATED_WIB||'WIB'}`;
+}
+
 function renderError(message) {
   content.innerHTML = `<section class="public-empty error"><span class="material-symbols-rounded">link_off</span><strong>Link kelas tidak tersedia</strong><p>${esc(message || 'Periksa kembali tautan yang dibagikan.')}</p><a href="/" class="public-promo-btn">Buka KelasKu</a></section>`;
 }
@@ -500,6 +529,7 @@ function registerPublicServiceWorker(){
 
 async function init() {
   registerPublicServiceWorker();
+  syncPublicFooter();
   if (!classCode) return renderError('Kode kelas tidak ditemukan pada URL.');
   const cached=readPublicCache();
   if(cached){

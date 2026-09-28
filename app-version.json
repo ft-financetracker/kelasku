@@ -1,7 +1,8 @@
 {
-  "version": "6.7.4",
-  "build": "20260927.274",
+  "version": "6.7.5",
+  "build": "20260927.275",
   "schema": 17,
   "release_date": "2026-09-27",
-  "release_note": "Pre-live cleanup: standalone landing period navigation preserved between sections; attendance XLSX is consolidated into ANALISIS + ALL + one matrix sheet per subject/activity, never one sheet per session."
+  "release_note": "Landing visual polish only: image-based compact section heroes, latest KelasKu logo placement, tighter showcase/actions, refined class-title hover, standalone semester rail preserved, and footer version/update time WIB.",
+  "release_updated_wib": "27 Sep 2026, 23:17 WIB"
 }

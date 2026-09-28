@@ -1,6 +1,22 @@
 {
   "releases": [
     {
+      "version": "6.7.5",
+      "build": "20260927.275",
+      "date": "2026-09-27",
+      "schema": 17,
+      "title": "Landing Visual Polish — Image Heroes & Compact Showcase",
+      "changes": [
+        "Landing page only: Informasi Kelas, Link Cepat, and Kenal KelasKu section headers now use lightweight image banner assets instead of plain text-only section heads.",
+        "Latest KelasKu logo is placed only in the landing brand bar and footer with controlled sizing and spacing; it is not embedded into every banner image.",
+        "Semester/class period navigation remains a standalone strip between Informasi Kelas and Link Cepat.",
+        "Kenal KelasKu showcase is shorter and denser; CTA buttons remain one compact horizontal row on mobile when space permits.",
+        "Public class title hover uses a lightweight CSS-only micro-interaction without blur/filter effects.",
+        "Footer now shows KelasKu logo, app version, and release update time in WIB.",
+        "Frontend-only release; Schema remains 17 and Apps Script is unchanged."
+      ]
+    },
+    {
       "version": "6.7.4",
       "build": "20260927.274",
       "date": "2026-09-27",
