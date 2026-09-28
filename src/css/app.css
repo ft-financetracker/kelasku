@@ -2840,3 +2840,34 @@ html[data-theme="light"] .overview-link-action,html[data-theme="light"] .overvie
 
 html[data-theme="light"] .room-subnav-menu-v6720{background:#FFFFFF!important;border-color:#D9E7F3!important;box-shadow:0 16px 30px rgba(39,76,113,.14)!important}
 html[data-theme="light"] .room-subnav-trigger-v6720{background:#F7FBFF!important;border-color:#DCE8F3!important;color:#102744!important}
+
+
+/* ============================================================
+   v6.7.21 — Room submenu behavior hotfix
+   Scope: Class Room navigation submenu only.
+   ============================================================ */
+.room-subnav-host-v6721{position:relative;margin:-4px 0 14px;z-index:38}
+.room-subnav-host-v6721[hidden]{display:none!important}
+.room-subnav-popover-v6721{width:min(720px,100%);margin-inline:auto;padding:8px;border:1px solid rgba(84,152,233,.16);border-radius:15px;background:#071C3C;box-shadow:0 18px 38px rgba(0,7,24,.34)}
+.room-subnav-popover-head-v6721{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 4px 8px 7px;border-bottom:1px solid rgba(86,151,231,.11)}
+.room-subnav-popover-head-v6721>div{display:grid;gap:1px}.room-subnav-popover-head-v6721 small{font-size:7.5px;line-height:1.1;text-transform:uppercase;letter-spacing:.11em;color:#7897B8}.room-subnav-popover-head-v6721 strong{font-size:11px;color:#EAF5FF}
+.room-subnav-list-v6721{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding-top:6px}
+.room-subnav-option-v6721{position:relative;min-width:0;min-height:48px;display:grid;grid-template-columns:29px minmax(0,1fr) auto;align-items:center;gap:8px;padding:7px 9px;border:1px solid transparent;border-radius:11px;background:transparent;color:#AFC3D7;text-align:left;font:inherit;cursor:pointer;transition:.15s ease}
+.room-subnav-option-v6721:hover{background:rgba(22,65,108,.44);border-color:rgba(83,154,236,.13)}
+.room-subnav-option-v6721.active{background:linear-gradient(100deg,rgba(34,224,199,.14),rgba(24,118,255,.12));border-color:rgba(34,224,199,.2);color:#F7FDFF}
+.room-subnav-option-v6721>.material-symbols-rounded{font-size:18px;color:var(--tosca)}
+.room-subnav-option-copy-v6721{min-width:0;display:grid;gap:1px}.room-subnav-option-copy-v6721 strong{font-size:10px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.room-subnav-option-copy-v6721 small{font-size:7.8px;line-height:1.2;color:#7897B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-main-item.submenu-open{border-color:rgba(34,224,199,.32)!important;box-shadow:0 0 0 2px rgba(34,224,199,.06) inset}
+.room-navigation-v6720 .room-subnav{display:none!important}
+html[data-theme="light"] .room-subnav-popover-v6721{background:#FFFFFF;border-color:#D9E7F3;box-shadow:0 16px 30px rgba(39,76,113,.14)}
+html[data-theme="light"] .room-subnav-popover-head-v6721{border-color:#E4EDF5}html[data-theme="light"] .room-subnav-popover-head-v6721 strong{color:#102744}
+html[data-theme="light"] .room-subnav-option-v6721{color:#58738F}html[data-theme="light"] .room-subnav-option-v6721:hover{background:#F3F8FC}html[data-theme="light"] .room-subnav-option-v6721.active{background:#EAFBF8;color:#173B5B}
+@media(max-width:680px){
+  .room-subnav-host-v6721{margin:-3px 0 12px;padding:0 4px}
+  .room-subnav-popover-v6721{width:100%;padding:7px;border-radius:14px}
+  .room-subnav-popover-head-v6721{padding:2px 3px 7px 6px}
+  .room-subnav-list-v6721{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  .room-subnav-option-v6721{min-height:46px;grid-template-columns:27px minmax(0,1fr) auto;padding:6px 8px;border-radius:10px}
+  .room-subnav-option-v6721>.material-symbols-rounded{font-size:17px}.room-subnav-option-copy-v6721 strong{font-size:9.6px}.room-subnav-option-copy-v6721 small{font-size:7.4px}
+}
+@media(max-width:390px){.room-subnav-list-v6721{grid-template-columns:1fr}}

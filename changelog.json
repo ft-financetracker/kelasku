@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.7.21",
+    "build": "20260929.321",
+    "date": "2026-09-29",
+    "type": "HOTFIX",
+    "title": "Room submenu click popover",
+    "summary": "Submenu Akademik/Kelola hanya muncul saat tombol utama diklik dan dirender di luar container navigasi."
+  },
+  {
     "version": "6.7.20",
     "build": "20260929.320",
     "date": "2026-09-29",

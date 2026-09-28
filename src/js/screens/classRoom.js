@@ -168,8 +168,8 @@ function drawClass(data, preserveTab = true) {
         </nav>
         <button type="button" class="room-nav-arrow-v6720 room-nav-next-v6720" data-room-scroll="next" aria-label="Geser menu ke kanan"><span class="material-symbols-rounded">chevron_right</span></button>
       </div>
-      <div class="room-subnav" id="room-subnav"></div>
     </section>
+    <div class="room-subnav-host-v6721" id="room-subnav" hidden></div>
     <div id="room-content"></div>`;
 
   document.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = () => copyText(btn.dataset.copy));
@@ -205,11 +205,66 @@ function roomMainKey(tab){
   if(['requests','settings'].includes(tab))return 'manage';
   return tab;
 }
+function roomSubmenuItems(main,data){
+  if(main==='academic')return [
+    ['announcements','campaign','Pengumuman'],
+    ['schedule','calendar_month','Jadwal'],
+    ['tasks','checklist','Tugas'],
+    ['materials','description','Materi'],
+    ['attendance','how_to_reg','Absensi'],
+    ['analytics','monitoring','Analitik']
+  ];
+  if(main==='manage'){
+    const items=[];
+    if(data.permissions?.can_manage_members)items.push(['requests','group_add',`Permintaan ${(data.pending_requests||[]).length}`]);
+    if(data.permissions?.can_manage_class)items.push(['settings','settings','Pengaturan Kelas']);
+    return items;
+  }
+  return [];
+}
+function closeRoomSubmenu(){
+  const host=document.getElementById('room-subnav');
+  if(!host)return;
+  host.hidden=true;
+  host.innerHTML='';
+  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.remove('submenu-open'));
+}
+function toggleRoomSubmenu(main,data,anchor){
+  const host=document.getElementById('room-subnav');
+  if(!host)return;
+  const items=roomSubmenuItems(main,data);
+  if(!items.length){closeRoomSubmenu();return;}
+  const isSame=!host.hidden && host.dataset.main===main;
+  if(isSame){closeRoomSubmenu();return;}
+  const currentMain=roomMainKey(activeTab);
+  const label=main==='academic'?'Menu Akademik':'Kelola Kelas';
+  host.dataset.main=main;
+  host.innerHTML=`<div class="room-subnav-popover-v6721" role="menu" aria-label="${label}">
+    <div class="room-subnav-popover-head-v6721"><div><small>${label}</small><strong>Pilih menu</strong></div><button type="button" class="icon-btn mini" data-close-room-submenu aria-label="Tutup submenu">${svg('i-close')}</button></div>
+    <div class="room-subnav-list-v6721">
+      ${items.map(([key,icon,itemLabel])=>`<button type="button" role="menuitem" class="room-subnav-option-v6721 ${activeTab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span class="room-subnav-option-copy-v6721"><strong>${esc(itemLabel)}</strong><small>${key==='announcements'?'Informasi kelas':key==='schedule'?'Agenda & pertemuan':key==='tasks'?'Tugas & deadline':key==='materials'?'Materi pembelajaran':key==='attendance'?'Presensi kelas':key==='analytics'?'Ringkasan akademik':key==='requests'?'Permintaan anggota':'Pengaturan kelas'}</small></span>${main==='academic'?roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId]):''}</button>`).join('')}
+    </div>
+  </div>`;
+  host.hidden=false;
+  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('submenu-open',btn===anchor));
+  host.querySelector('[data-close-room-submenu]')?.addEventListener('click',e=>{e.stopPropagation();closeRoomSubmenu();});
+  host.querySelectorAll('[data-room-sub]').forEach(btn=>btn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const key=btn.dataset.roomSub;
+    closeRoomSubmenu();
+    switchTab(key,data);
+  }));
+  requestAnimationFrame(()=>host.scrollIntoView({block:'nearest',behavior:'smooth'}));
+}
 function bindRoomNavigation(data){
-  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.onclick=(event)=>{
+    event.stopPropagation();
     const key=btn.dataset.roomMain;
-    if(key==='academic')return switchTab('announcements',data);
-    if(key==='manage')return switchTab((data.pending_requests||[]).length?'requests':'settings',data);
+    if(key==='academic'||key==='manage'){
+      toggleRoomSubmenu(key,data,btn);
+      return;
+    }
+    closeRoomSubmenu();
     switchTab(key,data);
   });
   bindRoomMainScrollerV6720();
@@ -218,49 +273,10 @@ function roomAcademicSignal(key,data){if(!data||key==='analytics')return '';cons
 function refreshRoomNavigation(tab,data){
   const main=roomMainKey(tab);
   document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('active',btn.dataset.roomMain===main));
-  const sub=document.getElementById('room-subnav'); if(!sub)return;
-  let items=[];
-  if(main==='academic'){
-    items=[['announcements','campaign','Pengumuman'],['schedule','calendar_month','Jadwal'],['tasks','checklist','Tugas'],['materials','description','Materi'],['attendance','how_to_reg','Absensi'],['analytics','monitoring','Analitik']];
-  }else if(main==='manage'){
-    if(data.permissions?.can_manage_members)items.push(['requests','group_add',`Permintaan ${(data.pending_requests||[]).length}`]);
-    if(data.permissions?.can_manage_class)items.push(['settings','settings','Pengaturan Kelas']);
-  }
-  if(!items.length){sub.innerHTML='';sub.hidden=true;return;}
-  sub.hidden=false;
-  const active=items.find(([key])=>key===tab)||items[0];
-  const label=main==='academic'?'Menu Akademik':'Kelola Kelas';
-  sub.innerHTML=`
-    <div class="room-subnav-mobile-v6720">
-      <button type="button" class="room-subnav-trigger-v6720" data-room-sub-trigger aria-expanded="false">
-        <span class="room-subnav-trigger-icon-v6720 material-symbols-rounded">${active[1]}</span>
-        <span class="room-subnav-trigger-copy-v6720"><small>${label}</small><strong>${esc(active[2])}</strong></span>
-        ${roomAcademicSignal(active[0],state.classAcademic?.[state.selectedClassId])}
-        <span class="material-symbols-rounded room-subnav-chevron-v6720">expand_more</span>
-      </button>
-      <div class="room-subnav-menu-v6720" hidden>
-        ${items.map(([key,icon,itemLabel])=>`<button type="button" class="room-subnav-option-v6720 ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span>${roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId])}</button>`).join('')}
-      </div>
-    </div>
-    <div class="room-subnav-strip" role="tablist" aria-label="${label}">
-      ${items.map(([key,icon,itemLabel])=>`<button type="button" role="tab" aria-selected="${tab===key?'true':'false'}" class="room-subnav-chip ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span>${roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId])}</button>`).join('')}
-    </div>`;
-  const trigger=sub.querySelector('[data-room-sub-trigger]');
-  const menu=sub.querySelector('.room-subnav-menu-v6720');
-  trigger?.addEventListener('click',()=>{
-    const open=trigger.getAttribute('aria-expanded')!=='true';
-    trigger.setAttribute('aria-expanded',String(open));
-    trigger.classList.toggle('open',open);
-    if(menu)menu.hidden=!open;
-  });
-  sub.querySelectorAll('[data-room-sub]').forEach(btn=>btn.onclick=(event)=>{
-    event.stopPropagation();
-    if(menu)menu.hidden=true;
-    trigger?.setAttribute('aria-expanded','false');
-    trigger?.classList.remove('open');
-    switchTab(btn.dataset.roomSub,data);
-  });
+  const host=document.getElementById('room-subnav');
+  if(host && !host.hidden && host.dataset.main!==main)closeRoomSubmenu();
 }
+
 function switchTab(tab, data) {
   activeTab = tab;
   refreshRoomNavigation(tab,data);

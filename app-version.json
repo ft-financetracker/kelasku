@@ -1,8 +1,8 @@
 {
-  "version": "6.7.20",
-  "build": "20260929.320",
+  "version": "6.7.21",
+  "build": "20260929.321",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Recovery release: sinkronisasi version/build/cache untuk memutus update loop dan memulihkan baseline v6.7.18 pada Room Class sebelum menerapkan polish hero, navigasi, submenu mobile, dan header Jadwal secara scoped.",
-  "release_time_wib": "Recovery Build"
+  "release_note": "Scoped Room Class navigation fix: Academic/Manage submenu no longer occupies a permanent row. The submenu now appears only when its main button is clicked, outside the navigation container, and closes after selection.",
+  "release_time_wib": "03:24 WIB"
 }

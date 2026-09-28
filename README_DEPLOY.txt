@@ -1,25 +1,24 @@
-KelasKu v6.7.20 — RECOVERY PATCH
+KelasKu v6.7.21 — Room Submenu Popover Hotfix
 
-PRIORITAS: gunakan PATCH ini jika repo GitHub saat ini sama dengan backup kelasku-main (2).zip.
+SCOPE ONLY:
+- Room Class navigation submenu behavior
+- Version/cache synchronization required for this frontend patch
 
-Overwrite file sesuai path:
-- config.js
-- app-version.json
-- service-worker.js
-- index.html
-- links.html
-- changelog.json
-- src/js/app.js
-- src/js/screens/classRoom.js
-- src/css/app.css
+PERUBAHAN:
+- Submenu Akademik/Kelola tidak tampil permanen di bawah navigasi.
+- Klik tombol Akademik atau Kelola -> submenu muncul sebagai panel di luar container navigasi.
+- Klik item -> pindah submenu lalu panel menutup.
+- Klik tombol utama yang sama -> toggle buka/tutup.
+- Desktop: grid compact 3 kolom.
+- Mobile: grid 2 kolom, 1 kolom di layar sangat sempit.
 
-Tidak ada Apps Script. Tidak ada migration. Schema tetap 17.
+TIDAK BERUBAH:
+- Dashboard
+- Daftar Kelas
+- Hero Room
+- Jadwal/card sesi
+- Absensi
+- Backend/API/Schema
 
-Setelah GitHub Pages selesai deploy:
-1. Buka https://klasku.my.id/update-recovery.html?v=6.7.20&b=20260929.320
-   ATAU tekan Update dari aplikasi lama.
-2. Tunggu recovery membersihkan service worker/cache.
-3. Pastikan footer/app info menjadi v6.7.20.
-4. Smoke test: Dashboard -> Daftar Kelas -> Room Kelas -> Akademik -> Jadwal.
-
-JANGAN menjalankan setupKelasKu() / migrateKelasKu().
+Apps Script: TIDAK PERLU UPDATE.
+Schema: 17.
