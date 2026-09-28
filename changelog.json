@@ -1,8 +1,16 @@
 {
   "releases": [
     {
-      "version": "6.7.10",
-      "build": "20260928.280",
+      "version": "6.7.11",
+      "build": "20260928.281",
+      "date": "2026-09-28",
+      "type": "HOTFIX",
+      "title": "Members Room Repair",
+      "summary": "Hotfix Room Class Anggota: memperbaiki menu Anggota yang gagal dibuka, merapikan card 2 baris, tombol keluarkan, badge jumlah, dan pagination."
+    },
+    {
+      "version": "6.7.9",
+      "build": "20260928.279",
       "date": "28 September 2026",
       "title": "Pre-Live Final Interaction Polish",
       "description": "Final polish sebelum live untuk indikator aktivitas, carousel dashboard berbasis asset, daftar kelas compact/collapsible, dan kontrol keluar/hapus kelas.",
