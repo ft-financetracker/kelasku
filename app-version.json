@@ -1,8 +1,8 @@
 {
-  "version": "6.7.5",
-  "build": "20260927.275",
+  "version": "6.7.6",
+  "build": "20260928.276",
   "schema": 17,
-  "release_date": "2026-09-27",
-  "release_note": "Landing visual polish only: image-based compact section heroes, latest KelasKu logo placement, tighter showcase/actions, refined class-title hover, standalone semester rail preserved, and footer version/update time WIB.",
-  "release_updated_wib": "27 Sep 2026, 23:17 WIB"
+  "release_date": "2026-09-28",
+  "release_note": "Frontend-only visual micro-patch: geometric background pattern visibility reduced by 40% across the main app and public class landing, with Light Mode kept proportionally softer. No Apps Script or schema changes.",
+  "release_updated_wib": "28 Sep 2026, 09:26 WIB"
 }

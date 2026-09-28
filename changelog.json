@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "6.7.6",
+      "build": "20260928.276",
+      "date": "2026-09-28",
+      "schema": 17,
+      "title": "Pre-Live Background Pattern Softening",
+      "changes": [
+        "Geometric background pattern visibility is reduced by 40% so cards, typography, and content remain the visual focus.",
+        "The same reduction is applied to the public class landing without changing its hero images, standalone Semester rail, or Link Cepat hierarchy.",
+        "Light Mode background pattern is reduced proportionally to preserve readability and visual balance.",
+        "Service Worker cache is bumped to b276 so the CSS patch is delivered cleanly without requiring PWA uninstall.",
+        "Frontend-only release; Schema remains 17 and Apps Script is unchanged."
+      ]
+    },
+    {
       "version": "6.7.5",
       "build": "20260927.275",
       "date": "2026-09-27",
