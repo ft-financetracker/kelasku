@@ -29,12 +29,12 @@ export function renderClasses() {
     </section>
 
     <section class="class-list-section">
-      <div class="section-title-row"><div><h2>Kelas Saya</h2><p id="class-count">Memuat kelas…</p></div></div>
+      <div class="section-title-row class-section-head"><div><h2>Kelas Saya</h2><p id="class-count">Memuat kelas…</p></div><button type="button" id="my-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Saya"><span class="material-symbols-rounded">expand_less</span></button></div>
       <div id="class-grid" class="class-table-shell">${classSkeleton()}</div>
     </section>
 
     <section class="class-list-section public-class-section">
-      <div class="section-title-row"><div><h2>Kelas Umum</h2><p id="public-class-count">Kelas PUBLIC yang dapat dijelajahi.</p></div><button id="public-class-refresh" class="btn btn-secondary small-btn">${svg('i-refresh')} Refresh</button></div>
+      <div class="section-title-row class-section-head"><div><h2>Kelas Umum</h2><p id="public-class-count">Kelas PUBLIC yang dapat dijelajahi.</p></div><div class="class-section-actions"><button id="public-class-refresh" class="btn btn-secondary small-btn">${svg('i-refresh')} Refresh</button><button type="button" id="public-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Umum"><span class="material-symbols-rounded">expand_less</span></button></div></div>
       <div id="public-class-list" class="class-table-shell">${classSkeleton()}</div>
       <div class="class-public-pager" id="public-class-pager"></div>
     </section>`;
@@ -47,10 +47,20 @@ export function renderClasses() {
   document.getElementById('class-search-btn').onclick = runSearch;
   document.getElementById('class-search-input').onkeydown = e => { if (e.key === 'Enter') runSearch(); };
   document.getElementById('public-class-refresh').onclick = () => loadPublicClasses(true);
+  bindClassSectionToggle('my-class-toggle','class-grid','kelasku_classes_mine_collapsed');
+  bindClassSectionToggle('public-class-toggle','public-class-list','kelasku_classes_public_collapsed','public-class-pager');
 
   if (Array.isArray(state.myClasses) && state.myClasses.length) drawMyClasses(state.myClasses);
   loadMyClasses();
   loadPublicClasses(false);
+}
+
+function bindClassSectionToggle(buttonId, contentId, storageKey, extraId='') {
+  const btn=document.getElementById(buttonId), content=document.getElementById(contentId), extra=extraId?document.getElementById(extraId):null;
+  if(!btn||!content)return;
+  const apply=collapsed=>{content.classList.toggle('class-section-collapsed',collapsed);if(extra)extra.classList.toggle('class-section-collapsed',collapsed);btn.setAttribute('aria-expanded',collapsed?'false':'true');btn.title=collapsed?'Buka daftar kelas':'Ciutkan daftar kelas';const icon=btn.querySelector('.material-symbols-rounded');if(icon)icon.textContent=collapsed?'expand_more':'expand_less';};
+  let collapsed=localStorage.getItem(storageKey)==='1'; apply(collapsed);
+  btn.onclick=()=>{collapsed=!collapsed;localStorage.setItem(storageKey,collapsed?'1':'0');apply(collapsed);};
 }
 export async function prefetchMyClasses() {
   return loadMyClasses(true);

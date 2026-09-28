@@ -193,6 +193,7 @@ function bindRoomNavigation(data){
     switchTab(key,data);
   });
 }
+function roomAcademicSignal(key,data){if(!data||key==='analytics')return '';const now=Date.now();let n=0;if(key==='attendance'){if(data.permissions?.is_participant===false)return '';n=(data.attendance_sessions||[]).filter(x=>{const status=String(x.my_status||'UNMARKED').toUpperCase();const open=new Date(x.open_at||x.start_at||0).getTime()||0,close=new Date(x.close_at||x.end_at||0).getTime()||0;return status==='UNMARKED'&&open<=now&&(!close||close>=now);}).length;}else if(key==='schedule')n=(data.schedules||[]).filter(x=>String(x.status||'ACTIVE').toUpperCase()!=='CANCELLED'&&(new Date(x.end_at||x.start_at||0).getTime()||0)>=now).length;else if(key==='tasks'){if(data.permissions?.is_participant===false)return '';n=(data.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase())).length;}else if(key==='materials')n=(data.materials||[]).length?1:0;else if(key==='announcements')n=(data.announcements||[]).length?1:0;if(!n)return '';return `<b class="room-nav-signal ${['materials','announcements'].includes(key)?'dot':''}">${['materials','announcements'].includes(key)?'':(n>9?'9+':n)}</b>`;}
 function refreshRoomNavigation(tab,data){
   const main=roomMainKey(tab);
   document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('active',btn.dataset.roomMain===main));
@@ -207,7 +208,7 @@ function refreshRoomNavigation(tab,data){
   if(!items.length){sub.innerHTML='';sub.hidden=true;return;}
   sub.hidden=false;
   sub.innerHTML=`<div class="room-subnav-strip" role="tablist" aria-label="${main==='academic'?'Menu Akademik':'Kelola Kelas'}">
-    ${items.map(([key,icon,itemLabel])=>`<button type="button" role="tab" aria-selected="${tab===key?'true':'false'}" class="room-subnav-chip ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span></button>`).join('')}
+    ${items.map(([key,icon,itemLabel])=>`<button type="button" role="tab" aria-selected="${tab===key?'true':'false'}" class="room-subnav-chip ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span>${roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId])}</button>`).join('')}
   </div>`;
   sub.querySelectorAll('[data-room-sub]').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.roomSub,data));
 }
@@ -269,6 +270,7 @@ async function loadClassAcademic(background = false, force = false) {
       const previous = state.classAcademic[classId];
       const changed = !sameData(previous, data);
       persistClassCache('classAcademic','classAcademicAt','kelasku_class_academic_cache','kelasku_class_academic_cache_at',classId,data);
+      if(String(state.selectedClassId)===classId&&currentClassData)refreshRoomNavigation(activeTab,currentClassData);
       if (String(state.selectedClassId) === classId && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && (changed || !background)) {
         drawAcademicTab(activeTab, data);
       }
@@ -298,6 +300,7 @@ function overviewHtml(data) {
       ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}<div class="detail-row"><span>Visibilitas</span><strong><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span></strong></div>${detail('Anggota aktif',String((data.members||[]).length))}${detail('Class Code',c.class_code||'-')}<div class="detail-row detail-row-link"><span>Link Kelas</span><strong>${esc(classUrl)}</strong><div class="detail-row-link-actions"><button type="button" class="icon-btn mini" id="overview-copy-class-link" title="Salin link kelas">${svg('i-copy')}</button><button type="button" class="btn btn-secondary small-btn" id="overview-open-class-link"><span class="material-symbols-rounded">open_in_new</span> Buka Landing</button></div></div><div class="detail-row detail-row-link"><span>Link Bergabung</span><strong>${esc(joinUrl)}</strong><button type="button" class="icon-btn mini" id="overview-copy-join-link" title="Salin link bergabung">${svg('i-copy')}</button></div>
     </div></div>
     ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Akses pengaturan dan pengelolaan anggota tanpa mengubah tampilan Ringkasan.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan Kelas</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota & Ketua Kelas</button></div></div>`:''}
+    <div class="panel wide-panel class-exit-panel"><div><div class="panel-title">${p.is_owner?'Hapus Kelas':'Keluar dari Kelas'}</div><p class="panel-copy">${p.is_owner?'Kelas akan dinonaktifkan dari daftar aktif. Data dan histori tetap dipertahankan.':'Akses ke kelas akan dihentikan. Histori akademik yang sudah tercatat tetap tersimpan.'}</p></div><button type="button" id="class-exit-action" class="btn ${p.is_owner?'btn-danger':'btn-secondary'}">${p.is_owner?'Hapus Kelas':'Keluar Kelas'}</button></div>
   </section>`;
 }
 
@@ -983,6 +986,7 @@ function bindTab(tab,data) {
     document.getElementById('overview-copy-class-link')?.addEventListener('click',()=>copyText(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.location.assign(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('overview-copy-join-link')?.addEventListener('click',()=>copyText(joinClassUrl(data.class?.class_code||'',data.class?.public_slug||'')));
+    document.getElementById('class-exit-action')?.addEventListener('click',()=>handleClassExit(data));
   }
   if(tab==='tasks') document.querySelectorAll('[data-review-task]').forEach(btn=>btn.onclick=()=>openTaskReview(btn.dataset.reviewTask));
   if(tab==='members'){
@@ -1004,6 +1008,8 @@ function bindTab(tab,data) {
     bindClassLinksSettings(data);
   }
 }
+
+async function handleClassExit(data){const isOwner=Boolean(data.permissions?.is_owner);const className=data.class?.name||'kelas ini';const ok=await confirmDialog({title:isOwner?'Hapus kelas dari daftar aktif?':'Keluar dari kelas?',message:isOwner?`“${className}” akan dinonaktifkan. Data, histori, tugas, absensi, dan file existing tidak dihapus permanen.`:`Kamu akan kehilangan akses ke “${className}”. Histori akademik yang sudah tercatat tetap disimpan.`,confirmText:isOwner?'Hapus Kelas':'Keluar Kelas',danger:true});if(!ok)return;const btn=document.getElementById('class-exit-action');if(btn)btn.disabled=true;try{await api(isOwner?'archiveClass':'leaveClass',{class_id:state.selectedClassId},{onSlow:()=>toast('Masih memproses. Jangan tutup halaman.')});const id=String(state.selectedClassId||'');state.myClasses=(state.myClasses||[]).filter(x=>String(x.class_id)!==id);state.myClassesAt=Date.now();localStorage.setItem('kelasku_classes_cache',JSON.stringify(state.myClasses));localStorage.setItem('kelasku_classes_cache_at',String(state.myClassesAt));delete state.classDetails[id];delete state.classDetailsAt[id];delete state.classAcademic[id];delete state.classAcademicAt[id];try{localStorage.setItem('kelasku_class_details_cache',JSON.stringify(state.classDetails));localStorage.setItem('kelasku_class_details_cache_at',JSON.stringify(state.classDetailsAt));localStorage.setItem('kelasku_class_academic_cache',JSON.stringify(state.classAcademic));localStorage.setItem('kelasku_class_academic_cache_at',JSON.stringify(state.classAcademicAt));sessionStorage.removeItem('kelasku_selected_class');}catch{}state.selectedClassId='';toast(isOwner?'Kelas dinonaktifkan.':'Kamu sudah keluar dari kelas.');go('classes');}catch(err){toast(err.message);if(btn)btn.disabled=false;}}
 
 function activateClassSettingPane(key){document.querySelectorAll('[data-class-setting-tab]').forEach(b=>b.classList.toggle('active',b.dataset.classSettingTab===key));document.querySelectorAll('[data-class-setting-pane]').forEach(p=>p.classList.toggle('active',p.dataset.classSettingPane===key));}
 

@@ -244,3 +244,7 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
   .public-attendance-state{font-size:.66rem;min-height:25px;padding:4px 7px}
   .public-attendance-row .public-primary-action{grid-column:1/-1;width:100%;min-height:32px!important}
 }
+
+/* v6.7.9 — compact activity signals */
+.public-room-tab{position:relative}.public-tab-signal{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#46E4CC;color:#06243B;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;line-height:1;margin-left:2px}.public-room-tab.active .public-tab-signal{background:#D9FFFA;color:#063A44}
+@media(max-width:560px){.public-tab-signal{min-width:16px;height:16px;font-size:8px;padding:0 4px}.public-room-tab{gap:5px!important}}

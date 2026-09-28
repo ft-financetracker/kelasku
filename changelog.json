@@ -1,6 +1,42 @@
 {
   "releases": [
     {
+      "version": "6.7.9",
+      "build": "20260928.279",
+      "date": "28 September 2026",
+      "title": "Pre-Live Final Interaction Polish",
+      "description": "Final polish sebelum live untuk indikator aktivitas, carousel dashboard berbasis asset, daftar kelas compact/collapsible, dan kontrol keluar/hapus kelas.",
+      "groups": [
+        {
+          "label": "Indicator",
+          "items": [
+            "Badge/dot memakai notifikasi unread dan data yang sudah tersedia; tidak menambah full-data fetch baru.",
+            "Landing Page menampilkan badge compact pada Jadwal, Presensi, Tugas, dan Informasi berdasarkan payload yang sudah dimuat."
+          ]
+        },
+        {
+          "label": "Dashboard",
+          "items": [
+            "Carousel memakai image asset HD terpisah untuk Kelas, Agenda, dan Tugas; copy/CTA tetap dinamis."
+          ]
+        },
+        {
+          "label": "Kelas",
+          "items": [
+            "Tipografi daftar Kelas Saya/Kelas Umum diseimbangkan desktop-mobile dan masing-masing section dapat diciutkan.",
+            "Non-Owner dapat Keluar Kelas; Owner mendapat Hapus Kelas berupa soft archive. Keduanya memakai custom confirmation modal dan mempertahankan histori/data existing."
+          ]
+        },
+        {
+          "label": "Teknis",
+          "items": [
+            "Schema tetap 17. Backend berubah hanya untuk endpoint leave/archive class; tidak ada migration.",
+            "Version/build/cache/query asset disinkronkan untuk mencegah stale cache."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.7.8",
       "build": "20260928.278",
       "date": "28 September 2026",

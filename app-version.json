@@ -1,8 +1,8 @@
 {
-  "version": "6.7.8",
-  "build": "20260928.278",
+  "version": "6.7.9",
+  "build": "20260928.279",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Pre-live UI polish: code card Ruang Kelas diperjelas, tipografi Absensi diproporsionalkan, dan Saran & Masukan memakai image asset dengan form popup.",
-  "release_time_wib": "14:45 WIB"
+  "release_note": "Pre-live final polish: indikator badge ringan, carousel dashboard berbasis image asset, kelas collapsible, serta kontrol Keluar/Hapus Kelas dengan konfirmasi aman.",
+  "release_time_wib": "15:56 WIB"
 }

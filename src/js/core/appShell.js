@@ -2,6 +2,11 @@ import { state } from './state.js';
 import { esc, svg, logo, toast } from './utils.js';
 import { go } from './router.js';
 
+function unreadCount(type){const key=String(type||'').toUpperCase();return (state.notifications||[]).filter(n=>!n.read_at&&String(n.type||'SYSTEM').toUpperCase()===key).length;}
+function unreadAny(types=[]){const set=new Set(types.map(x=>String(x).toUpperCase()));return (state.notifications||[]).filter(n=>!n.read_at&&set.has(String(n.type||'SYSTEM').toUpperCase())).length;}
+function signalHtml(count,{dotOnly=false}={}){const n=Number(count||0);if(!n)return '';return `<span class="nav-signal ${dotOnly?'dot':''}">${dotOnly?'':(n>9?'9+':n)}</span>`;}
+function signalForRoute(route){if(route==='schedule')return signalHtml(unreadCount('SCHEDULE'));if(route==='tasks')return signalHtml(unreadCount('TASK'));if(route==='materials')return signalHtml(unreadCount('MATERIAL'),{dotOnly:true});if(route==='announcements')return signalHtml(unreadCount('ANNOUNCEMENT'),{dotOnly:true});if(route==='attendance')return signalHtml(unreadCount('ATTENDANCE'));if(route==='messages')return signalHtml(unreadCount('MESSAGE'));if(route==='classes')return signalHtml(unreadAny(['ANNOUNCEMENT','MATERIAL','ATTENDANCE','SCHEDULE','TASK']),{dotOnly:true});return '';}
+export function refreshShellIndicators(){document.querySelectorAll('[data-route]').forEach(btn=>{const route=btn.dataset.route;const old=btn.querySelector('.nav-signal');if(old)old.remove();const html=signalForRoute(route);if(html)btn.insertAdjacentHTML('beforeend',html);});const bell=document.getElementById('notif-badge');if(bell){const n=(state.notifications||[]).filter(x=>!x.read_at).length;bell.textContent=n>99?'99+':String(n);bell.classList.toggle('hidden',!n);}}
 export function appShell(options = {}) {
   const active = options.active || 'dashboard';
   const content = options.content || '';
@@ -54,6 +59,8 @@ ${logo(true)}
 }
 
 export function bindAppShell(options = {}) {
+  refreshShellIndicators();
+  if(!window.__kelaskuShellSignalBound){window.__kelaskuShellSignalBound=true;window.addEventListener('kelasku-notifications-updated',refreshShellIndicators);}
   document.querySelectorAll('[data-route]').forEach(btn => {
     btn.onclick = () => handleRoute(btn.dataset.route);
   });
@@ -103,11 +110,11 @@ function handleRoute(route) {
 function sideItem(icon, label, route, active, homeCta = false) {
   const cls = `nav-item ${active ? 'active' : ''} ${homeCta ? 'nav-home-cta' : ''}`;
   const iconHtml = homeCta ? `<span class="nav-diamond">${svg(icon)}</span>` : svg(icon);
-  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span></button>`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span>${signalForRoute(route)}</button>`;
 }
 
 function bottomItem(icon, label, route, active, homeCta = false) {
   const cls = `bottom-item ${active ? 'active' : ''} ${homeCta ? 'bottom-home-cta' : ''}`;
   const iconHtml = homeCta ? `<span class="bottom-diamond">${svg(icon)}</span>` : `<span class="bottom-icon-wrap">${svg(icon)}</span>`;
-  return `<button type="button" class="${cls}" data-route="${esc(route)}">${iconHtml}<span class="bottom-label">${esc(label)}</span></button>`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}">${iconHtml}<span class="bottom-label">${esc(label)}</span>${signalForRoute(route)}</button>`;
 }

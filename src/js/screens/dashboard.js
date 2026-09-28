@@ -3,13 +3,14 @@ import { api } from '../core/api.js';
 import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js';
 
 let carouselTimer = null;
 let carouselIndex = 0;
 let carouselPhysicalIndex = 1;
 let carouselMoving = false;
 let updateEventHandler = null;
+let notificationEventHandler = null;
 
 export function renderDashboard() {
   const content = `
@@ -47,8 +48,10 @@ export function renderDashboard() {
   };
   window.addEventListener('kelasku-update-check', updateEventHandler);
 
+  if(notificationEventHandler)window.removeEventListener('kelasku-notifications-updated',notificationEventHandler);
+  notificationEventHandler=()=>{refreshNotificationSummary();refreshShellIndicators();if(!document.getElementById('notif-drawer')?.classList.contains('hidden'))renderNotificationDrawer();};
+  window.addEventListener('kelasku-notifications-updated',notificationEventHandler);
   refreshDashboard();
-  startNotificationPolling();
 }
 
 function empty(title, copy) {
@@ -147,9 +150,9 @@ function carouselHtml(d) {
   const nextTask = (d.tasks || [])[0];
   const classCount = Number(d.summary?.active_classes || 0);
   const slides = [
-    { icon:'i-class', eyebrow:'KELASKU • PHASE 6', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik sekarang terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', tone:'a' },
-    { icon:'i-calendar', eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', tone:'b' },
-    { icon:'i-task', eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', tone:'c' }
+    { eyebrow:'KELAS SAYA', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', image:'kelas' },
+    { eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', image:'agenda' },
+    { eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', image:'tugas' }
   ];
   const physical=[slides[slides.length-1],...slides,slides[0]];
   return `<section class="dashboard-carousel" id="dashboard-carousel" aria-label="Informasi utama">
@@ -159,7 +162,7 @@ function carouselHtml(d) {
 }
 
 function carouselSlide(x, index) {
-  return `<article class="dashboard-carousel-slide tone-${x.tone}" data-carousel-index="${index}"><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div><div class="carousel-art"><span class="carousel-diamond">${svg(x.icon)}</span><span class="carousel-orbit orbit-one"></span><span class="carousel-orbit orbit-two"></span></div></article>`;
+  return `<article class="dashboard-carousel-slide carousel-image-${esc(x.image)}" data-carousel-index="${index}"><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div></article>`;
 }
 
 function bindCarousel() {
@@ -227,6 +230,7 @@ async function fetchNotifications(showSystem) {
     const oldIds = new Set(state.notifications.map(n => n.notification_id));
     state.notifications = data.items || [];
     localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
+    window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
 
     const unread = state.notifications.filter(n => !n.read_at);
     const badge = document.getElementById('notif-badge');
@@ -272,6 +276,7 @@ async function markNotification(id) {
   if(wasUnread){
     n.read_at=new Date().toISOString();
     localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));
+    window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
     renderNotificationDrawer();
     refreshNotificationSummary();
   }
@@ -280,7 +285,7 @@ async function markNotification(id) {
     api('markNotificationRead',{notification_id:id},{onSlow:()=>{}}).catch(err=>{
       console.warn('Mark notification:',err);
       const current=state.notifications.find(x=>x.notification_id===id);
-      if(current){current.read_at='';localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));refreshNotificationSummary();}
+      if(current){current.read_at='';localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));refreshNotificationSummary();}
     });
   }
 }
