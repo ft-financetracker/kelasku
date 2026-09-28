@@ -1,6 +1,6 @@
 {
-  "version": "6.7.9",
-  "build": "20260928.279",
+  "version": "6.7.10",
+  "build": "20260928.280",
   "schema": 17,
   "release_date": "2026-09-28",
   "release_note": "Pre-live final polish: indikator badge ringan, carousel dashboard berbasis image asset, kelas collapsible, serta kontrol Keluar/Hapus Kelas dengan konfirmasi aman.",

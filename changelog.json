@@ -1,8 +1,8 @@
 {
   "releases": [
     {
-      "version": "6.7.9",
-      "build": "20260928.279",
+      "version": "6.7.10",
+      "build": "20260928.280",
       "date": "28 September 2026",
       "title": "Pre-Live Final Interaction Polish",
       "description": "Final polish sebelum live untuk indikator aktivitas, carousel dashboard berbasis asset, daftar kelas compact/collapsible, dan kontrol keluar/hapus kelas.",
