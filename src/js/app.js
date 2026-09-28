@@ -12,18 +12,17 @@ import { readBool, writeJson } from './core/storage.js';
 import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js';
 import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js';
 import { applyPreferences } from './core/preferences.js';
-import { startNotificationSignals } from './core/notificationSignals.js';
 
 import { renderSplash } from './screens/splash.js';
 import { renderOnboarding } from './screens/onboarding.js';
 import { renderAuth } from './screens/auth.js';
 import { renderProfile } from './screens/profile.js';
 import { renderSetup } from './screens/setup.js';
-import { renderDashboard } from './screens/dashboard.js?v=6715';
-import { renderAccount } from './screens/account.js?v=678';
+import { renderDashboard } from './screens/dashboard.js';
+import { renderAccount } from './screens/account.js';
 import { renderSettings } from './screens/settings.js';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6718';
-import { renderClassRoom } from './screens/classRoom.js?v=6718';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js';
+import { renderClassRoom } from './screens/classRoom.js?v=6719';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
@@ -173,7 +172,6 @@ function routeReadyUser() {
   if (!state.user.profile_complete) return go('profile');
   if (shouldShowAppSetup()) return go('setup');
   scheduleCoreWarmup();
-  startNotificationSignals();
 
   const currentUrl = new URL(window.location.href);
   if (currentUrl.searchParams.get('a') || currentUrl.searchParams.get('attendance')) return go('attendance-link');

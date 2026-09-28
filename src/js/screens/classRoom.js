@@ -19,12 +19,10 @@ let analyticsActivityExpanded = '';
 let classAttendancePage = 1;
 let attendanceModalPage = 1;
 let attendanceModalState = null;
-let classMembersPage = 1;
 const ANALYTICS_PAGE_SIZE = 15;
 const ANALYTICS_MEMBER_PAGE_SIZE = 15;
 const CLASS_ATTENDANCE_PAGE_SIZE = 10;
 const ATTENDANCE_MEMBER_PAGE_SIZE = 20;
-const CLASS_MEMBERS_PAGE_SIZE = 8;
 const CLASS_DETAIL_TTL_MS = 2 * 60 * 1000;
 const CLASS_ACADEMIC_TTL_MS = 90 * 1000;
 const classDetailInFlight = new Map();
@@ -84,7 +82,7 @@ export function renderClassRoom() {
   currentClassData = cached;
 
   const content = `<div class="class-room-page">
-    <div class="page-head class-room-head"><div><h1>Ruang Kelas</h1></div><button id="back-classes" class="btn btn-secondary class-room-back-btn">${svg('i-back')} Kembali</button></div>
+    <div class="page-head class-room-page-head"><div><h1>Ruang Kelas</h1><p id="class-room-subtitle">${cached ? esc(`${cached.class?.class_code || ''} · ${roleLabel(cached.class?.role || 'MEMBER')}`) : 'Memuat detail kelas…'}</p></div><button id="back-classes" class="btn btn-secondary compact-back-btn">${svg('i-back')} Kembali</button></div>
     <div id="class-room-slot">${cached ? '' : roomSkeleton()}</div>
   </div>`;
 
@@ -136,17 +134,18 @@ function drawClass(data, preserveTab = true) {
   const p = data.permissions || {};
   const desiredTab = preserveTab ? activeTab : 'overview';
   const leader = (data.members || []).find(m => m.is_class_leader);
-  const roomSubtitle=document.getElementById('class-room-subtitle');
-  if(roomSubtitle) roomSubtitle.textContent='';
+  document.getElementById('class-room-subtitle').textContent = `${c.class_code || ''} · ${roleLabel(c.role || 'MEMBER')}${leader && String(leader.user_id) === String(state.user?.user_id) ? ' • Ketua Kelas' : ''}`;
 
   document.getElementById('class-room-slot').innerHTML = `
-    <section class="class-hero class-hero-v51 panel">
-      <div class="class-hero-icon">${svg('i-class')}</div>
+    <section class="class-hero class-hero-v52 panel">
+      <div class="class-hero-media">
+        <div class="class-hero-icon class-room-cover">${svg('i-class')}</div>
+      </div>
       <div class="class-hero-main">
         <div class="class-primary-meta class-hero-subtitle"><span>${esc(c.institution || 'KelasKu')}</span>${c.study_program?`<span>${esc(c.study_program)}</span>`:''}${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}${c.semester?`<span>${esc(c.semester)}</span>`:''}</div>
         <h2>${esc(c.name)}</h2>
         <p class="class-hero-description">${esc(c.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
-        
+        <div class="class-hero-mobile-rule" aria-hidden="true"></div>
         <div class="class-hero-bottomline">
           <div class="class-secondary-meta"><span>Class</span><span class="visibility-badge visibility-${String(c.visibility||'DISCOVERABLE').toLowerCase()}">${esc(c.visibility || 'DISCOVERABLE')}</span></div>
           <div class="class-badge-line class-badge-bottom"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
@@ -155,15 +154,19 @@ function drawClass(data, preserveTab = true) {
     </section>
 
     <section class="room-navigation-shell" aria-label="Navigasi Ruang Kelas">
-      <nav class="room-main-nav" id="room-main-nav">
-        ${roomMainButton('overview','i-home','Ringkasan')}
-        ${roomMainButton('timeline','i-timeline','Timeline')}
-        ${roomMainButton('messages','i-chat','Pesan')}
-        ${roomMainButton('academic','i-class','Akademik')}
-        ${roomMainButton('members','i-users',`Anggota`,(data.members||[]).length)}
-        ${roomMainButton('elections','i-vote','Pemilihan',(data.leader_elections||[]).filter(x=>x.status==='ACTIVE').length)}
-        ${(p.can_manage_members||p.can_manage_class) ? roomMainButton('manage','i-gear','Kelola',(data.pending_requests||[]).length) : ''}
-      </nav>
+      <div class="room-main-nav-wrap">
+        <button type="button" class="room-scroll-btn prev" data-room-scroll="prev" aria-label="Geser menu ke kiri"><span class="material-symbols-rounded">chevron_left</span></button>
+        <nav class="room-main-nav" id="room-main-nav">
+          ${roomMainButton('overview','i-home','Ringkasan')}
+          ${roomMainButton('timeline','i-timeline','Timeline')}
+          ${roomMainButton('messages','i-chat','Pesan')}
+          ${roomMainButton('academic','i-class','Akademik')}
+          ${roomMainButton('members','i-users',`Anggota`,(data.members||[]).length)}
+          ${roomMainButton('elections','i-vote','Pemilihan',(data.leader_elections||[]).filter(x=>x.status==='ACTIVE').length)}
+          ${(p.can_manage_members||p.can_manage_class) ? roomMainButton('manage','i-gear','Kelola',(data.pending_requests||[]).length) : ''}
+        </nav>
+        <button type="button" class="room-scroll-btn next" data-room-scroll="next" aria-label="Geser menu ke kanan"><span class="material-symbols-rounded">chevron_right</span></button>
+      </div>
       <div class="room-subnav" id="room-subnav"></div>
     </section>
     <div id="room-content"></div>`;
@@ -176,7 +179,27 @@ function drawClass(data, preserveTab = true) {
 
 function roomMainButton(key,icon,label,count=0){
   const badge=Number(count||0)>0?`<b>${Number(count)}</b>`:'';
-  return `<button type="button" class="room-main-item" data-room-main="${key}"><span class="room-main-icon">${svg(icon)}</span><span>${label}</span>${badge}</button>`;
+  return `<button type="button" class="room-main-item" data-room-main="${key}"><span class="room-main-icon">${svg(icon)}</span><span class="room-main-label">${label}</span>${badge}</button>`;
+}
+function createInlineAddButton(id,label){
+  return `<button id="${id}" class="btn btn-primary room-create-icon-btn" title="${esc(label)}" aria-label="${esc(label)}">${svg('i-plus')}</button>`;
+}
+function bindRoomMainScroller(){
+  const nav=document.getElementById('room-main-nav');
+  if(!nav)return;
+  const prev=document.querySelector('[data-room-scroll="prev"]');
+  const next=document.querySelector('[data-room-scroll="next"]');
+  const sync=()=>{
+    const overflow=nav.scrollWidth-nav.clientWidth>8;
+    [prev,next].forEach(btn=>{ if(btn) btn.hidden=!overflow; });
+    if(prev) prev.disabled=nav.scrollLeft<=4;
+    if(next) next.disabled=nav.scrollLeft+nav.clientWidth>=nav.scrollWidth-4;
+  };
+  if(prev) prev.onclick=()=>nav.scrollBy({left:-180,behavior:'smooth'});
+  if(next) next.onclick=()=>nav.scrollBy({left:180,behavior:'smooth'});
+  nav.addEventListener('scroll',sync,{passive:true});
+  window.addEventListener('resize',sync);
+  setTimeout(sync,10);
 }
 function roomMainKey(tab){
   if(['announcements','schedule','tasks','materials','attendance','analytics'].includes(tab))return 'academic';
@@ -190,8 +213,8 @@ function bindRoomNavigation(data){
     if(key==='manage')return switchTab((data.pending_requests||[]).length?'requests':'settings',data);
     switchTab(key,data);
   });
+  bindRoomMainScroller();
 }
-function roomAcademicSignal(key,data){if(!data||key==='analytics')return '';const now=Date.now();let n=0;if(key==='attendance'){if(data.permissions?.is_participant===false)return '';n=(data.attendance_sessions||[]).filter(x=>{const status=String(x.my_status||'UNMARKED').toUpperCase();const open=new Date(x.open_at||x.start_at||0).getTime()||0,close=new Date(x.close_at||x.end_at||0).getTime()||0;return status==='UNMARKED'&&open<=now&&(!close||close>=now);}).length;}else if(key==='schedule')n=(data.schedules||[]).filter(x=>String(x.status||'ACTIVE').toUpperCase()!=='CANCELLED'&&(new Date(x.end_at||x.start_at||0).getTime()||0)>=now).length;else if(key==='tasks'){if(data.permissions?.is_participant===false)return '';n=(data.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase())).length;}else if(key==='materials')n=(data.materials||[]).length?1:0;else if(key==='announcements')n=(data.announcements||[]).length?1:0;if(!n)return '';return `<b class="room-nav-signal ${['materials','announcements'].includes(key)?'dot':''}">${['materials','announcements'].includes(key)?'':(n>9?'9+':n)}</b>`;}
 function refreshRoomNavigation(tab,data){
   const main=roomMainKey(tab);
   document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('active',btn.dataset.roomMain===main));
@@ -205,10 +228,33 @@ function refreshRoomNavigation(tab,data){
   }
   if(!items.length){sub.innerHTML='';sub.hidden=true;return;}
   sub.hidden=false;
-  sub.innerHTML=`<div class="room-subnav-strip" role="tablist" aria-label="${main==='academic'?'Menu Akademik':'Kelola Kelas'}">
-    ${items.map(([key,icon,itemLabel])=>`<button type="button" role="tab" aria-selected="${tab===key?'true':'false'}" class="room-subnav-chip ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span>${roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId])}</button>`).join('')}
+  const activeItem=items.find(([key])=>key===tab) || items[0];
+  const label=main==='academic'?'Menu Akademik':'Kelola Kelas';
+  sub.innerHTML=`<div class="room-subnav-mobile">
+    <button type="button" class="room-subnav-trigger" data-room-sub-trigger aria-expanded="false">
+      <span class="room-subnav-trigger-copy"><small>${label}</small><strong>${esc(activeItem[2])}</strong></span>
+      <span class="material-symbols-rounded">expand_more</span>
+    </button>
+    <div class="room-subnav-menu" hidden>
+      ${items.map(([key,icon,itemLabel])=>`<button type="button" class="room-subnav-option ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span></button>`).join('')}
+    </div>
+  </div>
+  <div class="room-subnav-strip" role="tablist" aria-label="${label}">
+    ${items.map(([key,icon,itemLabel])=>`<button type="button" role="tab" aria-selected="${tab===key?'true':'false'}" class="room-subnav-chip ${tab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span></button>`).join('')}
   </div>`;
-  sub.querySelectorAll('[data-room-sub]').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.roomSub,data));
+  const trigger=sub.querySelector('[data-room-sub-trigger]');
+  const menu=sub.querySelector('.room-subnav-menu');
+  trigger?.addEventListener('click',()=>{
+    const willOpen=trigger.getAttribute('aria-expanded')!=='true';
+    trigger.setAttribute('aria-expanded',String(willOpen));
+    if(menu) menu.hidden=!willOpen;
+  });
+  sub.querySelectorAll('[data-room-sub]').forEach(btn=>btn.onclick=(e)=>{
+    e.stopPropagation();
+    if(menu) menu.hidden=true;
+    trigger?.setAttribute('aria-expanded','false');
+    switchTab(btn.dataset.roomSub,data);
+  });
 }
 function switchTab(tab, data) {
   activeTab = tab;
@@ -268,7 +314,6 @@ async function loadClassAcademic(background = false, force = false) {
       const previous = state.classAcademic[classId];
       const changed = !sameData(previous, data);
       persistClassCache('classAcademic','classAcademicAt','kelasku_class_academic_cache','kelasku_class_academic_cache_at',classId,data);
-      if(String(state.selectedClassId)===classId&&currentClassData)refreshRoomNavigation(activeTab,currentClassData);
       if (String(state.selectedClassId) === classId && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && (changed || !background)) {
         drawAcademicTab(activeTab, data);
       }
@@ -290,31 +335,20 @@ function overviewHtml(data) {
   const c=data.class||{}, p=data.permissions||{};
   const classUrl=publicClassLinksUrl(c.class_code||'',c.public_slug||''), joinUrl=joinClassUrl(c.class_code||'',c.public_slug||'');
   const leader=(data.members||[]).find(m=>m.is_class_leader);
-  const joinCodeTile=p.can_manage_class?`<div class="overview-code-tile"><span>Join Code</span><strong>${esc(c.join_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-join-code" title="Salin Join Code">${svg('i-copy')}</button></div>`:'';
-  return `<section class="room-overview room-overview-v68">
-    <details class="panel overview-fold-card overview-info-card" open>
-      <summary><span class="overview-fold-icon material-symbols-rounded">info</span><span><strong>Informasi Kelas</strong><small>Identitas utama dan struktur kelas.</small></span><span class="material-symbols-rounded overview-fold-chevron">expand_more</span></summary>
-      <div class="overview-fold-body"><div class="detail-list">
-        ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
-      </div></div>
-    </details>
-
-    <details class="panel overview-fold-card overview-status-card" open>
-      <summary><span class="overview-fold-icon material-symbols-rounded">verified_user</span><span><strong>Status Kelas</strong><small>Keanggotaan, akses, dan kode kelas.</small></span><span class="material-symbols-rounded overview-fold-chevron">expand_more</span></summary>
-      <div class="overview-fold-body"><div class="detail-list overview-status-list">
-        ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}<div class="detail-row"><span>Visibilitas</span><strong><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span></strong></div>${detail('Anggota aktif',String((data.members||[]).length))}
-      </div><div class="overview-code-grid"><div class="overview-code-tile"><span>Class Code</span><strong>${esc(c.class_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-class-code" title="Salin Class Code">${svg('i-copy')}</button></div>${joinCodeTile}</div></div>
-    </details>
-
-    ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel overview-setting-card"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Pengaturan dan pengelolaan anggota.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota</button></div></div>`:''}
-
-    <div class="overview-link-strip" aria-label="Link kelas">
-      <button type="button" class="overview-link-action" id="overview-open-class-link" title="${esc(classUrl)}"><span class="material-symbols-rounded">open_in_new</span><span><small>Link Kelas</small><strong>Buka Landing</strong></span></button>
-      <button type="button" class="overview-link-copy" id="overview-copy-class-link" title="Salin link kelas">${svg('i-copy')}</button>
-      <button type="button" class="overview-link-action" id="overview-copy-join-link" title="${esc(joinUrl)}"><span class="material-symbols-rounded">link</span><span><small>Link Bergabung</small><strong>Salin Link</strong></span></button>
-    </div>
-
-    <div class="panel wide-panel class-exit-panel"><div><div class="panel-title">${p.is_owner?'Hapus Kelas':'Keluar dari Kelas'}</div><p class="panel-copy">${p.is_owner?'Kelas akan dinonaktifkan dari daftar aktif. Data dan histori tetap dipertahankan.':'Akses ke kelas akan dihentikan. Histori akademik yang sudah tercatat tetap tersimpan.'}</p></div><button type="button" id="class-exit-action" class="btn ${p.is_owner?'btn-danger':'btn-secondary'}">${p.is_owner?'Hapus Kelas':'Keluar Kelas'}</button></div>
+  return `<section class="room-overview room-overview-v65">
+    <div class="panel room-info-panel"><div class="panel-head"><div><div class="panel-title">Informasi Kelas</div><p class="panel-copy">Identitas utama dan struktur kelas.</p></div></div><div class="detail-list">
+      ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
+    </div></div>
+    <div class="panel room-status-panel"><div class="panel-head"><div><div class="panel-title">Status Kelas</div><p class="panel-copy">Keanggotaan, akses, dan kode kelas.</p></div></div><div class="detail-list">
+      ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}<div class="detail-row"><span>Visibilitas</span><strong><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span></strong></div>${detail('Anggota aktif',String((data.members||[]).length))}
+      <div class="detail-row detail-code-row"><span>Class Code</span><strong>${esc(c.class_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-class-code" title="Salin Class Code">${svg('i-copy')}</button></div>
+      ${p.can_manage_class?`<div class="detail-row detail-code-row"><span>Join Code</span><strong>${esc(c.join_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-join-code" title="Salin Join Code">${svg('i-copy')}</button></div>`:''}
+    </div></div>
+    ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Akses pengaturan, anggota, dan struktur kelas.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota</button></div></div>`:''}
+    <div class="panel wide-panel room-link-panel"><div class="panel-head"><div><div class="panel-title">Link Kelas</div><p class="panel-copy">Salin atau buka landing dan tautan gabung tanpa memenuhi card status.</p></div></div><div class="detail-list">
+      <div class="detail-row detail-row-link"><span>Link Kelas</span><strong>${esc(classUrl)}</strong><div class="detail-row-link-actions"><button type="button" class="icon-btn mini" id="overview-copy-class-link" title="Salin link kelas">${svg('i-copy')}</button><button type="button" class="btn btn-secondary small-btn" id="overview-open-class-link"><span class="material-symbols-rounded">open_in_new</span> Buka</button></div></div>
+      <div class="detail-row detail-row-link"><span>Link Bergabung</span><strong>${esc(joinUrl)}</strong><div class="detail-row-link-actions"><button type="button" class="icon-btn mini" id="overview-copy-join-link" title="Salin link bergabung">${svg('i-copy')}</button><button type="button" class="btn btn-secondary small-btn" id="overview-open-join-link"><span class="material-symbols-rounded">open_in_new</span> Lihat</button></div></div>
+    </div></div>
   </section>`;
 }
 
@@ -382,7 +416,7 @@ function timelineRoom(events) {
 function timelineIcon(type){const x=String(type||'').toUpperCase();if(x.includes('TASK'))return'i-task';if(x.includes('SCHEDULE'))return'i-calendar';if(x.includes('MATERIAL'))return'i-file';if(x.includes('ATTENDANCE'))return'i-check';if(x.includes('POLL')||x.includes('LEADER'))return'i-vote';if(x.includes('MEMBER'))return'i-users';if(x.includes('ANNOUNCEMENT'))return'i-mega';return'i-timeline';}
 
 function announcementsRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Pengumuman Kelas</div><p class="panel-copy">Klik pengumuman untuk membaca detail. Pengelola dapat mengedit atau menghapus.</p></div>${p.can_publish?`<button id="create-announcement" class="btn btn-primary">${svg('i-plus')} Buat</button>`:''}</div>
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Pengumuman Kelas</div><p class="panel-copy">Klik pengumuman untuk membaca detail. Pengelola dapat mengedit atau menghapus.</p></div>${p.can_publish?createInlineAddButton('create-announcement','Buat Pengumuman'):''}</div>
     <div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row priority-${String(x.priority||'normal').toLowerCase()}"><button type="button" class="academic-compact-main" data-announcement-detail="${esc(x.announcement_id)}"><span class="academic-type-icon"><span class="material-symbols-rounded">campaign</span></span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(shortDateTime(x.published_at))}</span><span class="status-badge status-${String(x.priority||'normal').toLowerCase()}">${esc(x.priority||'NORMAL')}</span></span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.body||'',150))}</small></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${p.can_publish?`<div class="academic-row-actions compact-actions"><button type="button" class="icon-btn mini" data-edit-announcement="${esc(x.announcement_id)}" title="Edit"><span class="material-symbols-rounded">edit</span></button>${archiveButton('ANNOUNCEMENT',x.announcement_id,'Hapus')}</div>`:''}</article>`).join(''):'<div class="search-empty">Belum ada pengumuman.</div>'}</div></section>`;
 }
 
@@ -446,27 +480,22 @@ function scheduleRoom(items,p,attendanceItems) {
       }).join('')}</div>
     </section>`;
   }).join('');
-  return `<section class="class-academic-panel schedule-room-v663"><div class="academic-room-toolbar panel"><div><div class="panel-title">Jadwal Kelas</div><p class="panel-copy">Urutan: sedang berlangsung → mendatang → selesai. Sesi selesai tetap tersimpan sebagai riwayat.</p></div>${(p.can_manage_schedule||p.can_manage_academic)?`<button id="create-schedule" class="btn btn-primary compact-create-btn">${svg('i-plus')} Tambah</button>`:''}</div>
+  return `<section class="class-academic-panel schedule-room-v663"><div class="academic-room-toolbar panel"><div><div class="panel-title">Jadwal Kelas</div><p class="panel-copy">Urutan: sedang berlangsung → mendatang → selesai. Sesi selesai tetap tersimpan sebagai riwayat.</p></div>${(p.can_manage_schedule||p.can_manage_academic)?createInlineAddButton('create-schedule','Tambah Jadwal'):''}</div>
     <div class="schedule-kpi-strip"><div><strong>${ongoing}</strong><span>Berlangsung</span></div><div><strong>${week}</strong><span>Pekan ini</span></div><div><strong>${upcoming}</strong><span>Mendatang</span></div><div><strong>${completed}</strong><span>Selesai</span></div></div>
     ${dateStrip?`<div class="schedule-date-strip">${dateStrip}</div><div class="schedule-color-note"><span><i class="dot normal"></i>Normal</span><span><i class="dot changed"></i>Revisi (${changed})</span><span><i class="dot cancelled"></i>Batal (${cancelled})</span><small>Indikator tanggal saja.</small></div>`:''}
     <div class="schedule-series-list">${groupHtml||'<div class="panel search-empty">Belum ada jadwal.</div>'}</div></section>`;
 }
 
 function tasksRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Tugas Kelas</div><p class="panel-copy">Deadline, pengumpulan, review, nilai, dan feedback.</p></div>${p.can_manage_academic?`<button id="create-task" class="btn btn-primary compact-create-btn">${svg('i-plus')} Buat</button>`:''}</div><div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row task-compact-row"><button type="button" class="academic-compact-main" data-open-global-task="${esc(x.task_id)}"><span class="academic-type-icon">${svg('i-task')}</span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(deadlineText(x.deadline))}</span><span>${esc(x.submission_mode||'NONE')}</span><span>Maks ${esc(String(x.max_score||0))}</span></span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.description||'Klik untuk membuka tugas.',140))}</small></span><span class="academic-status-pill status-${String(x.submission_status||'NOT_SUBMITTED').toLowerCase()}">${esc(x.submission_status||'NOT_SUBMITTED')}</span><span class="material-symbols-rounded row-chevron">chevron_right</span></button><div class="academic-row-actions compact-actions">${p.can_review_tasks?`<button type="button" class="icon-btn mini" data-review-task="${esc(x.task_id)}" title="Review">${svg('i-grade')}</button>`:''}${p.can_manage_academic?archiveButton('TASK',x.task_id):''}</div></article>`).join(''):'<div class="search-empty">Belum ada tugas.</div>'}</div></section>`;
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Tugas Kelas</div><p class="panel-copy">Deadline, pengumpulan, review, nilai, dan feedback.</p></div>${p.can_manage_academic?createInlineAddButton('create-task','Buat Tugas'):''}</div><div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row task-compact-row"><button type="button" class="academic-compact-main" data-open-global-task="${esc(x.task_id)}"><span class="academic-type-icon">${svg('i-task')}</span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(deadlineText(x.deadline))}</span><span>${esc(x.submission_mode||'NONE')}</span><span>Maks ${esc(String(x.max_score||0))}</span></span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.description||'Klik untuk membuka tugas.',140))}</small></span><span class="academic-status-pill status-${String(x.submission_status||'NOT_SUBMITTED').toLowerCase()}">${esc(x.submission_status||'NOT_SUBMITTED')}</span><span class="material-symbols-rounded row-chevron">chevron_right</span></button><div class="academic-row-actions compact-actions">${p.can_review_tasks?`<button type="button" class="icon-btn mini" data-review-task="${esc(x.task_id)}" title="Review">${svg('i-grade')}</button>`:''}${p.can_manage_academic?archiveButton('TASK',x.task_id):''}</div></article>`).join(''):'<div class="search-empty">Belum ada tugas.</div>'}</div></section>`;
 }
 
 function materialsRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Materi Kelas</div><p class="panel-copy">Materi, link, dan beberapa lampiran gambar dalam satu item.</p></div>${p.can_publish?`<button id="create-material" class="btn btn-primary">${svg('i-plus')} Tambah Materi</button>`:''}</div><div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row"><button type="button" class="academic-compact-main" data-material-detail="${esc(x.material_id)}"><span class="academic-type-icon"><span class="material-symbols-rounded">${(x.attachments||[]).length?'collections_bookmark':(x.material_type==='LINK'||x.material_type==='DRIVE_LINK')?'link':'description'}</span></span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(shortDate(x.published_at))}</span>${x.topic?`<span>${esc(x.topic)}</span>`:''}${x.meeting_no?`<span>Pertemuan ${esc(x.meeting_no)}</span>`:''}${(x.attachments||[]).length?`<span class="soft-chip">${(x.attachments||[]).length} lampiran</span>`:''}</span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.description||'Klik untuk membuka materi.',145))}</small></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${p.can_publish?`<div class="academic-row-actions compact-actions">${archiveButton('MATERIAL',x.material_id,'Hapus')}</div>`:''}</article>`).join(''):'<div class="search-empty">Belum ada materi.</div>'}</div></section>`;
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Materi Kelas</div><p class="panel-copy">Materi, link, dan beberapa lampiran gambar dalam satu item.</p></div>${p.can_publish?createInlineAddButton('create-material','Tambah Materi'):''}</div><div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row"><button type="button" class="academic-compact-main" data-material-detail="${esc(x.material_id)}"><span class="academic-type-icon"><span class="material-symbols-rounded">${(x.attachments||[]).length?'collections_bookmark':(x.material_type==='LINK'||x.material_type==='DRIVE_LINK')?'link':'description'}</span></span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(shortDate(x.published_at))}</span>${x.topic?`<span>${esc(x.topic)}</span>`:''}${x.meeting_no?`<span>Pertemuan ${esc(x.meeting_no)}</span>`:''}${(x.attachments||[]).length?`<span class="soft-chip">${(x.attachments||[]).length} lampiran</span>`:''}</span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.description||'Klik untuk membuka materi.',145))}</small></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${p.can_publish?`<div class="academic-row-actions compact-actions">${archiveButton('MATERIAL',x.material_id,'Hapus')}</div>`:''}</article>`).join(''):'<div class="search-empty">Belum ada materi.</div>'}</div></section>`;
 }
 
-function roomAttendanceState(item,managerMode=false){
+function roomAttendanceState(item){
   const status=String(item?.my_status||'UNMARKED').toUpperCase(),windowKey=String(item?.window_status||'').toUpperCase();
-  if(managerMode){
-    if(windowKey==='OPEN')return{group:'waiting',label:'Aktif',icon:'radio_button_checked'};
-    if(windowKey==='UPCOMING')return{group:'upcoming',label:'Belum dibuka',icon:'lock_clock'};
-    return{group:'closed',label:'Ditutup',icon:'lock'};
-  }
   if(status==='PRESENT')return{group:'done',label:'Hadir',icon:'check_circle'};
   if(status==='SICK')return{group:'done',label:'Sakit',icon:'sick'};
   if(status==='PERMIT')return{group:'done',label:'Izin',icon:'assignment'};
@@ -476,27 +505,17 @@ function roomAttendanceState(item,managerMode=false){
   return{group:'closed',label:'Ditutup',icon:'lock'};
 }
 
-function attendanceWindowText(item){
-  const start=item?.open_at||item?.start_at||'';
-  const end=item?.close_at||item?.end_at||'';
-  const startText=start?shortDateTime(start):'Belum diatur';
-  const endText=end?shortDateTime(end):'Belum diatur';
-  return `Mulai ${startText} • Selesai ${endText}`;
-}
-
 function attendanceRoom(items,p,schedules=[]) {
   const now=Date.now();
   const scheduleMap={}; decorateScheduleSessions(schedules||[]).forEach(x=>scheduleMap[String(x.schedule_id)]=x);
-  const available=[...items].sort((a,b)=>{const rank={waiting:0,upcoming:1,done:2,closed:3},ar=rank[roomAttendanceState(a,p.can_manage_attendance).group]??9,br=rank[roomAttendanceState(b,p.can_manage_attendance).group]??9;if(ar!==br)return ar-br;const ad=dateMs(a.start_at),bd=dateMs(b.start_at);return ar===3?bd-ad:ad-bd;});
+  const available=[...items].filter(x=>{if(String(x.window_status||'').toUpperCase()==='CLOSED')return false;const close=dateMs(x.close_at||x.end_at||'');return !close||close>=now;}).sort((a,b)=>{const rank={waiting:0,done:1,upcoming:2,closed:3},ar=rank[roomAttendanceState(a).group]??9,br=rank[roomAttendanceState(b).group]??9;return ar-br||dateMs(a.start_at)-dateMs(b.start_at);});
   const groups=new Map();
   available.forEach(x=>{const sc=scheduleMap[String(x.source_schedule_id||'')];const title=sc?.title||String(x.title||'Absensi Manual').replace(/^Absensi\s*[—-]\s*/i,'').replace(/\s*[•-]\s*Sesi\s*\d+.*$/i,'')||'Absensi Manual';const key=sc?.recurrence_group_id||sc?.title||`MANUAL:${title}`;if(!groups.has(key))groups.set(key,{title,items:[]});groups.get(key).items.push({...x,_schedule:sc});});
-  const groupRows=[...groups.values()].sort((a,b)=>Number(!a.items.some(x=>roomAttendanceState(x,p.can_manage_attendance).group==='waiting'))-Number(!b.items.some(x=>roomAttendanceState(x,p.can_manage_attendance).group==='waiting'))||a.title.localeCompare(b.title)).map((group,idx)=>{
-    group.items.sort((a,b)=>dateMs(a.start_at)-dateMs(b.start_at));
-    const doneCount=group.items.filter(x=>roomAttendanceState(x,p.can_manage_attendance).group==='done').length,waitingCount=group.items.filter(x=>roomAttendanceState(x,p.can_manage_attendance).group==='waiting').length,upcomingCount=group.items.filter(x=>roomAttendanceState(x,p.can_manage_attendance).group==='upcoming').length,closedCount=group.items.filter(x=>roomAttendanceState(x,p.can_manage_attendance).group==='closed').length,autoOpen=waitingCount>0,groupId=`attendance-group-${idx}`;
-    return `<section class="schedule-series-card attendance-series-card ${autoOpen?'open':''}"><button type="button" class="schedule-series-head attendance-course-head" data-attendance-group-toggle aria-expanded="${autoOpen?'true':'false'}" aria-controls="${groupId}"><span class="schedule-series-copy"><span class="eyebrow">MATA PELAJARAN / KEGIATAN</span><h3>${esc(group.title)}</h3><small>${group.items.length} sesi${p.can_manage_attendance?(waitingCount?` · ${waitingCount} aktif`:upcomingCount?` · ${upcomingCount} belum dibuka`:closedCount?` · ${closedCount} ditutup`:''):`${doneCount?` · ${doneCount} sudah`:''}${waitingCount?` · ${waitingCount} perlu presensi`:''}${upcomingCount?` · ${upcomingCount} belum dibuka`:''}${closedCount?` · ${closedCount} ditutup`:''}`}</small></span><span class="schedule-series-side"><span class="material-symbols-rounded schedule-series-icon">how_to_reg</span><span class="material-symbols-rounded schedule-series-chevron">expand_more</span></span></button><div class="schedule-session-list attendance-course-sessions" id="${groupId}" ${autoOpen?'':'hidden'}>${group.items.map((x,sessionIndex)=>{const sc=x._schedule,session=sc?decorateScheduleSessions([sc])[0]?._sessionNo:0,displaySessionNo=session||sessionIndex+1,ui=roomAttendanceState(x,p.can_manage_attendance),isOpen=String(x.window_status||'').toUpperCase()==='OPEN',canInspect=Boolean(p.can_manage_attendance)||isOpen,sessionLabel=`Sesi - ${String(displaySessionNo).padStart(2,'0')}`,scheduleTitle=sc?.title||group.title;return `<article class="schedule-session-row attendance-session-row state-${ui.group} ${isOpen?'is-open':'is-locked'}"><${canInspect?'button':'div'} ${canInspect?`type="button" data-attendance-id="${esc(x.attendance_id)}"`:''} class="schedule-session-main ${canInspect?'':'attendance-disabled-row'}"><span class="academic-date-tile compact"><strong>${esc(dayPart(x.start_at))}</strong><span>${esc(monthPart(x.start_at))}</span></span><span class="schedule-session-copy"><span><b>${esc(sessionLabel)}</b></span><small>${esc(scheduleTitle)}</small><small class="attendance-session-window">${esc(attendanceWindowText(x))}</small></span><span class="attendance-hub-status status-${ui.group}"><span class="material-symbols-rounded">${ui.icon}</span>${esc(ui.label)}</span>${canInspect?'<span class="material-symbols-rounded row-chevron">chevron_right</span>':''}</${canInspect?'button':'div'}>${isOpen&&ui.group==='waiting'&&!p.can_manage_attendance?`<div class="academic-row-actions compact-actions"><button type="button" class="session-action-btn" data-attendance-id="${esc(x.attendance_id)}"><span class="material-symbols-rounded">how_to_reg</span><span>Presensi</span></button></div>`:''}</article>`;}).join('')}</div></section>`;
+  const groupRows=[...groups.values()].sort((a,b)=>Number(!a.items.some(x=>roomAttendanceState(x).group==='waiting'))-Number(!b.items.some(x=>roomAttendanceState(x).group==='waiting'))||a.title.localeCompare(b.title)).map((group,idx)=>{
+    const doneCount=group.items.filter(x=>roomAttendanceState(x).group==='done').length,waitingCount=group.items.filter(x=>roomAttendanceState(x).group==='waiting').length,upcomingCount=group.items.filter(x=>roomAttendanceState(x).group==='upcoming').length,autoOpen=waitingCount>0,groupId=`attendance-group-${idx}`;
+    return `<section class="schedule-series-card attendance-series-card ${autoOpen?'open':''}"><button type="button" class="schedule-series-head attendance-course-head" data-attendance-group-toggle aria-expanded="${autoOpen?'true':'false'}" aria-controls="${groupId}"><span class="schedule-series-copy"><span class="eyebrow">MATA PELAJARAN / KEGIATAN</span><h3>${esc(group.title)}</h3><small>${group.items.length} sesi${doneCount?` · ${doneCount} sudah`:''}${waitingCount?` · ${waitingCount} perlu presensi`:''}${upcomingCount?` · ${upcomingCount} belum dibuka`:''}</small></span><span class="schedule-series-side"><span class="material-symbols-rounded schedule-series-icon">how_to_reg</span><span class="material-symbols-rounded schedule-series-chevron">expand_more</span></span></button><div class="schedule-session-list attendance-course-sessions" id="${groupId}" ${autoOpen?'':'hidden'}>${group.items.map(x=>{const sc=x._schedule,session=sc?decorateScheduleSessions([sc])[0]?._sessionNo:0,ui=roomAttendanceState(x),isOpen=String(x.window_status||'').toUpperCase()==='OPEN',sessionLabel=session?`Sesi ${String(session).padStart(2,'0')}`:'Sesi',scheduleTitle=sc?.title||group.title;return `<article class="schedule-session-row attendance-session-row state-${ui.group} ${isOpen?'is-open':'is-locked'}"><${isOpen?'button':'div'} ${isOpen?`type="button" data-attendance-id="${esc(x.attendance_id)}"`:''} class="schedule-session-main ${isOpen?'':'attendance-disabled-row'}"><span class="academic-date-tile compact"><strong>${esc(dayPart(x.start_at))}</strong><span>${esc(monthPart(x.start_at))}</span></span><span class="schedule-session-copy"><span><b>${esc(sessionLabel)}</b><i>${esc(timeRange(x.start_at,x.end_at||x.close_at))}</i></span><small>${esc(scheduleTitle)}</small></span><span class="attendance-hub-status status-${ui.group}"><span class="material-symbols-rounded">${ui.icon}</span>${esc(ui.label)}</span>${isOpen?'<span class="material-symbols-rounded row-chevron">chevron_right</span>':''}</${isOpen?'button':'div'}>${isOpen&&ui.group==='waiting'?`<div class="academic-row-actions compact-actions"><button type="button" class="session-action-btn" data-attendance-id="${esc(x.attendance_id)}"><span class="material-symbols-rounded">how_to_reg</span><span>Presensi</span></button></div>`:''}</article>`;}).join('')}</div></section>`;
   }).join('');
-  const roomCopy=p.can_manage_attendance?'Mata pelajaran/kegiatan → sesi. Buka sesi untuk edit waktu, menyelesaikan, mengoreksi peserta, atau menghapus sesi jika kamu Owner.':'Mata pelajaran/kegiatan → sesi. Lihat status presensi, waktu mulai/selesai, dan sesi yang belum dibuka atau sudah ditutup.';
-  return `<section class="panel class-academic-panel attendance-grouped-room attendance-room-v673"><div class="panel-head"><div><div class="panel-title">Absensi</div><p class="panel-copy">${roomCopy}</p></div>${p.can_manage_attendance?`<button id="create-attendance" class="btn btn-primary compact-create-btn">${svg('i-plus')} Buat Sesi</button>`:''}</div><div class="attendance-course-list">${groupRows||'<div class="search-empty">Belum ada sesi absensi.</div>'}</div></section>`;
+  return `<section class="panel class-academic-panel attendance-grouped-room attendance-room-v673"><div class="panel-head"><div><div class="panel-title">Absensi</div><p class="panel-copy">Mata pelajaran/kegiatan → sesi. Status dibedakan antara sudah presensi, perlu presensi, dan belum dibuka.</p></div>${p.can_manage_attendance?createInlineAddButton('create-attendance','Buat Sesi Absensi'):''}</div><div class="attendance-course-list">${groupRows||'<div class="search-empty">Belum ada presensi aktif atau mendatang.</div>'}</div></section>`;
 }
 
 function classAttendancePaginationHtml(page,totalPages,total){
@@ -580,11 +599,7 @@ function openEditAnnouncement(id,data){
 }
 
 function openCreateSchedule(){
-  const startDate=new Date();
-  startDate.setSeconds(0,0);
-  const startLocal=toLocalInput(startDate);
-  const endLocal=toLocalInput(new Date(startDate.getTime()+2*60*60*1000));
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Jadwal + Sesi</div><h2>Tambah Jadwal</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="form-grid"><div class="field"><label>Judul / Mata Kuliah</label><input name="title" class="control" required minlength="3" placeholder="Contoh: Sejarah Peradaban Islam"></div><div class="field"><label>Lokasi / Link Zoom</label><input name="location" class="control" placeholder="Ruang 3 atau https://zoom.us/..."></div></div><div class="field"><label>Deskripsi</label><textarea name="description" class="control" rows="2"></textarea></div><div class="form-grid"><div class="field"><label>Mulai sesi pertama</label><input name="start_at" type="datetime-local" class="control" value="${esc(startLocal)}" required></div><div class="field"><label>Selesai</label><input name="end_at" type="datetime-local" class="control" value="${esc(endLocal)}" required></div></div><div class="schedule-repeat-box"><div class="form-grid"><div class="field"><label>Pengulangan</label><select name="recurrence_frequency" id="schedule-repeat" class="control"><option value="NONE">Tidak berulang</option><option value="WEEKLY">Setiap minggu</option><option value="DAILY">Setiap hari</option><option value="MONTHLY">Setiap bulan</option></select></div><div class="field"><label>Mulai dari sesi</label><input name="session_start" type="number" min="1" max="99" value="1" class="control"></div></div><div class="repeat-field hidden"><div class="field"><label>Total sesi</label><input name="recurrence_count" type="number" min="1" max="32" value="16" class="control"></div></div></div><div class="field"><label>Pembuatan Absensi</label><select name="attendance_mode" id="schedule-attendance-mode" class="control"><option value="MANUAL">Tidak otomatis — buat absensi bila diperlukan</option><option value="AUTO">Otomatis — buat absensi setiap sesi</option></select></div><div id="schedule-auto-settings" class="schedule-auto-settings hidden"><div class="form-grid"><div class="field"><label>Cara mengisi</label><select name="attendance_entry_mode" class="control"><option value="SELF">Mandiri oleh mahasiswa</option><option value="HYBRID">Hybrid — mahasiswa + pengelola</option><option value="MANUAL">Manual oleh pengelola</option></select></div><div class="field"><label>Media Hadir</label><div class="choice-inline"><label><input type="checkbox" name="attendance_channel" value="ZOOM" checked> Zoom</label><label><input type="checkbox" name="attendance_channel" value="YOUTUBE" checked> YouTube</label><label><input type="checkbox" name="attendance_channel" value="OFFLINE"> Offline</label></div></div></div><div class="form-grid"><div class="field"><label>Buka sebelum jadwal</label><div class="input-suffix"><input name="attendance_open_before" type="number" min="0" max="240" value="10" class="control"><span>menit</span></div></div><div class="field"><label>Tutup setelah jadwal</label><div class="input-suffix"><input name="attendance_close_after" type="number" min="0" max="720" value="30" class="control"><span>menit</span></div></div></div><label class="setting-card compact-setting"><span class="setting-card-copy"><strong>Catat keterlambatan</strong><small>Hadir tetap Hadir, tetapi diberi atribut Terlambat.</small></span><span class="switch"><input name="attendance_lateness_enabled" id="attendance-lateness-enabled" type="checkbox"><span></span></span></label><div id="attendance-late-minutes" class="field hidden"><label>Dianggap terlambat setelah</label><div class="input-suffix"><input name="attendance_late_after_minutes" type="number" min="0" max="240" value="15" class="control"><span>menit dari mulai jadwal</span></div></div><div class="choice-inline attendance-status-options"><label><input type="checkbox" name="attendance_sick_enabled" checked> Sakit</label><label><input type="checkbox" name="attendance_permit_enabled" checked> Izin</label></div><div class="form-help">Status tetap Hadir/Sakit/Izin/Alpa. Zoom/YouTube adalah media kehadiran, bukan pengganti status.</div></div>${formFooter('Simpan Jadwal')}</form>`);
+  showModal(`<div class="modal-head"><div><div class="eyebrow">Jadwal + Sesi</div><h2>Tambah Jadwal</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="form-grid"><div class="field"><label>Judul / Mata Kuliah</label><input name="title" class="control" required minlength="3" placeholder="Contoh: Sejarah Peradaban Islam"></div><div class="field"><label>Lokasi / Link Zoom</label><input name="location" class="control" placeholder="Ruang 3 atau https://zoom.us/..."></div></div><div class="field"><label>Deskripsi</label><textarea name="description" class="control" rows="2"></textarea></div><div class="form-grid"><div class="field"><label>Mulai sesi pertama</label><input name="start_at" type="datetime-local" class="control" required></div><div class="field"><label>Selesai</label><input name="end_at" type="datetime-local" class="control"></div></div><div class="schedule-repeat-box"><div class="form-grid"><div class="field"><label>Pengulangan</label><select name="recurrence_frequency" id="schedule-repeat" class="control"><option value="NONE">Tidak berulang</option><option value="WEEKLY">Setiap minggu</option><option value="DAILY">Setiap hari</option><option value="MONTHLY">Setiap bulan</option></select></div><div class="field"><label>Mulai dari sesi</label><input name="session_start" type="number" min="1" max="99" value="1" class="control"></div></div><div class="repeat-field hidden"><div class="field"><label>Total sesi</label><input name="recurrence_count" type="number" min="1" max="32" value="16" class="control"></div></div></div><div class="field"><label>Pembuatan Absensi</label><select name="attendance_mode" id="schedule-attendance-mode" class="control"><option value="MANUAL">Tidak otomatis — buat absensi bila diperlukan</option><option value="AUTO">Otomatis — buat absensi setiap sesi</option></select></div><div id="schedule-auto-settings" class="schedule-auto-settings hidden"><div class="form-grid"><div class="field"><label>Cara mengisi</label><select name="attendance_entry_mode" class="control"><option value="SELF">Mandiri oleh mahasiswa</option><option value="HYBRID">Hybrid — mahasiswa + pengelola</option><option value="MANUAL">Manual oleh pengelola</option></select></div><div class="field"><label>Media Hadir</label><div class="choice-inline"><label><input type="checkbox" name="attendance_channel" value="ZOOM" checked> Zoom</label><label><input type="checkbox" name="attendance_channel" value="YOUTUBE" checked> YouTube</label><label><input type="checkbox" name="attendance_channel" value="OFFLINE"> Offline</label></div></div></div><div class="form-grid"><div class="field"><label>Buka sebelum jadwal</label><div class="input-suffix"><input name="attendance_open_before" type="number" min="0" max="240" value="10" class="control"><span>menit</span></div></div><div class="field"><label>Tutup setelah jadwal</label><div class="input-suffix"><input name="attendance_close_after" type="number" min="0" max="720" value="30" class="control"><span>menit</span></div></div></div><label class="setting-card compact-setting"><span class="setting-card-copy"><strong>Catat keterlambatan</strong><small>Hadir tetap Hadir, tetapi diberi atribut Terlambat.</small></span><span class="switch"><input name="attendance_lateness_enabled" id="attendance-lateness-enabled" type="checkbox"><span></span></span></label><div id="attendance-late-minutes" class="field hidden"><label>Dianggap terlambat setelah</label><div class="input-suffix"><input name="attendance_late_after_minutes" type="number" min="0" max="240" value="15" class="control"><span>menit dari mulai jadwal</span></div></div><div class="choice-inline attendance-status-options"><label><input type="checkbox" name="attendance_sick_enabled" checked> Sakit</label><label><input type="checkbox" name="attendance_permit_enabled" checked> Izin</label></div><div class="form-help">Status tetap Hadir/Sakit/Izin/Alpa. Zoom/YouTube adalah media kehadiran, bukan pengganti status.</div></div>${formFooter('Simpan Jadwal')}</form>`);
   const mode=document.getElementById('schedule-attendance-mode'),auto=document.getElementById('schedule-auto-settings'),repeat=document.getElementById('schedule-repeat'),late=document.getElementById('attendance-lateness-enabled');
   mode.onchange=()=>{auto.classList.toggle('hidden',mode.value!=='AUTO');const count=document.querySelector('[name="recurrence_count"]');if(count){count.max=mode.value==='AUTO'?'20':'32';if(mode.value==='AUTO'&&Number(count.value)>20)count.value='20';}};
   repeat.onchange=()=>document.querySelectorAll('.repeat-field').forEach(el=>el.classList.toggle('hidden',repeat.value==='NONE'));
@@ -604,14 +619,12 @@ function openScheduleDetail(id,data){
     ? `<div class="schedule-detail-action-grid"><button type="button" id="schedule-open-attendance" class="btn btn-primary schedule-detail-btn"><span class="material-symbols-rounded">how_to_reg</span> Buka Presensi</button>${attendance.public_token?`<button type="button" id="schedule-copy-attendance" class="btn btn-secondary schedule-detail-btn">${svg('i-copy')} Salin Link</button>`:''}${meeting?`<button type="button" id="schedule-meeting-link" class="btn btn-secondary schedule-detail-btn"><span class="material-symbols-rounded">videocam</span> Zoom / Meet</button>`:''}</div>`
     : attendance ? `<div class="attendance-availability-note"><span class="material-symbols-rounded">schedule</span><div><strong>${attendanceWindow==='UPCOMING'?'Presensi belum dibuka':'Presensi tidak aktif'}</strong><small>${attendanceWindow==='UPCOMING'?'Tombol presensi dan salin link akan tersedia saat sesi aktif.':'Sesi presensi sudah tidak dapat diakses.'}</small></div></div>${meeting?`<div class="schedule-detail-action-grid single"><button type="button" id="schedule-meeting-link" class="btn btn-secondary schedule-detail-btn"><span class="material-symbols-rounded">videocam</span> Zoom / Meet</button></div>`:''}`
     : meeting?`<div class="schedule-detail-action-grid single"><button type="button" id="schedule-meeting-link" class="btn btn-secondary schedule-detail-btn"><span class="material-symbols-rounded">videocam</span> Zoom / Meet</button></div>`:'';
-  showModal(`<div class="modal-head"><div><div class="eyebrow">JADWAL • ${esc(shortDateTime(x.start_at))}</div><h2>${esc(x.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="detail-badge-row compact-detail-badges">${sessionBadge}${scheduleStateBadge(x)}${x.recurrence_group_id?'<span class="soft-chip"><span class="material-symbols-rounded recurring-inline-icon">repeat</span> Berulang</span>':''}${String(x.attendance_mode)==='AUTO'?'<span class="soft-chip">Absensi Auto</span>':''}</div><div class="detail-list academic-detail-list compact-detail-list">${detail('Mulai',shortDateTime(x.start_at))}${detail('Selesai',x.end_at?shortDateTime(x.end_at):'-')}${detail('Lokasi',locationText)}${x.change_note?detail('Catatan perubahan',x.change_note):''}</div>${attendanceInfo}${x.description?`<div class="academic-detail-body">${nl2br(x.description)}</div>`:''}${can&&String(x.schedule_state)!=='CANCELLED'?`<div class="modal-actions compact-modal-actions schedule-detail-actions"><button type="button" id="detail-edit-schedule" class="btn btn-secondary schedule-detail-btn"><span class="material-symbols-rounded">edit_calendar</span> Edit</button>${x.recurrence_group_id?`<button type="button" id="detail-add-schedule" class="btn btn-secondary schedule-detail-btn"><span class="material-symbols-rounded">add_circle</span> Tambah Sesi</button><button type="button" id="detail-delete-schedule" class="btn btn-secondary schedule-detail-btn danger-outline"><span class="material-symbols-rounded">delete</span> Hapus Sesi</button>`:''}<button type="button" id="detail-cancel-schedule" class="btn btn-danger schedule-detail-btn"><span class="material-symbols-rounded">event_busy</span> Batalkan</button></div>`:String(x.schedule_state)==='CANCELLED'?'<div class="alert info">Jadwal dibatalkan dan dikunci. Koreksi hanya melalui pengelola data.</div>':''}`);
+  showModal(`<div class="modal-head"><div><div class="eyebrow">JADWAL • ${esc(shortDateTime(x.start_at))}</div><h2>${esc(x.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="detail-badge-row compact-detail-badges">${sessionBadge}${scheduleStateBadge(x)}${x.recurrence_group_id?'<span class="soft-chip"><span class="material-symbols-rounded recurring-inline-icon">repeat</span> Berulang</span>':''}${String(x.attendance_mode)==='AUTO'?'<span class="soft-chip">Absensi Auto</span>':''}</div><div class="detail-list academic-detail-list compact-detail-list">${detail('Mulai',shortDateTime(x.start_at))}${detail('Selesai',x.end_at?shortDateTime(x.end_at):'-')}${detail('Lokasi',locationText)}${x.change_note?detail('Catatan perubahan',x.change_note):''}</div>${attendanceInfo}${x.description?`<div class="academic-detail-body">${nl2br(x.description)}</div>`:''}${can&&String(x.schedule_state)!=='CANCELLED'?`<div class="modal-actions compact-modal-actions"><button type="button" id="detail-edit-schedule" class="btn btn-secondary schedule-detail-btn"><span class="material-symbols-rounded">edit_calendar</span> Edit</button><button type="button" id="detail-cancel-schedule" class="btn btn-danger schedule-detail-btn"><span class="material-symbols-rounded">event_busy</span> Batalkan</button></div>`:String(x.schedule_state)==='CANCELLED'?'<div class="alert info">Jadwal dibatalkan dan dikunci. Koreksi hanya melalui pengelola data.</div>':''}`);
   document.getElementById('schedule-open-attendance')?.addEventListener('click',()=>{closeModal();openAttendance(attendance.attendance_id);});
   document.getElementById('schedule-copy-attendance')?.addEventListener('click',()=>copyAttendanceLink(attendance.public_token));
   document.getElementById('schedule-meeting-link')?.addEventListener('click',()=>openExternal(x.location));
   document.getElementById('detail-edit-schedule')?.addEventListener('click',()=>openEditSchedule(id,data));
   document.getElementById('detail-cancel-schedule')?.addEventListener('click',()=>openCancelSchedule(id,data));
-  document.getElementById('detail-add-schedule')?.addEventListener('click',()=>openAppendSchedule(id,data));
-  document.getElementById('detail-delete-schedule')?.addEventListener('click',()=>openDeleteScheduleSession(id,data));
 }
 
 function openEditSchedule(id,data){
@@ -626,39 +639,6 @@ function openCancelSchedule(id,data){
   const x=(data.schedules||[]).find(v=>String(v.schedule_id)===String(id));if(!x)return;
   showModal(`<div class="modal-head"><div><div class="eyebrow">Pembatalan</div><h2>Batalkan Jadwal</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-cancel-schedule"><div class="alert warning">Jadwal tetap terlihat dengan badge <b>Dibatalkan</b> agar riwayat tidak hilang.</div><div class="field"><label>Alasan / catatan</label><textarea name="change_note" rows="3" class="control" required placeholder="Contoh: Dosen berhalangan hadir"></textarea></div>${x.recurrence_group_id?`<div class="field"><label>Batalkan</label><select name="scope" class="control"><option value="SINGLE">Hanya jadwal ini</option><option value="FUTURE_SERIES">Jadwal ini dan berikutnya</option></select></div>`:'<input type="hidden" name="scope" value="SINGLE">'}${formFooter('Batalkan Jadwal')}</form>`);
   const form=document.getElementById('academic-cancel-schedule');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status');btn.disabled=true;try{await api('cancelSchedule',{schedule_id:id,...Object.fromEntries(new FormData(form))});closeModal();toast('Jadwal dibatalkan.');await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;}};
-}
-
-function inferredNextScheduleWindow(x){
-  const rule=scheduleRuleObject(x)||{};
-  const frequency=String(rule.frequency||'WEEKLY').toUpperCase();
-  const interval=Math.max(1,Number(rule.interval||1)||1);
-  const start=new Date(x.start_at);
-  const end=x.end_at?new Date(x.end_at):null;
-  const nextStart=new Date(start);
-  if(frequency==='DAILY') nextStart.setDate(nextStart.getDate()+interval);
-  else if(frequency==='MONTHLY') nextStart.setMonth(nextStart.getMonth()+interval);
-  else nextStart.setDate(nextStart.getDate()+(7*interval));
-  const duration=end?Math.max(0,end.getTime()-start.getTime()):0;
-  return {start:nextStart,end:duration?new Date(nextStart.getTime()+duration):null};
-}
-
-function openAppendSchedule(id,data){
-  const decorated=decorateScheduleSessions(data.schedules||[]);
-  const x=decorated.find(v=>String(v.schedule_id)===String(id)); if(!x)return;
-  const guess=inferredNextScheduleWindow(x);
-  const current=x._sessionNo?`Sesi ${String(x._sessionNo).padStart(2,'0')}`:'jadwal ini';
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Jadwal • Seri</div><h2>Tambah Sesi</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-append-schedule"><div class="alert info">Sesi baru tetap masuk ke seri yang sama. Nomor sesi akan dirapikan otomatis.</div><div class="field"><label>Posisi</label><select name="placement" class="control"><option value="AFTER">Setelah ${esc(current)}</option><option value="END">Di akhir seri</option></select></div><div class="field"><label>Judul</label><input name="title" class="control" value="${esc(x.title)}" required></div><div class="form-grid"><div class="field"><label>Mulai</label><input name="start_at" type="datetime-local" class="control" value="${esc(toLocalInput(guess.start))}" required></div><div class="field"><label>Selesai</label><input name="end_at" type="datetime-local" class="control" value="${guess.end?esc(toLocalInput(guess.end)):''}"></div></div><div class="field"><label>Lokasi / Link Zoom atau Meet</label><input name="location" class="control" value="${esc(x.location||'')}"></div><div class="field"><label>Catatan</label><input name="change_note" class="control" placeholder="Contoh: Sesi tambahan / pengganti"></div>${formFooter('Tambah Sesi')}</form>`);
-  const form=document.getElementById('academic-append-schedule');
-  form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{const payload=Object.fromEntries(new FormData(form));payload.schedule_id=id;payload.after_schedule_id=payload.placement==='END'?'':id;delete payload.placement;['start_at','end_at'].forEach(k=>{if(payload[k])payload[k]=new Date(payload[k]).toISOString();});await api('appendScheduleSession',payload);closeModal();toast('Sesi berhasil ditambahkan ke seri.');await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}};
-}
-
-function openDeleteScheduleSession(id,data){
-  const decorated=decorateScheduleSessions(data.schedules||[]);
-  const x=decorated.find(v=>String(v.schedule_id)===String(id)); if(!x)return;
-  const label=x._sessionNo?`Sesi ${String(x._sessionNo).padStart(2,'0')}`:'Sesi ini';
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Jadwal • Seri</div><h2>Hapus ${esc(label)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-delete-schedule"><div class="alert warning">Sesi diarsipkan, bukan dihapus permanen. Absensi otomatis terkait ikut dinonaktifkan dan histori lama tetap tersimpan.</div><div class="field"><label>Catatan</label><textarea name="change_note" class="control" rows="3" placeholder="Opsional. Contoh: Semester hanya 9 pertemuan."></textarea></div>${formFooter('Hapus Sesi')}</form>`);
-  const form=document.getElementById('academic-delete-schedule');
-  form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menghapus…</span>';try{await api('deleteScheduleSession',{schedule_id:id,...Object.fromEntries(new FormData(form))});closeModal();toast('Sesi dihapus dari seri dan nomor sesi dirapikan.');await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}};
 }
 
 function openCreateTask(){
@@ -681,10 +661,8 @@ function openMaterialDetail(id,data){
 }
 
 function openCreateAttendance(){
-  const startDate=new Date();
-  const nowLocal=toLocalInput(startDate);
-  const endLocal=toLocalInput(new Date(startDate.getTime()+2*60*60*1000));
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Absensi</div><h2>Buat Sesi Absensi</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="field"><label>Judul Pertemuan</label><input name="title" class="control" placeholder="Pertemuan 01 — Pengantar Ekonomi" required minlength="3"></div><div class="form-grid"><div class="field"><label>Mulai</label><input name="start_at" type="datetime-local" class="control" value="${esc(nowLocal)}" required></div><div class="field"><label>Selesai</label><input name="end_at" type="datetime-local" class="control" value="${esc(endLocal)}" required></div></div><div class="form-grid"><div class="field"><label>Metode Presensi</label><select name="entry_mode" class="control"><option value="SELF">Mandiri</option><option value="HYBRID">Hybrid</option><option value="MANUAL">Manual Pengelola</option></select></div><div class="field"><label>Media Hadir</label><div class="choice-inline"><label><input type="checkbox" name="attendance_channel" value="ZOOM" checked> Zoom</label><label><input type="checkbox" name="attendance_channel" value="YOUTUBE" checked> YouTube</label><label><input type="checkbox" name="attendance_channel" value="OFFLINE"> Offline</label></div></div></div><label class="setting-card compact-setting"><span class="setting-card-copy"><strong>Catat keterlambatan</strong><small>Opsional. Jika mati, Hadir tidak dibedakan tepat waktu/terlambat.</small></span><span class="switch"><input name="lateness_enabled" id="manual-lateness-enabled" type="checkbox"><span></span></span></label><div id="manual-late-minutes" class="field hidden"><label>Terlambat setelah</label><div class="input-suffix"><input name="late_after_minutes" type="number" min="0" max="240" value="15" class="control"><span>menit dari mulai</span></div></div><div class="choice-inline attendance-status-options"><label><input type="checkbox" name="sick_enabled" checked> Boleh Sakit</label><label><input type="checkbox" name="permit_enabled" checked> Boleh Izin</label></div><div class="form-help">Mahasiswa memilih status berdasarkan kejujuran. Jika Hadir, ia memilih media Zoom/YouTube/Offline yang tersedia.</div>${formFooter('Buat Sesi')}</form>`);
+  const nowLocal=toLocalInput(new Date());
+  showModal(`<div class="modal-head"><div><div class="eyebrow">Absensi</div><h2>Buat Sesi Absensi</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="academic-create-form"><div class="field"><label>Judul Pertemuan</label><input name="title" class="control" placeholder="Pertemuan 01 — Pengantar Ekonomi" required minlength="3"></div><div class="form-grid"><div class="field"><label>Mulai</label><input name="start_at" type="datetime-local" class="control" value="${esc(nowLocal)}" required></div><div class="field"><label>Selesai</label><input name="end_at" type="datetime-local" class="control"></div></div><div class="form-grid"><div class="field"><label>Metode Presensi</label><select name="entry_mode" class="control"><option value="SELF">Mandiri</option><option value="HYBRID">Hybrid</option><option value="MANUAL">Manual Pengelola</option></select></div><div class="field"><label>Media Hadir</label><div class="choice-inline"><label><input type="checkbox" name="attendance_channel" value="ZOOM" checked> Zoom</label><label><input type="checkbox" name="attendance_channel" value="YOUTUBE" checked> YouTube</label><label><input type="checkbox" name="attendance_channel" value="OFFLINE"> Offline</label></div></div></div><label class="setting-card compact-setting"><span class="setting-card-copy"><strong>Catat keterlambatan</strong><small>Opsional. Jika mati, Hadir tidak dibedakan tepat waktu/terlambat.</small></span><span class="switch"><input name="lateness_enabled" id="manual-lateness-enabled" type="checkbox"><span></span></span></label><div id="manual-late-minutes" class="field hidden"><label>Terlambat setelah</label><div class="input-suffix"><input name="late_after_minutes" type="number" min="0" max="240" value="15" class="control"><span>menit dari mulai</span></div></div><div class="choice-inline attendance-status-options"><label><input type="checkbox" name="sick_enabled" checked> Boleh Sakit</label><label><input type="checkbox" name="permit_enabled" checked> Boleh Izin</label></div><div class="form-help">Mahasiswa memilih status berdasarkan kejujuran. Jika Hadir, ia memilih media Zoom/YouTube/Offline yang tersedia.</div>${formFooter('Buat Sesi')}</form>`);
   const late=document.getElementById('manual-lateness-enabled');late.onchange=()=>document.getElementById('manual-late-minutes').classList.toggle('hidden',!late.checked);bindCreateForm('createAttendanceSession');
 }
 
@@ -729,12 +707,6 @@ async function openAttendance(attendanceId){
   showModal(`<div class="modal-head"><div><div class="eyebrow">Absensi</div><h2>Memuat sesi…</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="search-loading"><span class="status-dot"></span>Memuat data anggota…</div>`);
   try{const data=await api('getAttendanceSessionDetail',{attendance_id:attendanceId});attendanceModalState={data,draft:{}};attendanceModalPage=1;(data.records||[]).forEach(r=>attendanceModalState.draft[String(r.user_id)]={attendance_status:r.attendance_status||'UNMARKED',note:r.note||''});drawAttendanceModal(data);}catch(err){showModal(`<div class="modal-head"><h2>Absensi</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert danger">${esc(err.message)}</div>`);}
 }
-function attendanceLateMinutes(session={}){
-  if(!session.lateness_enabled||!session.late_after_at||!session.start_at)return 15;
-  const late=dateMs(session.late_after_at),start=dateMs(session.start_at);
-  return late&&start?Math.max(0,Math.min(240,Math.round((late-start)/60000))):15;
-}
-function attendanceLocalInput(value){const d=new Date(value||'');return Number.isFinite(d.getTime())?toLocalInput(d):'';}
 function drawAttendanceModal(data){
   const s=data.session||{}; const link=s.public_token?attendanceLink(s.public_token):'';
   const linkBlock=link?`<div class="attendance-link-box compact"><div><small>Link check-in</small><strong>${esc(link)}</strong></div><button type="button" id="modal-copy-attendance" class="icon-btn mini" title="Salin link">${svg('i-copy')}</button></div>`:'';
@@ -746,30 +718,10 @@ function drawAttendanceModal(data){
   const totalPages=Math.max(1,Math.ceil(ordered.length/ATTENDANCE_MEMBER_PAGE_SIZE));attendanceModalPage=Math.min(Math.max(1,attendanceModalPage),totalPages);
   const pageRecords=ordered.slice((attendanceModalPage-1)*ATTENDANCE_MEMBER_PAGE_SIZE,attendanceModalPage*ATTENDANCE_MEMBER_PAGE_SIZE);
   const summary=data.can_manage?`<div class="attendance-modal-summary"><div><strong>${records.length}</strong><span>Mahasiswa</span></div><div><strong>${filled}</strong><span>Sudah isi</span></div><div><strong>${present}</strong><span>Hadir</span></div><div><strong>${waiting}</strong><span>Belum</span></div></div>`:'';
-  const sessionMeta=`<div class="attendance-session-meta"><span><small>Mulai</small><strong>${esc(shortDateTime(s.open_at||s.start_at))}</strong></span><span><small>Selesai</small><strong>${esc(s.close_at||s.end_at?shortDateTime(s.close_at||s.end_at):'Belum diatur')}</strong></span><span><small>Status sesi</small><strong>${esc(windowLabel(s.window_status))}</strong></span>${s.lateness_enabled?`<span><small>Terlambat setelah</small><strong>${attendanceLateMinutes(s)} menit</strong></span>`:''}</div>`;
-  const manageActions=data.can_manage?`<div class="attendance-session-actions"><button type="button" id="attendance-edit-session" class="btn btn-secondary compact-session-btn"><span class="material-symbols-rounded">edit_calendar</span> Edit Sesi</button>${String(s.window_status||'').toUpperCase()!=='CLOSED'?`<button type="button" id="attendance-close-session" class="btn btn-secondary compact-session-btn"><span class="material-symbols-rounded">stop_circle</span> Selesaikan</button>`:''}${data.can_delete?`<button type="button" id="attendance-delete-session" class="btn btn-danger compact-session-btn"><span class="material-symbols-rounded">delete</span> Hapus Sesi</button>`:''}</div>`:'';
-  const body=data.can_manage?`<form id="attendance-record-form"><div class="attendance-record-head"><div><strong>Daftar Presensi</strong><small>Perubahan status setelah submit hanya dilakukan pengelola dari Ruang Kelas.</small></div></div><div class="attendance-record-list">${pageRecords.map(attendanceRecordRow).join('')}</div>${attendanceMemberPaginationHtml(attendanceModalPage,totalPages,records.length)}<div id="attendance-save-status" class="request-status"></div><button id="attendance-save-btn" class="btn btn-primary compact-save-btn" type="submit">Simpan Perubahan</button></form>`:`<div class="attendance-own-card"><span class="academic-type-icon attendance-icon"><span class="material-symbols-rounded">how_to_reg</span></span><div><span>Status Kehadiran</span><strong>${esc(attendanceStatusLabel(data.records?.[0]?.attendance_status||'UNMARKED'))}</strong><small>${esc(data.records?.[0]?.note||'Belum ada catatan.')}</small></div></div>`;
-  showModal(`<div class="modal-head attendance-modal-head"><div><div class="eyebrow">Absensi</div><h2>${esc(s.title||'Sesi Absensi')}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${sessionMeta}${manageActions}${summary}${linkBlock}${body}`);
+  const body=data.can_manage?`<form id="attendance-record-form"><div class="attendance-record-head"><div><strong>Daftar Presensi</strong><small>Yang sudah mengisi ditampilkan lebih dulu. Status tetap dapat dikoreksi pengelola.</small></div></div><div class="attendance-record-list">${pageRecords.map(attendanceRecordRow).join('')}</div>${attendanceMemberPaginationHtml(attendanceModalPage,totalPages,records.length)}<div id="attendance-save-status" class="request-status"></div><button id="attendance-save-btn" class="btn btn-primary compact-save-btn" type="submit">Simpan Perubahan</button></form>`:`<div class="attendance-own-card"><span class="academic-type-icon attendance-icon"><span class="material-symbols-rounded">how_to_reg</span></span><div><span>Status Kehadiran</span><strong>${esc(attendanceStatusLabel(data.records?.[0]?.attendance_status||'UNMARKED'))}</strong><small>${esc(data.records?.[0]?.note||'Belum ada catatan.')}</small></div></div>`;
+  showModal(`<div class="modal-head attendance-modal-head"><div><div class="eyebrow">Absensi • ${esc(shortDateTime(s.start_at))}</div><h2>${esc(s.title||'Sesi Absensi')}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${summary}${linkBlock}${body}`);
   bindAttendanceModalPage(data);
   document.getElementById('modal-copy-attendance')?.addEventListener('click',()=>copyText(link));
-  document.getElementById('attendance-edit-session')?.addEventListener('click',()=>openEditAttendanceSession(data));
-  document.getElementById('attendance-close-session')?.addEventListener('click',()=>closeAttendanceSessionFlow(s.attendance_id));
-  document.getElementById('attendance-delete-session')?.addEventListener('click',()=>deleteAttendanceSessionFlow(s.attendance_id));
-}
-function openEditAttendanceSession(data){
-  const s=data.session||{},lateMinutes=attendanceLateMinutes(s),channels=Array.isArray(s.channels)?s.channels:[];
-  const start=attendanceLocalInput(s.open_at||s.start_at),end=attendanceLocalInput(s.close_at||s.end_at);
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Kelola Absensi</div><h2>Edit Sesi</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="attendance-session-edit-form"><div class="field"><label>Judul Pertemuan</label><input name="title" class="control" value="${esc(s.title||'')}" required minlength="3"></div><div class="form-grid"><div class="field"><label>Mulai</label><input name="start_at" type="datetime-local" class="control" value="${esc(start)}" required></div><div class="field"><label>Selesai</label><input name="end_at" type="datetime-local" class="control" value="${esc(end)}" required></div></div><div class="form-grid"><div class="field"><label>Metode Presensi</label><select name="entry_mode" class="control"><option value="SELF" ${String(s.entry_mode)==='SELF'?'selected':''}>Mandiri</option><option value="HYBRID" ${String(s.entry_mode)==='HYBRID'?'selected':''}>Hybrid</option><option value="MANUAL" ${String(s.entry_mode)==='MANUAL'?'selected':''}>Manual Pengelola</option></select></div><div class="field"><label>Media Hadir</label><div class="choice-inline"><label><input type="checkbox" name="attendance_channel" value="ZOOM" ${channels.includes('ZOOM')?'checked':''}> Zoom</label><label><input type="checkbox" name="attendance_channel" value="YOUTUBE" ${channels.includes('YOUTUBE')?'checked':''}> YouTube</label><label><input type="checkbox" name="attendance_channel" value="OFFLINE" ${channels.includes('OFFLINE')?'checked':''}> Offline</label></div></div></div><label class="setting-card compact-setting"><span class="setting-card-copy"><strong>Catat keterlambatan</strong><small>Peserta tetap dapat presensi selama sesi belum ditutup.</small></span><span class="switch"><input name="lateness_enabled" id="edit-lateness-enabled" type="checkbox" ${s.lateness_enabled?'checked':''}><span></span></span></label><div id="edit-late-minutes" class="field ${s.lateness_enabled?'':'hidden'}"><label>Terlambat setelah</label><div class="input-suffix"><input name="late_after_minutes" type="number" min="0" max="240" value="${lateMinutes}" class="control"><span>menit dari mulai</span></div></div><div class="choice-inline attendance-status-options"><label><input type="checkbox" name="sick_enabled" ${s.sick_enabled!==false?'checked':''}> Boleh Sakit</label><label><input type="checkbox" name="permit_enabled" ${s.permit_enabled!==false?'checked':''}> Boleh Izin</label></div><div id="attendance-edit-status" class="request-status"></div><button id="attendance-edit-submit" class="btn btn-primary btn-block" type="submit">Simpan Sesi</button></form>`);
-  const late=document.getElementById('edit-lateness-enabled');late?.addEventListener('change',()=>document.getElementById('edit-late-minutes')?.classList.toggle('hidden',!late.checked));
-  document.getElementById('attendance-session-edit-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,btn=document.getElementById('attendance-edit-submit'),status=document.getElementById('attendance-edit-status');if(btn.disabled)return;const raw=Object.fromEntries(new FormData(form)),startDate=new Date(raw.start_at),endDate=new Date(raw.end_at);if(!Number.isFinite(startDate.getTime())||!Number.isFinite(endDate.getTime())||endDate<=startDate){status.className='request-status error';status.textContent='Waktu selesai harus setelah waktu mulai.';return;}btn.disabled=true;status.className='request-status progress';status.textContent='Menyimpan perubahan sesi…';try{await api('updateAttendanceSession',{attendance_id:s.attendance_id,title:raw.title,start_at:startDate.toISOString(),end_at:endDate.toISOString(),open_at:startDate.toISOString(),close_at:endDate.toISOString(),entry_mode:raw.entry_mode,self_checkin_enabled:raw.entry_mode!=='MANUAL',attendance_channels:[...form.querySelectorAll('[name="attendance_channel"]:checked')].map(x=>x.value),lateness_enabled:form.lateness_enabled?.checked===true,late_after_minutes:Number(raw.late_after_minutes||15),sick_enabled:form.sick_enabled?.checked===true,permit_enabled:form.permit_enabled?.checked===true});closeModal();toast('Sesi absensi diperbarui.');await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;}};
-}
-async function closeAttendanceSessionFlow(attendanceId){
-  const ok=await confirmDialog({title:'Selesaikan sesi absensi?',message:'Presensi mandiri akan langsung ditutup. Data yang sudah masuk tetap tersimpan dan masih dapat dikoreksi pengelola.',confirmText:'Selesaikan',danger:false});if(!ok)return;
-  try{await api('closeAttendanceSession',{attendance_id:attendanceId});closeModal();toast('Sesi absensi selesai.');await refreshAcademicAfterMutation();}catch(err){toast(err.message);}
-}
-async function deleteAttendanceSessionFlow(attendanceId){
-  const ok=await confirmDialog({title:'Hapus sesi absensi?',message:'Sesi akan dihapus dari kelas aktif. Record disimpan secara internal agar tidak merusak data existing.',confirmText:'Hapus Sesi',danger:true});if(!ok)return;
-  try{await api('archiveAcademicItem',{type:'ATTENDANCE',id:attendanceId});closeModal();toast('Sesi absensi dihapus dari kelas aktif.');await refreshAcademicAfterMutation();}catch(err){toast(err.message);}
 }
 function attendanceMemberPaginationHtml(page,totalPages,total){
   if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} mahasiswa</span></div>`;
@@ -951,7 +903,7 @@ function attendanceStatusLabel(status){return ({PRESENT:'Hadir',SICK:'Sakit',PER
 
 async function openTaskReview(taskId){
   const cached=state.taskReviewCache[taskId];
-  showModal(`<div class="modal-head"><div><div class="eyebrow">REVIEW TUGAS</div><h2>${cached?esc(cached.task?.title||'Review Tugas'):'Memuat pengumpulan…'}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div id="task-review-slot">${cached?taskReviewHtml(cached):'<div class="search-loading"><span class="status-dot"></span>Memuat submission anggota…</div>'}</div>`);
+  showModal(`<div class="modal-head"><div><div class="eyebrow">PHASE 6 • REVIEW TUGAS</div><h2>${cached?esc(cached.task?.title||'Review Tugas'):'Memuat pengumpulan…'}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div id="task-review-slot">${cached?taskReviewHtml(cached):'<div class="search-loading"><span class="status-dot"></span>Memuat submission anggota…</div>'}</div>`);
   if(cached)bindTaskReview(cached);
   try{const data=await api('getTaskSubmissions',{task_id:taskId});state.taskReviewCache[taskId]=data;const slot=document.getElementById('task-review-slot');if(slot){slot.innerHTML=taskReviewHtml(data);bindTaskReview(data);}}catch(err){const slot=document.getElementById('task-review-slot');if(slot)slot.innerHTML=`<div class="alert danger">${esc(err.message)}</div>`;}
 }
@@ -962,60 +914,9 @@ async function saveSubmissionReview(event,data,submissionId){event.preventDefaul
 function downloadCsv(filename,rows){const csv='\uFEFF'+rows.map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 function membersHtml(data) {
-  const p=data.permissions||{};
-  const items=data.members||[];
-  const leader=items.find(m=>m.is_class_leader)||null;
-  const candidates=items;
-  const totalPages=Math.max(1,Math.ceil(items.length/CLASS_MEMBERS_PAGE_SIZE));
-  classMembersPage=Math.min(Math.max(1,classMembersPage),totalPages);
-  const pageItems=items.slice((classMembersPage-1)*CLASS_MEMBERS_PAGE_SIZE,classMembersPage*CLASS_MEMBERS_PAGE_SIZE);
-
-  const leaderCard=`<div class="class-leader-card">
-    <div class="class-leader-icon">${svg('i-shield')}</div>
-    <div class="class-leader-copy">
-      <span>KETUA KELAS</span>
-      <strong>${leader?esc(leader.full_name||leader.username):'Belum ditetapkan'}</strong>
-      <small>${leader?`@${esc(leader.username||'-')} · ${esc(roleLabel(leader.class_role))}`:'Owner dapat menunjuk dirinya sendiri atau anggota aktif sebagai Ketua Kelas.'}</small>
-    </div>
-    ${p.is_owner?`<div class="class-leader-control">
-      <select id="class-leader-select" class="control">
-        <option value="">Pilih anggota…</option>
-        ${candidates.map(m=>`<option value="${esc(m.user_id)}" ${leader&&String(leader.user_id)===String(m.user_id)?'selected':''}>${esc(m.full_name||m.username)} · ${esc(roleLabel(m.class_role))}</option>`).join('')}
-      </select>
-      <button type="button" id="save-class-leader" class="btn btn-primary">Tetapkan</button>
-    </div>`:''}
-  </div>`;
-
-  return `<section class="panel members-room-panel">
-    <div class="panel-head">
-      <div>
-        <div class="panel-title">Anggota & Ketua Kelas</div>
-        <p class="panel-copy">Kelola anggota dan jabatan Ketua Kelas. Perubahan role teknis hanya dapat dilakukan Owner melalui Pengaturan Kelas.</p>
-      </div>
-      <span class="soft-chip">${items.length} anggota</span>
-    </div>
-    ${leaderCard}
-    <div class="member-list member-list-v52">
-      ${pageItems.length?pageItems.map(m=>memberRow(m,p)).join(''):'<div class="search-empty">Belum ada anggota.</div>'}
-    </div>
-    ${classMembersPaginationHtml(classMembersPage,totalPages,items.length)}
-  </section>`;
-}
-
-function classMembersPaginationHtml(page,totalPages,total){
-  if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} anggota</span></div>`;
-  const pages=[];
-  for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++){
-    pages.push(`<button type="button" data-class-members-page="${i}" class="${i===page?'active':''}">${i}</button>`);
-  }
-  return `<div class="table-pagination class-members-pagination">
-    <span>${total} anggota • Halaman ${page}/${totalPages}</span>
-    <div>
-      <button type="button" data-class-members-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>
-      ${pages.join('')}
-      <button type="button" data-class-members-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button>
-    </div>
-  </div>`;
+  const p=data.permissions||{}; const items=data.members||[]; const leader=items.find(m=>m.is_class_leader)||null; const candidates=items;
+  const leaderCard=`<div class="class-leader-card"><div class="class-leader-icon">${svg('i-shield')}</div><div class="class-leader-copy"><span>KETUA KELAS</span><strong>${leader?esc(leader.full_name||leader.username):'Belum ditetapkan'}</strong><small>${leader?`@${esc(leader.username||'-')} · ${esc(roleLabel(leader.class_role))}`:'Owner dapat menunjuk dirinya sendiri atau anggota aktif sebagai Ketua Kelas.'}</small></div>${p.is_owner?`<div class="class-leader-control"><select id="class-leader-select" class="control"><option value="">Pilih anggota…</option>${candidates.map(m=>`<option value="${esc(m.user_id)}" ${leader&&String(leader.user_id)===String(m.user_id)?'selected':''}>${esc(m.full_name||m.username)} · ${esc(roleLabel(m.class_role))}</option>`).join('')}</select><button type="button" id="save-class-leader" class="btn btn-primary">Tetapkan</button></div>`:''}</div>`;
+  return `<section class="panel members-room-panel"><div class="panel-head"><div><div class="panel-title">Anggota & Ketua Kelas</div><p class="panel-copy">Kelola anggota dan jabatan Ketua Kelas. Perubahan role teknis hanya dapat dilakukan Owner melalui Pengaturan Kelas.</p></div><span class="soft-chip">${items.length} anggota</span></div>${leaderCard}<div class="member-list member-list-v51">${items.length?items.map(m=>memberRow(m,p)).join(''):'<div class="search-empty">Belum ada anggota.</div>'}</div></section>`;
 }
 
 function electionsHtml(data){
@@ -1062,21 +963,7 @@ function memberBadgesHtml(m){
 }
 function memberRow(m,p) {
   const canRemove=p.can_manage_members && m.class_role!=='OWNER';
-  const academic=[m.study_program,m.cohort].filter(Boolean).join(' · ') || '-';
-  return `<div class="member-row member-row-v52">
-    <div class="member-avatar">${avatarMarkup(m)}</div>
-    <div class="member-main-v52">
-      <strong class="member-name-v52">${esc(m.full_name||m.username)}</strong>
-      <span class="member-id-v52">@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span>
-    </div>
-    <div class="member-academic-v52">${esc(academic)}</div>
-    <div class="member-side member-side-v52">
-      <div class="member-badges">${memberBadgesHtml(m)}</div>
-      ${canRemove?`<button class="member-remove-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota" aria-label="Keluarkan ${esc(m.full_name||m.username)}">
-        <span class="material-symbols-rounded">person_remove</span>
-      </button>`:''}
-    </div>
-  </div>`;
+  return `<div class="member-row member-row-v51"><div class="member-avatar">${avatarMarkup(m)}</div><div class="member-info"><strong>${esc(m.full_name||m.username)}</strong><span>@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span><small>${esc(m.study_program||'')} ${m.cohort?'· '+esc(m.cohort):''}</small></div><div class="member-side"><div class="member-badges">${memberBadgesHtml(m)}</div><div class="member-actions">${canRemove?`<button class="icon-btn mini danger-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota">${svg('i-close')}</button>`:''}</div></div></div>`;
 }
 
 function requestsHtml(data) {
@@ -1106,16 +993,11 @@ function bindTab(tab,data) {
     document.getElementById('overview-copy-class-link')?.addEventListener('click',()=>copyText(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.location.assign(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('overview-copy-join-link')?.addEventListener('click',()=>copyText(joinClassUrl(data.class?.class_code||'',data.class?.public_slug||'')));
-    document.getElementById('class-exit-action')?.addEventListener('click',()=>handleClassExit(data));
+    document.getElementById('overview-open-join-link')?.addEventListener('click',()=>window.location.assign(joinClassUrl(data.class?.class_code||'',data.class?.public_slug||'')));
   }
   if(tab==='tasks') document.querySelectorAll('[data-review-task]').forEach(btn=>btn.onclick=()=>openTaskReview(btn.dataset.reviewTask));
   if(tab==='members'){
     document.querySelectorAll('[data-remove-user]').forEach(btn=>btn.onclick=()=>removeMember(btn.dataset.removeUser,btn));
-    document.querySelectorAll('[data-class-members-page]').forEach(btn=>btn.addEventListener('click',()=>{
-      classMembersPage=Number(btn.dataset.classMembersPage||1);
-      const slot=document.getElementById('room-content');
-      if(slot){slot.innerHTML=membersHtml(currentClassData);bindTab('members',currentClassData);}
-    }));
     document.getElementById('save-class-leader')?.addEventListener('click',setClassLeader);
   }
   if(tab==='elections'){
@@ -1133,8 +1015,6 @@ function bindTab(tab,data) {
     bindClassLinksSettings(data);
   }
 }
-
-async function handleClassExit(data){const isOwner=Boolean(data.permissions?.is_owner);const className=data.class?.name||'kelas ini';const ok=await confirmDialog({title:isOwner?'Hapus kelas dari daftar aktif?':'Keluar dari kelas?',message:isOwner?`“${className}” akan dinonaktifkan. Data, histori, tugas, absensi, dan file existing tidak dihapus permanen.`:`Kamu akan kehilangan akses ke “${className}”. Histori akademik yang sudah tercatat tetap disimpan.`,confirmText:isOwner?'Hapus Kelas':'Keluar Kelas',danger:true});if(!ok)return;const btn=document.getElementById('class-exit-action');if(btn)btn.disabled=true;try{await api(isOwner?'archiveClass':'leaveClass',{class_id:state.selectedClassId},{onSlow:()=>toast('Masih memproses. Jangan tutup halaman.')});const id=String(state.selectedClassId||'');state.myClasses=(state.myClasses||[]).filter(x=>String(x.class_id)!==id);state.myClassesAt=Date.now();localStorage.setItem('kelasku_classes_cache',JSON.stringify(state.myClasses));localStorage.setItem('kelasku_classes_cache_at',String(state.myClassesAt));delete state.classDetails[id];delete state.classDetailsAt[id];delete state.classAcademic[id];delete state.classAcademicAt[id];try{localStorage.setItem('kelasku_class_details_cache',JSON.stringify(state.classDetails));localStorage.setItem('kelasku_class_details_cache_at',JSON.stringify(state.classDetailsAt));localStorage.setItem('kelasku_class_academic_cache',JSON.stringify(state.classAcademic));localStorage.setItem('kelasku_class_academic_cache_at',JSON.stringify(state.classAcademicAt));sessionStorage.removeItem('kelasku_selected_class');}catch{}state.selectedClassId='';toast(isOwner?'Kelas dinonaktifkan.':'Kamu sudah keluar dari kelas.');go('classes');}catch(err){toast(err.message);if(btn)btn.disabled=false;}}
 
 function activateClassSettingPane(key){document.querySelectorAll('[data-class-setting-tab]').forEach(b=>b.classList.toggle('active',b.dataset.classSettingTab===key));document.querySelectorAll('[data-class-setting-pane]').forEach(p=>p.classList.toggle('active',p.dataset.classSettingPane===key));}
 

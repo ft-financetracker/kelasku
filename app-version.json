@@ -1,8 +1,8 @@
 {
-  "version": "6.7.18",
-  "build": "20260929.318",
+  "version": "6.7.19",
+  "build": "20260929.319",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Precision-only frontend patch: live dropdown class search, cleaner mobile Room Class hero, and reorganized Ringkasan with foldable information/status cards, class/join codes, and compact class links.",
-  "release_time_wib": "01:08 WIB"
+  "release_note": "Class Room precision patch: room hero refined, main navigation compact with mobile scroll controls, submenu dropdown on mobile, academic add buttons compacted to [+], overview link/code layout cleaned, and schedule header/KPI presentation tightened without changing schedule cards.",
+  "release_time_wib": "02:26 WIB"
 }
