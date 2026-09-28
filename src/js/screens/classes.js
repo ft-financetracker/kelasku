@@ -19,14 +19,13 @@ function publicLandingUrl(c={}) {
 export function renderClasses() {
   const content = `
     <div class="classes-page">
-      <div class="page-head classes-page-head">
-        <div><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
-      </div>
-
-      <section class="class-search panel classes-search-panel">
-        <div class="class-search-box classes-search-row">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off"><button id="class-search-btn" class="btn btn-secondary classes-search-btn">Cari</button></div>
-        <div class="classes-primary-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} Masuk dengan Kode</button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} Buat Kelas</button></div>
-        <div id="class-search-results" class="search-results hidden"></div>
+      <section class="classes-top-shell">
+        <div class="classes-title-block"><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
+        <div class="classes-primary-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} <span>Masuk Kode</span></button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} <span>Buat Kelas</span></button></div>
+        <div class="classes-search-panel">
+          <div class="class-search-box classes-search-row">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off"><button id="class-search-btn" class="btn btn-secondary classes-search-btn">Cari</button></div>
+          <div id="class-search-results" class="search-results hidden"></div>
+        </div>
       </section>
 
       <section class="class-list-section">
@@ -180,7 +179,7 @@ function classListRow(c, mine = false) {
   return `<article class="class-list-row class-room-card" ${rowTarget} tabindex="0" role="button" aria-label="${isMember?'Buka':'Lihat'} ${esc(c.name || 'kelas')}">
     <span class="class-symbol small class-room-icon">${svg('i-class')}</span>
     <div class="class-list-copy class-room-copy"><strong>${esc(c.name)}</strong><small class="class-list-subtitle">${esc(desc)}</small></div>
-    <div class="class-list-badge-line class-room-badges">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile" aria-label="${memberCount} anggota">${memberCount} anggota</span>` : ''}</div>
+    <div class="class-list-badge-line class-room-badges">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : ''}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile class-card-kpi" aria-label="${memberCount} anggota"><span class="material-symbols-rounded">group</span>${memberCount}</span>` : ''}</div>
     <div class="class-list-action class-room-action">${action}</div>
   </article>`;
 }
@@ -352,7 +351,7 @@ async function lookupCode() {
 
 function openJoinPreview(c, code = '') {
   const effectiveCode = code || c.class_code || '';
-  showModal(`<div class="modal-head"><div><div class="eyebrow">Gabung Kelas</div><h2>${esc(c.name)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${joinPreviewHtml(c, effectiveCode)}`);
+  showModal(`<div class="modal-head class-preview-modal-head"><div><div class="eyebrow">GABUNG KELAS</div><h2>Preview Kelas</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${joinPreviewHtml(c, effectiveCode)}`);
   document.getElementById('confirm-join-btn').onclick = () => submitJoin(c, effectiveCode);
 }
 
@@ -360,7 +359,8 @@ function joinPreviewHtml(c, code) {
   const viaJoin = String(c.match_type || '').toUpperCase() === 'JOIN_CODE' || (code && code.toUpperCase() !== String(c.class_code || '').toUpperCase());
   const waiting = String(c.membership_status || '').toUpperCase() === 'PENDING';
   const landingUrl=publicLandingUrl(c);
-  return `<div class="join-preview panel"><span class="class-symbol">${svg('i-class')}</span><div><h3>${esc(c.name)}</h3><p>${esc(c.institution || '')} ${c.cohort?'· '+esc(c.cohort):''}</p><small>${esc(c.class_code || '')} · ${esc(c.visibility || '')}</small></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Join Code valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="join-preview-actions"><button id="confirm-join-btn" class="btn btn-primary" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button><a class="btn btn-secondary" href="${esc(landingUrl)}"><span class="material-symbols-rounded">open_in_new</span> Lihat Landing Kelas</a></div>`;
+  const memberCount=Number(c.member_count||0);
+  return `<div class="join-preview panel join-preview-compact"><span class="class-symbol">${svg('i-class')}</span><div class="join-preview-copy"><h3>${esc(c.name)}</h3><p>${[c.institution||'',c.cohort?`Angkatan ${c.cohort}`:'',c.class_code||''].filter(Boolean).map(esc).join(' · ')}</p><div class="join-preview-kpis"><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span>${memberCount?`<span class="class-card-kpi"><span class="material-symbols-rounded">group</span>${memberCount}</span>`:''}</div></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Join Code valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="join-preview-actions"><button id="confirm-join-btn" class="btn btn-primary" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button><a class="btn btn-secondary" href="${esc(landingUrl)}"><span class="material-symbols-rounded">open_in_new</span> Landing Kelas</a></div>`;
 }
 
 async function submitJoin(c, code) {

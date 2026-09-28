@@ -1,8 +1,8 @@
 {
-  "version": "6.7.16",
-  "build": "20260928.316",
+  "version": "6.7.17",
+  "build": "20260929.317",
   "schema": 17,
-  "release_date": "2026-09-28",
-  "release_note": "Daftar Kelas precision polish only: compact search/actions, mobile two-line room cards, aligned square room/action controls, cleaner badges, and full-card navigation.",
-  "release_time_wib": "23:52 WIB"
+  "release_date": "2026-09-29",
+  "release_note": "Daftar Kelas precision: desktop title/actions/search hierarchy, mobile one-row search plus compact actions, refined class cards/KPI, compact join preview, minimal Material bottom navigation, and zero notification badge fix.",
+  "release_time_wib": "01:05 WIB"
 }

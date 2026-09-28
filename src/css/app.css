@@ -2446,3 +2446,151 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   .classes-page .class-room-copy .class-list-subtitle{font-size:9.6px!important}
 }
 html[data-theme="light"] .classes-page .class-room-card{background:#FFFFFF!important;border-color:#DCE8F3!important}
+
+
+/* ============================================================
+   KelasKu v6.7.17 — Classes page precision + minimal bottom nav
+   Scope: Daftar Kelas + mobile bottom navigation + zero badge fix.
+   ============================================================ */
+.badge.hidden{display:none!important}
+
+/* ----- Classes top area ----- */
+.classes-page .classes-top-shell{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:"title actions" "search search"!important;
+  align-items:end!important;
+  gap:10px 14px!important;
+  margin:2px 0 14px!important;
+}
+.classes-page .classes-title-block{grid-area:title;min-width:0}
+.classes-page .classes-title-block h1{margin:0 0 4px!important;font-size:clamp(25px,2.6vw,34px)!important;line-height:1.12!important}
+.classes-page .classes-title-block p{margin:0!important;color:var(--muted)!important;font-size:11.5px!important;line-height:1.45!important}
+.classes-page .classes-primary-actions{
+  grid-area:actions!important;
+  display:flex!important;align-items:center!important;justify-content:flex-end!important;
+  gap:7px!important;margin:0!important;padding:0!important;border:0!important
+}
+.classes-page .classes-primary-actions .btn{
+  width:auto!important;min-width:0!important;min-height:34px!important;
+  padding:7px 11px!important;border-radius:10px!important;font-size:9.8px!important;gap:6px!important;white-space:nowrap!important
+}
+.classes-page .classes-primary-actions .btn .icon{width:15px!important;height:15px!important}
+.classes-page .classes-search-panel{
+  grid-area:search!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;box-shadow:none!important
+}
+.classes-page .classes-search-row{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr) 76px!important;align-items:center!important;gap:7px!important;
+  min-height:42px!important;padding:4px 5px 4px 11px!important;border:1px solid rgba(93,169,255,.18)!important;border-radius:13px!important;background:rgba(6,27,61,.48)!important
+}
+.classes-page .classes-search-row>.icon{width:18px!important;height:18px!important;color:var(--muted)!important}
+.classes-page .classes-search-row input{height:32px!important;min-width:0!important;padding:4px 2px!important;border:0!important;background:transparent!important;font-size:10.8px!important;outline:0!important;color:var(--text)!important}
+.classes-page .classes-search-btn{width:76px!important;min-width:76px!important;min-height:32px!important;height:32px!important;padding:6px 9px!important;border-radius:9px!important;font-size:9.5px!important}
+.classes-page .classes-search-panel .search-results{margin-top:7px!important}
+
+/* ----- Class cards ----- */
+.classes-page .class-card-stack{gap:9px!important}
+.classes-page .class-room-card{
+  grid-template-columns:40px minmax(0,1fr) auto 38px!important;
+  min-height:66px!important;padding:10px 11px!important;border-radius:15px!important;
+  background:linear-gradient(135deg,rgba(7,31,69,.72),rgba(6,24,55,.62))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.018)!important
+}
+.classes-page .class-room-card:hover{border-color:rgba(34,224,199,.26)!important;background:linear-gradient(135deg,rgba(10,43,88,.76),rgba(7,29,64,.7))!important}
+.classes-page .class-room-icon{width:40px!important;height:40px!important;border-radius:12px!important;background:linear-gradient(145deg,rgba(25,118,255,.2),rgba(34,224,199,.12))!important}
+.classes-page .class-room-copy>strong{font-size:12.7px!important;letter-spacing:-.01em!important}
+.classes-page .class-room-copy .class-list-subtitle{font-size:9.6px!important}
+.classes-page .class-room-badges{gap:5px!important}
+.classes-page .class-room-badges .role-pill,
+.classes-page .class-room-badges .visibility-badge,
+.classes-page .class-room-badges .soft-chip,
+.classes-page .class-room-badges .class-member-mobile{
+  min-height:24px!important;padding:4px 8px!important;font-size:8.8px!important;font-weight:780!important
+}
+.classes-page .class-card-kpi{gap:4px!important}
+.classes-page .class-card-kpi .material-symbols-rounded{font-size:14px!important;line-height:1!important}
+.classes-page .class-row-action{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;border-radius:11px!important;background:rgba(8,36,78,.58)!important}
+.classes-page .class-row-action.join{background:linear-gradient(135deg,#72F2B8,#22E0C7)!important;color:#052136!important;border-color:transparent!important}
+
+/* ----- Join preview: no duplicated room title ----- */
+.class-preview-modal-head h2{font-size:18px!important;margin-top:3px!important}
+.join-preview-compact{display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;gap:12px!important;align-items:center!important;padding:15px!important}
+.join-preview-compact .class-symbol{width:44px!important;height:44px!important;border-radius:13px!important}
+.join-preview-copy{min-width:0!important}
+.join-preview-copy h3{margin:0 0 4px!important;font-size:15px!important;line-height:1.25!important}
+.join-preview-copy p{margin:0!important;color:var(--muted)!important;font-size:10px!important;line-height:1.45!important}
+.join-preview-kpis{display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap!important;margin-top:9px!important}
+.join-preview-kpis .visibility-badge,.join-preview-kpis .class-card-kpi{display:inline-flex!important;align-items:center!important;gap:4px!important;min-height:24px!important;padding:4px 8px!important;border-radius:999px!important;font-size:8.8px!important}
+.join-preview-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+.join-preview-actions .btn{min-height:38px!important;padding:9px 10px!important;font-size:10px!important;border-radius:11px!important}
+
+/* ----- Bottom navigation: icons only, no CTA ----- */
+@media(max-width:900px){
+  .main{padding-bottom:92px!important}
+  .bottom-nav.bottom-nav-minimal{
+    position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:40!important;
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:center!important;
+    height:calc(68px + env(safe-area-inset-bottom))!important;min-height:calc(68px + env(safe-area-inset-bottom))!important;
+    padding:8px 14px calc(8px + env(safe-area-inset-bottom))!important;
+    background:rgba(4,17,41,.98)!important;border-top:1px solid rgba(87,153,235,.16)!important;box-shadow:0 -12px 30px rgba(0,8,28,.22)!important;
+    overflow:visible!important
+  }
+  .bottom-nav.bottom-nav-minimal::before{display:none!important}
+  .bottom-material-item{
+    position:relative!important;display:grid!important;place-items:center!important;width:100%!important;height:48px!important;min-height:48px!important;
+    padding:0!important;margin:0!important;background:transparent!important;border:0!important;border-radius:14px!important;color:#8199B8!important;transform:none!important
+  }
+  .bottom-material-item .bottom-material-icon{font-size:26px!important;line-height:1!important;font-variation-settings:'FILL' 0,'wght' 420,'GRAD' 0,'opsz' 24!important}
+  .bottom-material-item.active{color:var(--tosca)!important;background:rgba(34,224,199,.075)!important;box-shadow:inset 0 0 0 1px rgba(34,224,199,.11)!important}
+  .bottom-material-item.active .bottom-material-icon{font-variation-settings:'FILL' 1,'wght' 520,'GRAD' 0,'opsz' 24!important}
+  .bottom-material-item .nav-signal{top:2px!important;right:calc(50% - 19px)!important;min-width:16px!important;height:16px!important;padding:0 4px!important;font-size:8px!important;border:2px solid #041129!important;box-shadow:none!important}
+  .bottom-material-item .nav-signal.dot{width:9px!important;min-width:9px!important;height:9px!important;padding:0!important;top:5px!important;right:calc(50% - 15px)!important}
+}
+
+@media(max-width:760px){
+  .classes-page .classes-top-shell{
+    grid-template-columns:1fr!important;
+    grid-template-areas:"title" "search" "actions"!important;
+    gap:9px!important;margin-bottom:14px!important
+  }
+  .classes-page .classes-title-block h1{font-size:23px!important}
+  .classes-page .classes-title-block p{font-size:10.7px!important}
+  .classes-page .classes-search-row{grid-template-columns:auto minmax(0,1fr) 66px!important;min-height:40px!important;padding:3px 4px 3px 10px!important}
+  .classes-page .classes-search-row input{height:32px!important;font-size:10.6px!important}
+  .classes-page .classes-search-btn{width:66px!important;min-width:66px!important;height:32px!important;min-height:32px!important;padding:5px 7px!important}
+  .classes-page .classes-primary-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;width:100%!important}
+  .classes-page .classes-primary-actions .btn{width:100%!important;min-height:34px!important;padding:7px 8px!important;font-size:9.4px!important}
+
+  .classes-page .class-room-card{
+    grid-template-columns:42px minmax(0,1fr) 38px!important;grid-template-rows:auto auto!important;
+    gap:8px 10px!important;padding:10px 11px!important;border-radius:15px!important
+  }
+  .classes-page .class-room-icon{grid-column:1!important;grid-row:1!important;width:42px!important;height:42px!important;align-self:center!important}
+  .classes-page .class-room-copy{grid-column:2!important;grid-row:1!important;align-self:center!important;gap:4px!important}
+  .classes-page .class-room-copy>strong{font-size:13px!important;line-height:1.18!important}
+  .classes-page .class-room-copy .class-list-subtitle{font-size:10px!important;line-height:1.25!important}
+  .classes-page .class-room-action{grid-column:3!important;grid-row:1!important;align-self:center!important}
+  .classes-page .class-row-action{width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;border-radius:11px!important}
+  .classes-page .class-room-badges{grid-column:1/-1!important;grid-row:2!important;justify-content:flex-start!important;padding-top:8px!important;border-top:1px solid rgba(91,160,240,.13)!important;gap:6px!important}
+  .classes-page .class-room-badges .role-pill,
+  .classes-page .class-room-badges .visibility-badge,
+  .classes-page .class-room-badges .class-member-mobile{
+    min-height:25px!important;padding:5px 8px!important;font-size:9.4px!important
+  }
+  .join-preview-actions{grid-template-columns:1fr!important}
+}
+
+@media(max-width:420px){
+  .classes-page .classes-primary-actions .btn span{display:inline!important}
+  .classes-page .classes-primary-actions .btn{font-size:9px!important}
+  .classes-page .classes-search-row{grid-template-columns:auto minmax(0,1fr) 62px!important}
+  .classes-page .classes-search-btn{width:62px!important;min-width:62px!important}
+  .bottom-nav.bottom-nav-minimal{padding-left:10px!important;padding-right:10px!important}
+  .bottom-material-item .bottom-material-icon{font-size:25px!important}
+}
+
+html[data-theme="light"] .classes-page .classes-search-row{background:#FFFFFF!important;border-color:#D8E6F2!important}
+html[data-theme="light"] .classes-page .class-room-card{background:linear-gradient(135deg,#FFFFFF,#F8FBFF)!important;border-color:#DCE8F3!important}
+html[data-theme="light"] .bottom-nav.bottom-nav-minimal{background:rgba(250,253,255,.98)!important;border-color:#DCE8F3!important}
+html[data-theme="light"] .bottom-material-item{color:#758DA8!important}
+html[data-theme="light"] .bottom-material-item.active{color:#087D74!important;background:#EAFBF7!important;box-shadow:inset 0 0 0 1px #CDEBE5!important}

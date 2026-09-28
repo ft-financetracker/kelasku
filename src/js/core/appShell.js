@@ -48,12 +48,12 @@ ${logo(true)}
         <div class="dashboard-body">${content}</div>
       </main>
 
-      <nav class="bottom-nav" aria-label="Navigasi bawah">
-        ${bottomItem('i-class', 'Kelas', 'classes', active === 'classes' || active === 'class')}
-        ${bottomItem('i-task', 'Tugas', 'tasks', active === 'tasks')}
-        ${bottomItem('i-home', 'Beranda', 'dashboard', active === 'dashboard', true)}
-        ${bottomItem('i-chat', 'Chat', 'messages', active === 'messages')}
-        ${bottomItem('i-user', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'app-info' || String(active).startsWith('admin'))}
+      <nav class="bottom-nav bottom-nav-minimal" aria-label="Navigasi bawah">
+        ${bottomMaterialItem('school', 'Kelas', 'classes', active === 'classes' || active === 'class')}
+        ${bottomMaterialItem('assignment_turned_in', 'Tugas', 'tasks', active === 'tasks')}
+        ${bottomMaterialItem('home', 'Beranda', 'dashboard', active === 'dashboard')}
+        ${bottomMaterialItem('chat_bubble', 'Chat', 'messages', active === 'messages')}
+        ${bottomMaterialItem('person', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'app-info' || String(active).startsWith('admin'))}
       </nav>
     </div>`;
 }
@@ -113,8 +113,7 @@ function sideItem(icon, label, route, active, homeCta = false) {
   return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span>${signalForRoute(route)}</button>`;
 }
 
-function bottomItem(icon, label, route, active, homeCta = false) {
-  const cls = `bottom-item ${active ? 'active' : ''} ${homeCta ? 'bottom-home-cta' : ''}`;
-  const iconHtml = homeCta ? `<span class="bottom-diamond">${svg(icon)}</span>` : `<span class="bottom-icon-wrap">${svg(icon)}</span>`;
-  return `<button type="button" class="${cls}" data-route="${esc(route)}">${iconHtml}<span class="bottom-label">${esc(label)}</span>${signalForRoute(route)}</button>`;
+function bottomMaterialItem(symbol, label, route, active) {
+  const cls = `bottom-item bottom-material-item ${active ? 'active' : ''}`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}" aria-label="${esc(label)}"><span class="material-symbols-rounded bottom-material-icon">${esc(symbol)}</span>${signalForRoute(route)}</button>`;
 }

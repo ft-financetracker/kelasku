@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "6.7.17",
+      "build": "20260929.317",
+      "date": "2026-09-29",
+      "type": "FRONTEND",
+      "title": "Classes Precision + Minimal Bottom Nav",
+      "summary": "Daftar Kelas hierarchy, compact search/actions, class-card KPI polish, no duplicated preview title, icon-only Material bottom nav, zero badge fix."
+    },
+    {
       "version": "6.7.16",
       "build": "20260928.316",
       "date": "2026-09-28",
