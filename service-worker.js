@@ -2,14 +2,14 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.12-b282-schedule-hotfix';
+const CACHE_NAME = 'kelasku-v6.7.13-b283-mobile-fit';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/404.html',
   '/robots.txt',
   '/sitemap.xml',
-  '/config.js?v=6712',
+  '/config.js?v=6713',
   '/manifest.json',
   '/app-version.json',
   '/changelog.json',
@@ -17,8 +17,8 @@ const APP_SHELL = [
   '/links.html',
   '/src/css/public-links.css?v=6712',
   '/src/js/screens/publicLinks.js?v=6712',
-  '/src/css/app.css?v=6712',
-  '/src/js/app.js?v=6712',
+  '/src/css/app.css?v=6713',
+  '/src/js/app.js?v=6713',
   '/src/js/core/state.js',
   '/src/js/core/storage.js',
   '/src/js/core/utils.js',
@@ -41,7 +41,7 @@ const APP_SHELL = [
   '/src/js/screens/account.js?v=6712',
   '/src/js/screens/settings.js',
   '/src/js/screens/classes.js?v=6712',
-  '/src/js/screens/classRoom.js?v=6712',
+  '/src/js/screens/classRoom.js?v=6713',
   '/src/js/screens/admin.js',
   '/src/js/screens/appInfo.js',
   '/src/js/screens/attendanceLanding.js',

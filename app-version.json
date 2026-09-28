@@ -1,8 +1,8 @@
 {
-  "version": "6.7.12",
-  "build": "20260928.282",
+  "version": "6.7.13",
+  "build": "20260928.283",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Urgent hotfix Jadwal: tombol Tambah Jadwal kembali berfungsi dengan default waktu mulai dan selesai yang valid.",
-  "release_time_wib": "17:12 WIB"
+  "release_note": "Mobile Fit Lock + kontrol tambah/hapus sesi seri jadwal tanpa menghapus histori.",
+  "release_time_wib": "21:20 WIB"
 }

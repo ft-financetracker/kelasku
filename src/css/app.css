@@ -2190,3 +2190,96 @@ html[data-theme="light"] .class-exit-panel{background:#FFFFFF;border-color:#E2EA
 html[data-theme="light"] .member-row-v52{background:#FFF;border-color:#DCE8F3}
 html[data-theme="light"] .member-academic-v52{color:#5C7590}
 html[data-theme="light"] .member-remove-btn{background:#FFF6F7;border-color:#FFD6DB;color:#D94861}
+
+
+/* ============================================================
+   v6.7.13 — MOBILE FIT LOCK
+   Final responsive layer. Desktop rules stay intact unless noted.
+   ============================================================ */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
+.danger-outline{color:#FDA4AF!important;border-color:rgba(251,113,133,.24)!important;background:rgba(251,113,133,.045)!important}
+
+@media (max-width:900px){
+  /* Generic title + actions: title owns the space, actions stay compact. */
+  .panel-head{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:start!important;gap:9px 12px!important}
+  .panel-head>.btn,.panel-head>.compact-create-btn{width:auto!important;min-width:96px!important;max-width:46vw!important;min-height:38px!important;padding:9px 12px!important;justify-self:end!important;font-size:11px!important;line-height:1.15!important}
+  .panel-head .panel-title{line-height:1.25!important}.panel-head .panel-copy{line-height:1.45!important}
+
+  /* Dashboard carousel: panoramic source must fit the phone frame, not crop to the edges. */
+  .dashboard-carousel{height:clamp(198px,47vw,232px)!important;min-height:198px!important;border-radius:20px!important;overflow:hidden!important}
+  .dashboard-carousel-slide{display:flex!important;align-items:center!important;padding:18px 16px 38px!important;background-size:100% 100%!important;background-position:center!important;background-repeat:no-repeat!important}
+  .dashboard-carousel-slide::before{background:linear-gradient(90deg,rgba(3,17,43,.94) 0%,rgba(3,18,45,.74) 48%,rgba(3,18,45,.10) 100%)!important}
+  .carousel-copy{width:min(72%,470px)!important;max-width:none!important;text-shadow:0 2px 14px rgba(0,10,30,.42)!important}
+  .carousel-copy h2{font-size:clamp(21px,5vw,26px)!important;line-height:1.16!important;margin:0!important}
+  .carousel-copy p{font-size:10.5px!important;line-height:1.45!important;margin:7px 0 11px!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .carousel-eyebrow{font-size:8px!important;margin-bottom:6px!important}
+  .carousel-action{min-height:34px!important;padding:7px 11px!important;font-size:9.5px!important;border-radius:11px!important}
+  .dashboard-carousel-dots{left:16px!important;bottom:11px!important}
+
+  /* Bottom nav: all five anchors share one baseline; only Home floats. */
+  .bottom-nav{height:calc(92px + env(safe-area-inset-bottom))!important;min-height:calc(92px + env(safe-area-inset-bottom))!important;padding:15px 8px calc(8px + env(safe-area-inset-bottom))!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:end!important;overflow:visible!important}
+  .bottom-item{display:grid!important;grid-template-rows:28px 14px!important;align-content:end!important;align-items:center!important;justify-items:center!important;gap:5px!important;min-height:58px!important;padding:3px 2px 0!important;font-size:9.5px!important;line-height:1!important}
+  .bottom-item>.icon{width:24px!important;height:24px!important;margin:0!important}
+  .bottom-home-cta{transform:translateY(-10px)!important;grid-template-rows:54px 14px!important;gap:7px!important}
+  .bottom-diamond{width:54px!important;height:54px!important;border-radius:15px!important}
+  .bottom-diamond .icon{width:24px!important;height:24px!important}
+
+  /* Profile actions: compact and in one row when there is enough width. */
+  .account-page .page-head,.profile-page .page-head{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}
+  .account-page .page-actions,.profile-page .page-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}
+  .account-page .page-actions .btn,.profile-page .page-actions .btn{width:100%!important;min-width:0!important;min-height:42px!important;padding:9px 8px!important;justify-content:center!important;font-size:11px!important;white-space:nowrap!important}
+
+  /* Room hero: use all available width. */
+  .class-room-page .class-hero-v51{grid-template-columns:40px minmax(0,1fr)!important;align-items:start!important;gap:10px!important;padding:12px!important}
+  .class-room-page .class-hero-v51 .class-hero-icon{width:40px!important;height:40px!important;min-width:40px!important;border-radius:12px!important}
+  .class-room-page .class-hero-v51 .class-hero-main{min-width:0!important;width:100%!important}
+  .class-room-page .class-hero-v51 .class-primary-meta{font-size:9.5px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .class-room-page .class-hero-v51 .class-hero-main h2{font-size:17px!important;line-height:1.2!important;margin:1px 0 0!important;max-width:none!important;width:100%!important}
+  .class-room-page .class-hero-v51 .class-hero-description{display:none!important}
+  .class-room-page .class-hero-bottomline{display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap!important;overflow:visible!important;margin-top:7px!important}
+  .class-room-page .class-hero-v51 .visibility-badge,.class-room-page .class-hero-v51 .role-pill{font-size:7.5px!important;padding:3px 6px!important;min-height:19px!important}
+  .class-room-page .class-hero-code-rail{grid-column:1/-1!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important;margin-top:2px!important}
+  .class-room-page .class-code-rail-item{grid-template-columns:auto auto minmax(0,1fr) 24px!important;min-height:34px!important;padding:5px 7px!important}
+  .class-room-page .class-code-rail-item>span{font-size:6.8px!important}.class-room-page .class-code-rail-item strong{font-size:9px!important}
+
+  /* Room nav: horizontally scrollable; no giant wrapped button blocks. */
+  .room-navigation-shell{padding:7px!important;overflow:hidden!important}
+  .room-main-nav{display:flex!important;gap:6px!important;overflow-x:auto!important;scrollbar-width:none!important;padding-bottom:2px!important}
+  .room-main-nav::-webkit-scrollbar{display:none!important}
+  .room-main-item{flex:0 0 auto!important;min-width:104px!important;min-height:44px!important;padding:7px 9px!important;font-size:10px!important}
+  .room-main-item>b{min-width:20px!important;height:20px!important;font-size:7.5px!important}
+  .room-subnav-strip{display:flex!important;gap:6px!important;overflow-x:auto!important;scrollbar-width:none!important;padding:5px 0 1px!important}
+  .room-subnav-strip::-webkit-scrollbar{display:none!important}
+  .room-subnav-chip{flex:0 0 auto!important;min-height:36px!important;padding:7px 10px!important;font-size:10px!important}
+
+  /* Modal action buttons: max two per row on phones/tablets. */
+  .modal-actions,.schedule-detail-actions,.compact-modal-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .modal-actions .btn,.schedule-detail-actions .btn,.compact-modal-actions .btn{width:100%!important;min-width:0!important;justify-content:center!important;padding:10px 8px!important;font-size:10.5px!important}
+
+  /* Member cards: badges become the third line under identity on mobile. */
+  .member-row-v52{grid-template-columns:40px minmax(0,1fr)!important;align-items:start!important;gap:9px!important;padding:10px!important;min-height:0!important}
+  .member-row-v52 .member-avatar{width:40px!important;height:40px!important}
+  .member-main-v52{min-width:0!important}.member-name-v52{font-size:12.5px!important}.member-id-v52{font-size:9.3px!important}
+  .member-academic-v52{grid-column:2!important;text-align:left!important;font-size:9.4px!important;margin:0!important;max-width:none!important;padding:0!important}
+  .member-side-v52{grid-column:2!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:7px!important;width:100%!important}
+  .member-side-v52 .member-badges{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:5px!important;max-width:none!important}
+  .member-side-v52 .role-pill{font-size:7.4px!important;padding:4px 7px!important}
+  .member-remove-btn{width:30px!important;height:30px!important;flex:0 0 30px!important}
+}
+
+@media (max-width:560px){
+  .account-page .page-actions,.profile-page .page-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .account-page .page-actions .btn:nth-child(3):last-child,.profile-page .page-actions .btn:nth-child(3):last-child{grid-column:1/-1!important}
+  .carousel-copy{width:72%!important}
+}
+
+@media (max-width:420px){
+  .dashboard-carousel{height:205px!important}
+  .carousel-copy{width:78%!important}.carousel-copy h2{font-size:20px!important}.carousel-copy p{font-size:10px!important}
+  .bottom-item{font-size:9px!important}.bottom-diamond{width:50px!important;height:50px!important}
+  .class-room-page .class-hero-v51 .class-hero-main h2{font-size:16px!important}
+  .class-room-page .class-hero-code-rail{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .class-room-page .class-code-rail-item{grid-template-columns:auto auto minmax(0,1fr) 22px!important;padding:5px!important}
+  .room-main-item{min-width:96px!important}
+}

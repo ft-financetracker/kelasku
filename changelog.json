@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "6.7.13",
+      "build": "20260928.283",
+      "date": "2026-09-28",
+      "type": "PRELIVE HOTFIX",
+      "title": "Mobile Fit Lock & Flexible Schedule Sessions",
+      "summary": "Perapihan mobile dashboard, navbar, profil, hero Ruang Kelas, tombol/pill, serta tambah/hapus sesi pada seri jadwal."
+    },
+    {
       "version": "6.7.12",
       "build": "20260928.282",
       "date": "2026-09-28",
