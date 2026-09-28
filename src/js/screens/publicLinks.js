@@ -257,7 +257,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
 
   content.innerHTML = `${publicHero(cls)}
     ${infoSection}
-    ${linkUi.nav}
+    ${linkUi.nav?`<div class="public-period-standalone">${linkUi.nav}</div>`:''}
     <section class="public-section-block"><div class="public-section-head"><div><span class="public-kicker">LINK CEPAT</span><h2>Akses penting kelas</h2><p>Pilih tab, lalu buka kategori link yang dibutuhkan.</p></div></div>${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
     ${showcase()}`;
   bindInteractions();

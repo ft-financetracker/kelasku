@@ -139,3 +139,9 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 .public-link-card .public-link-arrow{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;color:var(--tosca);font-size:21px;line-height:1;justify-self:end}
 .public-link-card.is-locked-link .public-link-arrow{background:rgba(34,224,199,.055);border:1px solid rgba(34,224,199,.12)}
 @media(max-width:640px){.public-link-card.is-locked-link .public-link-icon{width:34px;height:34px;font-size:19px}.public-link-card .public-link-arrow{width:30px;height:30px;font-size:20px}}
+
+
+/* v6.7.4 — keep period navigation as a true standalone strip between sections */
+.public-period-standalone{display:block;margin:10px 2px 12px;position:relative;z-index:1}
+.public-period-standalone .public-link-period-switch{margin:0!important}
+@media(max-width:640px){.public-period-standalone{margin:8px 0 10px}}

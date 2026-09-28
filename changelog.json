@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "6.7.4",
+      "build": "20260927.274",
+      "date": "2026-09-27",
+      "schema": 17,
+      "title": "Pre-Live Landing & Attendance Export Cleanup",
+      "changes": [
+        "Period/tab navigation on the public landing remains a standalone strip between Informasi Kelas and Link Cepat.",
+        "Attendance XLSX no longer creates one sheet per session.",
+        "Workbook structure is ANALISIS + ALL + one matrix sheet per subject/activity.",
+        "Each subject sheet uses Mata Kuliah/Kegiatan | Nama | Username | S01..Sn | summary columns.",
+        "Attendance grouping normalizes fallback titles such as Absensi — MAPEL • Sesi 03 into one subject/activity."
+      ]
+    },
+    {
       "version": "6.7.3",
       "build": "20260927.273",
       "date": "2026-09-27",

@@ -1,7 +1,7 @@
 {
-  "version": "6.7.3",
-  "build": "20260927.273",
+  "version": "6.7.4",
+  "build": "20260927.274",
   "schema": 17,
   "release_date": "2026-09-27",
-  "release_note": "Attendance hierarchy cleanup: global Absensi uses class → subject/activity → session grouping and filters only by class + subject/activity; Room Class Absensi uses the same compact status language."
+  "release_note": "Pre-live cleanup: standalone landing period navigation preserved between sections; attendance XLSX is consolidated into ANALISIS + ALL + one matrix sheet per subject/activity, never one sheet per session."
 }

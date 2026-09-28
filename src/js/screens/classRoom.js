@@ -758,16 +758,27 @@ function progressedAttendanceRecords(records,activities=[]){
   (activities||[]).forEach(a=>{if(!a.start_at||dateMs(a.start_at)<=now)started.add(String(a.attendance_id||''));});
   return (records||[]).filter(r=>started.has(String(r.attendance_id||''))||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED');
 }
+function canonicalAttendanceActivityName(item={}){
+  let name=String(item.activity_name||item.session_title||item.title||'Kegiatan').trim()||'Kegiatan';
+  // Attendance session titles may be stored as "Absensi — MAPEL • Sesi 03" when
+  // source_schedule_id is unavailable. Export/analytics must still group by MAPEL.
+  name=name
+    .replace(/^absensi\s*[—–-]\s*/i,'')
+    .replace(/\s*[•·]\s*sesi\s*0*\d+\s*$/i,'')
+    .replace(/\s*[—–-]\s*sesi\s*0*\d+\s*$/i,'')
+    .trim();
+  return name||'Kegiatan';
+}
 function buildActivitySummary(records,activities=[]){
   const now=Date.now(),groups={},activityById={};
-  (activities||[]).forEach(a=>{activityById[String(a.attendance_id||'')]=a;const name=String(a.activity_name||a.session_title||'Kegiatan').trim()||'Kegiatan',key=name.toLowerCase();if(!groups[key])groups[key]={name,plannedSessionIds:new Set(),progressedSessionIds:new Set(),studentNames:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,ZOOM:0,YOUTUBE:0,OFFLINE:0,OTHER:0,ON_TIME:0,LATE:0,total:0};groups[key].plannedSessionIds.add(String(a.attendance_id||''));if(!a.start_at||dateMs(a.start_at)<=now)groups[key].progressedSessionIds.add(String(a.attendance_id||''));});
-  (records||[]).forEach(r=>{const a=activityById[String(r.attendance_id||'')]||r,name=String(r.activity_name||r.session_title||a.activity_name||a.session_title||'Kegiatan').trim()||'Kegiatan',key=name.toLowerCase();if(!groups[key])groups[key]={name,plannedSessionIds:new Set(),progressedSessionIds:new Set(),studentNames:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,ZOOM:0,YOUTUBE:0,OFFLINE:0,OTHER:0,ON_TIME:0,LATE:0,total:0};const g=groups[key],sessionId=String(r.attendance_id||'');g.plannedSessionIds.add(sessionId);const started=(!r.start_at||dateMs(r.start_at)<=now)||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED';if(!started)return;g.progressedSessionIds.add(sessionId);if(r.full_name||r.username)g.studentNames.add(String(r.full_name||r.username));const st=String(r.attendance_status||'UNMARKED').toUpperCase();g[st]=(g[st]||0)+1;const ch=String(r.attendance_channel||'').toUpperCase();if(ch)g[ch]=(g[ch]||0)+1;const pn=String(r.punctuality||'').toUpperCase();if(pn)g[pn]=(g[pn]||0)+1;g.total+=1;});
+  (activities||[]).forEach(a=>{activityById[String(a.attendance_id||'')]=a;const name=canonicalAttendanceActivityName(a),key=name.toLowerCase();if(!groups[key])groups[key]={name,plannedSessionIds:new Set(),progressedSessionIds:new Set(),studentNames:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,ZOOM:0,YOUTUBE:0,OFFLINE:0,OTHER:0,ON_TIME:0,LATE:0,total:0};groups[key].plannedSessionIds.add(String(a.attendance_id||''));if(!a.start_at||dateMs(a.start_at)<=now)groups[key].progressedSessionIds.add(String(a.attendance_id||''));});
+  (records||[]).forEach(r=>{const a=activityById[String(r.attendance_id||'')]||r,name=canonicalAttendanceActivityName({...a,...r}),key=name.toLowerCase();if(!groups[key])groups[key]={name,plannedSessionIds:new Set(),progressedSessionIds:new Set(),studentNames:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,ZOOM:0,YOUTUBE:0,OFFLINE:0,OTHER:0,ON_TIME:0,LATE:0,total:0};const g=groups[key],sessionId=String(r.attendance_id||'');g.plannedSessionIds.add(sessionId);const started=(!r.start_at||dateMs(r.start_at)<=now)||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED';if(!started)return;g.progressedSessionIds.add(sessionId);if(r.full_name||r.username)g.studentNames.add(String(r.full_name||r.username));const st=String(r.attendance_status||'UNMARKED').toUpperCase();g[st]=(g[st]||0)+1;const ch=String(r.attendance_channel||'').toUpperCase();if(ch)g[ch]=(g[ch]||0)+1;const pn=String(r.punctuality||'').toUpperCase();if(pn)g[pn]=(g[pn]||0)+1;g.total+=1;});
   return Object.values(groups).map(g=>{const denominator=g.PRESENT+g.SICK+g.PERMIT+g.ABSENT;return {...g,sessions:g.plannedSessionIds.size,progressed_sessions:g.progressedSessionIds.size,student_names:[...g.studentNames],attendance_rate:denominator?Math.round((g.PRESENT/denominator)*1000)/10:0};}).sort((a,b)=>a.name.localeCompare(b.name));
 }
 function activitySummaryHtml(items,records=[],activities=[],members=[]){
   if(!items.length)return '<div class="search-empty">Belum ada data kegiatan.</div>';
   const activityIdsByName={};
-  (activities||[]).forEach(a=>{const key=String(a.activity_name||a.session_title||'Kegiatan').trim().toLowerCase();(activityIdsByName[key]||=(new Set())).add(String(a.attendance_id||''));});
+  (activities||[]).forEach(a=>{const key=canonicalAttendanceActivityName(a).toLowerCase();(activityIdsByName[key]||=(new Set())).add(String(a.attendance_id||''));});
   const statusSummaryFor=(summary)=>{
     const key=String(summary.name||'').trim().toLowerCase(),ids=activityIdsByName[key]||new Set();
     const related=progressedAttendanceRecords((records||[]).filter(r=>ids.has(String(r.attendance_id||''))),activities);
@@ -788,7 +799,7 @@ function memberSummaryForRecords(records,members){
   return Object.values(map).map(m=>{const d=m.PRESENT+m.SICK+m.PERMIT+m.ABSENT;return {...m,attendance_rate:d?Math.round((m.PRESENT/d)*1000)/10:0};}).sort((a,b)=>String(a.full_name||a.username||'').localeCompare(String(b.full_name||b.username||'')));
 }
 function analyticsSheetRows(title,records,members){
-  const progressed=records.filter(r=>!r.start_at||dateMs(r.start_at)<=Date.now()||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED'),memberSummary=memberSummaryForRecords(progressed,members),sessions=buildSessionSummary(records).slice(0,32);
+  const progressed=records.filter(r=>!r.start_at||dateMs(r.start_at)<=Date.now()||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED'),memberSummary=memberSummaryForRecords(progressed,members),sessions=buildSessionSummary(records);
   const statusCode=r=>{const st=String(r?.attendance_status||'UNMARKED').toUpperCase();if(st==='PRESENT'){const ch=String(r?.attendance_channel||'').toUpperCase();return ch==='ZOOM'?'H-Z':ch==='YOUTUBE'?'H-YT':ch==='OFFLINE'?'H-O':'H';}if(st==='SICK')return'S';if(st==='PERMIT')return'I';if(st==='ABSENT')return'A';return'-';};
   const present=progressed.filter(r=>r.attendance_status==='PRESENT').length,sick=progressed.filter(r=>r.attendance_status==='SICK').length,permit=progressed.filter(r=>r.attendance_status==='PERMIT').length,absent=progressed.filter(r=>r.attendance_status==='ABSENT').length,unmarked=progressed.filter(r=>r.attendance_status==='UNMARKED').length,den=present+sick+permit+absent,rate=den?Math.round((present/den)*1000)/10:0;
   const rows=[
@@ -796,12 +807,12 @@ function analyticsSheetRows(title,records,members){
     [`${sessions.length} sesi rencana • ${memberSummary.length} mahasiswa • ${progressed.length} record berjalan • Presensi ${rate}%`],
     ['Kode: H-Z=Hadir Zoom | H-YT=Hadir YouTube | H-O=Hadir Offline | H=Hadir | S=Sakit | I=Izin | A=Alpa | -=Belum'],
     [],
-    [xlsxCell('Nama',5),xlsxCell('Username',5),xlsxCell('Mata Kuliah / Kegiatan',5),...sessions.map((x,i)=>xlsxCell(`${x.session_no?`S${String(x.session_no).padStart(2,'0')}`:`S${String(i+1).padStart(2,'0')}`} • ${shortDate(x.start_at)}`,5)),xlsxCell('Total',5),xlsxCell('Hadir',5),xlsxCell('Sakit',5),xlsxCell('Izin',5),xlsxCell('Alpa',5),xlsxCell('Belum',5),xlsxCell('Zoom',5),xlsxCell('YouTube',5),xlsxCell('Tepat',5),xlsxCell('Terlambat',5),xlsxCell('% Presensi',5)]
+    [xlsxCell('Mata Kuliah / Kegiatan',5),xlsxCell('Nama',5),xlsxCell('Username',5),...sessions.map((x,i)=>xlsxCell(`${x.session_no?`S${String(x.session_no).padStart(2,'0')}`:`S${String(i+1).padStart(2,'0')}`} • ${shortDate(x.start_at)}`,5)),xlsxCell('Total',5),xlsxCell('Hadir',5),xlsxCell('Sakit',5),xlsxCell('Izin',5),xlsxCell('Alpa',5),xlsxCell('Belum',5),xlsxCell('Zoom',5),xlsxCell('YouTube',5),xlsxCell('Tepat',5),xlsxCell('Terlambat',5),xlsxCell('% Presensi',5)]
   ];
   memberSummary.forEach(m=>{
     const mine=records.filter(r=>String(r.user_id||'')===String(m.user_id||''));
     const cells=sessions.map(sess=>{const rec=mine.find(r=>String(r.attendance_id||'')===String(sess.attendance_id||''));return rec?statusCode(rec):'-';});
-    rows.push([m.full_name||'',m.username||'',title,...cells,m.total||0,m.PRESENT||0,m.SICK||0,m.PERMIT||0,m.ABSENT||0,m.UNMARKED||0,m.ZOOM||0,m.YOUTUBE||0,m.ON_TIME||0,m.LATE||0,(m.attendance_rate||0)+'%']);
+    rows.push([title,m.full_name||'',m.username||'',...cells,m.total||0,m.PRESENT||0,m.SICK||0,m.PERMIT||0,m.ABSENT||0,m.UNMARKED||0,m.ZOOM||0,m.YOUTUBE||0,m.ON_TIME||0,m.LATE||0,(m.attendance_rate||0)+'%']);
   });
   rows.push([], [xlsxCell('RINGKASAN STATUS',4)], [xlsxCell('Hadir',1),xlsxCell('Sakit',1),xlsxCell('Izin',1),xlsxCell('Alpa',1),xlsxCell('Belum',1),xlsxCell('% Presensi',1)], [present,sick,permit,absent,unmarked,rate+'%']);
   return rows;
@@ -822,8 +833,20 @@ function exportAttendanceXlsx(data){
   ];
   summaries.forEach(g=>overview.push([g.name,(g.student_names||[]).length,g.sessions,g.total,g.PRESENT,g.SICK,g.PERMIT,g.ABSENT,g.UNMARKED,g.ZOOM||0,g.YOUTUBE||0,g.ON_TIME||0,g.LATE||0,g.attendance_rate+'%']));
   overview.push([], [xlsxCell('TOTAL KELAS',4)], [xlsxCell('Hadir',1),xlsxCell('Sakit',1),xlsxCell('Izin',1),xlsxCell('Alpa',1),xlsxCell('Belum',1),xlsxCell('Zoom',1),xlsxCell('YouTube',1),xlsxCell('Tepat',1),xlsxCell('Terlambat',1),xlsxCell('% Presensi',1)], [pCount,sCount,iCount,aCount,uCount,progressedRecords.filter(r=>r.attendance_channel==='ZOOM').length,progressedRecords.filter(r=>r.attendance_channel==='YOUTUBE').length,progressedRecords.filter(r=>r.punctuality==='ON_TIME').length,progressedRecords.filter(r=>r.punctuality==='LATE').length,overallRate+'%']);
-  const sheets=[{name:'ANALISIS',rows:overview}];
-  summaries.forEach((summary,index)=>{const activityRecords=records.filter(r=>String(r.activity_name||r.session_title||'').trim().toLowerCase()===String(summary.name).trim().toLowerCase());sheets.push({name:`${String(index+1).padStart(2,'0')}-${summary.name}`,rows:analyticsSheetRows(summary.name,activityRecords,scopeMembers)});});
+  const allRows=[
+    [xlsxCell('Mata Kuliah / Kegiatan',5),xlsxCell('Nama',5),xlsxCell('Username',5),xlsxCell('Sesi',5),xlsxCell('Tanggal',5),xlsxCell('Status',5),xlsxCell('Media',5),xlsxCell('Ketepatan',5),xlsxCell('Catatan',5)]
+  ];
+  progressedRecords
+    .slice()
+    .sort((a,b)=>canonicalAttendanceActivityName(a).localeCompare(canonicalAttendanceActivityName(b))||dateMs(a.start_at)-dateMs(b.start_at)||String(a.full_name||'').localeCompare(String(b.full_name||'')))
+    .forEach(r=>allRows.push([
+      canonicalAttendanceActivityName(r),r.full_name||'',r.username||'',r.session_no?`Sesi ${String(r.session_no).padStart(2,'0')}`:'-',shortDateTime(r.start_at),attendanceStatusLabel(r.attendance_status),attendanceChannelLabel(r.attendance_channel),punctualityLabel(r.punctuality),r.note||''
+    ]));
+  const sheets=[{name:'ANALISIS',rows:overview},{name:'ALL',rows:allRows}];
+  summaries.forEach((summary,index)=>{
+    const activityRecords=records.filter(r=>canonicalAttendanceActivityName(r).toLowerCase()===String(summary.name).trim().toLowerCase());
+    sheets.push({name:`${String(index+1).padStart(2,'0')}-${summary.name}`,rows:analyticsSheetRows(summary.name,activityRecords,scopeMembers)});
+  });
   downloadXlsx(`KelasKu-Presensi-${state.selectedClassId}.xlsx`,sheets);
 }
 
