@@ -159,9 +159,9 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 .public-section-block>.public-image-head{margin:-16px -16px 10px}
 .public-showcase>.public-image-head{margin:-17px -17px 10px}
 .public-image-head::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(4,18,44,.96) 0%,rgba(5,24,52,.86) 42%,rgba(5,24,52,.36) 70%,rgba(5,24,52,.12) 100%)}
-.public-image-head-access{background-image:url('/assets/public/hero-access.webp?v=675')}
-.public-image-head-links{background-image:url('/assets/public/hero-links.webp?v=675')}
-.public-image-head-showcase{background-image:url('/assets/public/hero-showcase.webp?v=675')}
+.public-image-head-access{background-image:url('/assets/public/hero-access.webp?v=676')}
+.public-image-head-links{background-image:url('/assets/public/hero-links.webp?v=676')}
+.public-image-head-showcase{background-image:url('/assets/public/hero-showcase.webp?v=676')}
 .public-image-head-copy{position:relative;z-index:1;display:grid;gap:2px;min-width:0;max-width:min(620px,66%)}
 .public-image-head .public-kicker{font-size:10px!important;letter-spacing:.13em;text-shadow:0 1px 10px rgba(0,0,0,.35)}
 .public-image-head h2{margin:1px 0 0;font-size:clamp(18px,2.4vw,23px);line-height:1.18;letter-spacing:-.025em;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.34)}
@@ -214,4 +214,33 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
   .public-showcase-actions{display:flex!important;gap:5px!important;justify-content:flex-end!important;flex-wrap:nowrap!important}
   .public-promo-btn,.public-install-btn{width:auto!important;flex:1 1 0;min-height:33px!important;padding:6px 7px!important;font-size:9.5px!important}
   .public-footer{justify-content:center;text-align:center;gap:5px 10px;padding-top:13px!important}.public-footer-release{white-space:normal;justify-content:center}
+}
+
+/* ============================================================
+   v6.7.6 — Attendance action clarity
+   ============================================================ */
+.public-attendance-list{display:grid;gap:7px;padding:2px 0}
+.public-attendance-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 10px;border:1px solid rgba(91,160,240,.14);border-radius:12px;background:rgba(7,31,66,.52)}
+.public-attendance-main{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:9px;min-width:0}
+.public-attendance-main>div{display:grid;gap:2px;min-width:0}
+.public-attendance-icon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:#0A315D;color:var(--tosca);font-size:18px}
+.public-attendance-kicker{font-size:.66rem;line-height:1;font-weight:900;letter-spacing:.08em;color:var(--tosca)}
+.public-attendance-main strong{font-size:.9rem;line-height:1.25}
+.public-attendance-main small{font-size:.74rem;line-height:1.35;color:var(--muted)}
+.public-attendance-state{display:inline-flex;align-items:center;justify-content:center;min-height:27px;padding:5px 8px;border-radius:999px;border:1px solid rgba(91,160,240,.18);font-size:.7rem;font-weight:800;white-space:nowrap;background:#0A294F;color:#CFE1F3}
+.public-attendance-state.state-late,.public-attendance-row.state-late{border-color:rgba(245,158,11,.28)}
+.public-attendance-state.state-late{background:rgba(245,158,11,.12);color:#FFD78A}
+.public-attendance-state.state-upcoming{background:rgba(91,160,240,.09);color:#AAC5DF}
+.public-active-attendance.state-late{border-color:rgba(245,158,11,.32);background:linear-gradient(110deg,rgba(245,158,11,.10),rgba(40,126,244,.05))}
+.public-active-attendance.state-late .public-active-kicker{color:#FFD078}
+.public-attendance-late-note{display:flex;align-items:flex-start;gap:7px;margin:8px 0 4px;padding:8px 9px;border:1px solid rgba(245,158,11,.22);border-radius:10px;background:rgba(245,158,11,.08);font-size:.74rem;line-height:1.4;color:#F6D69C}
+.public-attendance-late-note .material-symbols-rounded{font-size:17px;color:#FBBF24}
+.public-attendance-lock-note{display:block;margin-top:7px;text-align:center;font-size:.68rem;line-height:1.35;color:var(--muted)}
+@media(max-width:600px){
+  .public-attendance-row{grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:8px}
+  .public-attendance-main{grid-template-columns:30px minmax(0,1fr);gap:7px}
+  .public-attendance-icon{width:30px;height:30px}
+  .public-attendance-main strong{font-size:.84rem}.public-attendance-main small{font-size:.7rem}
+  .public-attendance-state{font-size:.66rem;min-height:25px;padding:4px 7px}
+  .public-attendance-row .public-primary-action{grid-column:1/-1;width:100%;min-height:32px!important}
 }

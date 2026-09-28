@@ -10,6 +10,8 @@ let deferredInstallPrompt = null;
 let showcaseTimer = null;
 let currentPublicAcademic = null;
 let currentPublicClassId = '';
+let currentPublicData = null;
+let currentPublicMemberData = null;
 
 const PLATFORM = {
   WHATSAPP: ['WhatsApp', 'chat', 'Ruang komunikasi dan grup kelas'],
@@ -24,7 +26,7 @@ const PLATFORM = {
 const ORDERED = ['WHATSAPP','ZOOM','GOOGLE_MEET','GOOGLE_DRIVE','YOUTUBE','TELEGRAM','WEBSITE','OTHER'];
 const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const classCode = rawCode;
-const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v670_${classCode.toLowerCase()}` : '';
+const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v676_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
 const fmtDate = value => { try { return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value)); } catch { return value || '-'; } };
 const isFuture = value => value && new Date(value).getTime() >= Date.now();
@@ -200,18 +202,21 @@ function imageSectionHead(kind,kicker,title,copy='',extra='') {
 function memberAcademicHub(academic={}, classId='') {
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
-  const attendance=(academic.attendance_sessions||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').sort(byDate('start_at')).slice(0,3);
+  const attendance=(academic.permissions?.is_participant===false?[]:(academic.attendance_sessions||[]))
+    .filter(x=>String(x.my_status||'UNMARKED').toUpperCase()==='UNMARKED')
+    .sort((a,b)=>{const rank={LATE:0,OPEN:1,UPCOMING:2,CLOSED:3},ak=publicAttendanceState(a).key,bk=publicAttendanceState(b).key,ar=rank[ak]??9,br=rank[bk]??9;if(ar!==br)return ar-br;const ad=new Date(a.open_at||a.start_at||0).getTime()||0,bd=new Date(b.open_at||b.start_at||0).getTime()||0;return ak==='CLOSED'?bd-ad:ad-bd;})
+    .slice(0,4);
   const announcements=(academic.announcements||[]).slice(0,4);
-  const activeAttendance=attendance[0];
-  const activeBanner=activeAttendance?`<div class="public-active-attendance"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> PRESENSI AKTIF</span><strong>${esc(activeAttendance.title||'Presensi Kelas')}</strong><small>${activeAttendance.start_at?esc(fmtDate(activeAttendance.start_at)):'Sedang dibuka'}${activeAttendance.my_status&&activeAttendance.my_status!=='UNMARKED'?` · Status: ${esc(publicAttendanceLabel(activeAttendance.my_status))}`:''}</small></div><button type="button" class="public-primary-action" data-public-quick-attendance="${esc(activeAttendance.attendance_id)}">Presensi Sekarang</button></div>`:'';
+  const activeAttendance=attendance.find(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key));
+  const activeBanner=activeAttendance?publicActiveAttendanceBanner(activeAttendance):'';
   const panels = {
     schedule: `${activeBanner}${publicScheduleBlock(allSchedules,activeAttendance,{guest:false,classId})}`,
-    attendance: roomList(attendance,'Belum ada presensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-public-open-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title || 'Presensi Kelas')}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi sedang aktif'}${x.my_status&&x.my_status!=='UNMARKED'?` · ${esc(publicAttendanceLabel(x.my_status))}`:''}</small></div></button><button type="button" data-public-quick-attendance="${esc(x.attendance_id)}" class="public-primary-action">Presensi</button></div>`),
+    attendance: attendance.length?`<div class="public-attendance-list">${attendance.map(publicAttendanceRowHtml).join('')}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">task_alt</span><span>Tidak ada presensi yang perlu kamu isi.</span></div>`,
     tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<button type="button" data-public-open-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
   const tabs = [['schedule','calendar_month','Jadwal'],['attendance','done_all','Presensi'],['tasks','checklist','Tugas'],['announcements','campaign','Informasi']];
-  return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Akses ruang kelas.','Jadwal aktif dan presensi tersedia dari satu link kelas. Tidak perlu menyimpan link presensi per sesi.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
+  return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas','Lihat jadwal terdekat, presensi yang perlu diisi, tugas, dan informasi kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
 function academicLoading() {
@@ -230,7 +235,7 @@ function guestAcademicHub(loggedIn,academic={}) {
     announcements:roomList(announcements,'Belum ada informasi publik.',x=>`<button type="button" data-guest-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title)}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
   const tabs=[['schedule','calendar_month','Jadwal'],['attendance','done_all','Presensi'],['tasks','checklist','Tugas'],['announcements','campaign','Informasi']];
-  return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Akses ruang kelas.','Jadwal publik tetap terlihat. Presensi dan Zoom/Meet memerlukan login sebagai anggota kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
+  return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas','Jadwal publik dapat dilihat. Presensi internal memerlukan login sebagai anggota kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
 function showPublicNotice(message){
@@ -248,7 +253,7 @@ function showcase() {
 function syncPublicReleaseFooter(){
   const version=document.getElementById('public-footer-version');
   const updated=document.getElementById('public-footer-updated');
-  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.5'}`;
+  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.6'}`;
   if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'28 Sep 2026, 11:13 WIB';
 }
 
@@ -265,6 +270,8 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   const linkUi=linkPeriodUi(sourceItems);
   currentPublicAcademic = isMember ? (academic || {}) : (data.public_academic || {});
   currentPublicClassId = cls.class_id || '';
+  currentPublicData = data;
+  currentPublicMemberData = memberData;
   const infoSection = isMember
     ? memberAcademicHub(academic||{},cls.class_id||'')
     : (membershipLoading ? academicLoading() : guestAcademicHub(loggedIn,data.public_academic||{}));
@@ -280,17 +287,43 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
 
 function publicAttendanceLabel(v){return ({PRESENT:'Hadir',SICK:'Sakit',PERMIT:'Izin',ABSENT:'Alpa',UNMARKED:'Belum'})[String(v||'UNMARKED').toUpperCase()]||String(v||'Belum');}
 function publicChannelLabel(v){return ({ZOOM:'Zoom',YOUTUBE:'YouTube',OFFLINE:'Offline',OTHER:'Lainnya'})[String(v||'').toUpperCase()]||String(v||'');}
+function publicAttendanceState(item={}){
+  const myStatus=String(item.my_status||'UNMARKED').toUpperCase();
+  if(myStatus!=='UNMARKED')return{key:'DONE',label:publicAttendanceLabel(myStatus),icon:'check_circle'};
+  const now=Date.now(),open=new Date(item.open_at||item.start_at||0).getTime(),close=new Date(item.close_at||item.end_at||0).getTime(),late=new Date(item.late_after_at||0).getTime();
+  if(Number.isFinite(open)&&open&&now<open)return{key:'UPCOMING',label:'Belum dibuka',icon:'lock_clock'};
+  if(Number.isFinite(close)&&close&&now>close)return{key:'CLOSED',label:'Ditutup',icon:'lock'};
+  if(item.lateness_enabled&&Number.isFinite(late)&&late&&now>late)return{key:'LATE',label:'Terlambat',icon:'schedule'};
+  return{key:'OPEN',label:'Belum presensi',icon:'how_to_reg'};
+}
+function publicAttendanceWindowText(item={}){
+  const start=item.open_at||item.start_at||'',end=item.close_at||item.end_at||'';
+  return `${start?`Mulai ${fmtDate(start)}`:'Mulai belum diatur'}${end?` • Selesai ${fmtDate(end)}`:' • Selesai belum diatur'}`;
+}
+function publicActiveAttendanceBanner(item){
+  const ui=publicAttendanceState(item);
+  return `<div class="public-active-attendance state-${ui.key.toLowerCase()}" data-public-attendance-card="${esc(item.attendance_id)}"><div><span class="public-active-kicker"><span class="material-symbols-rounded">${ui.icon}</span> ${ui.key==='LATE'?'PRESENSI TERLAMBAT':'PRESENSI AKTIF'}</span><strong>${esc(item.title||'Presensi Kelas')}</strong><small>${esc(publicAttendanceWindowText(item))} · ${esc(ui.label)}</small></div><button type="button" class="public-primary-action" data-public-quick-attendance="${esc(item.attendance_id)}">Isi Presensi</button></div>`;
+}
+function publicAttendanceRowHtml(item){
+  const ui=publicAttendanceState(item),canSubmit=['OPEN','LATE'].includes(ui.key);
+  const kicker=ui.key==='LATE'?'TERLAMBAT':ui.key==='UPCOMING'?'BELUM DIBUKA':ui.key==='CLOSED'?'DITUTUP':'PERLU PRESENSI';
+  return `<article class="public-attendance-row state-${ui.key.toLowerCase()}" data-public-attendance-card="${esc(item.attendance_id)}"><div class="public-attendance-main"><span class="public-attendance-icon material-symbols-rounded">${ui.icon}</span><div><span class="public-attendance-kicker">${kicker}</span><strong>${esc(item.title||'Presensi Kelas')}</strong><small>${esc(publicAttendanceWindowText(item))}</small></div></div><span class="public-attendance-state state-${ui.key.toLowerCase()}">${esc(ui.label)}</span>${canSubmit?`<button type="button" data-public-quick-attendance="${esc(item.attendance_id)}" class="public-primary-action">Presensi</button>`:''}</article>`;
+}
+
 function showQuickAttendance(attendanceId){
   const academic=currentPublicAcademic||{},item=(academic.attendance_sessions||[]).find(x=>String(x.attendance_id)===String(attendanceId));
-  if(!item||String(item.window_status||'').toUpperCase()!=='OPEN'||!item.public_token)return showPublicNotice('Presensi belum dapat diisi.');
+  if(!item||!item.public_token)return showPublicNotice('Presensi belum dapat diisi.');
+  const ui=publicAttendanceState(item);
+  if(String(item.my_status||'UNMARKED').toUpperCase()!=='UNMARKED')return showPublicNotice('Presensi sudah tercatat. Perubahan dilakukan pengelola dari Ruang Kelas.');
+  if(!['OPEN','LATE'].includes(ui.key))return showPublicNotice(ui.key==='UPCOMING'?'Presensi belum dibuka.':'Waktu presensi sudah ditutup.');
   const choices=[['PRESENT','Hadir','check_circle'],...(item.sick_enabled===false?[]:[['SICK','Sakit','sick']]),...(item.permit_enabled===false?[]:[['PERMIT','Izin','assignment']])];
-  const channels=Array.isArray(item.channels)?item.channels:[];let selected=String(item.my_status||'UNMARKED')==='UNMARKED'?'PRESENT':String(item.my_status),channel=String(item.my_channel||channels[0]||'');
+  const channels=Array.isArray(item.channels)?item.channels:[];let selected='PRESENT',channel=String(channels[0]||'');
   closePublicDetail();const overlay=document.createElement('div');overlay.id='public-detail-overlay';overlay.className='public-detail-overlay';
-  overlay.innerHTML=`<div class="public-detail-card public-attendance-card"><div class="public-detail-head"><div><span class="public-kicker">PRESENSI AKTIF</span><h3>${esc(item.title||'Presensi Kelas')}</h3><small>${item.start_at?esc(fmtDate(item.start_at)):'Sedang dibuka'} · Saat ini: ${esc(publicAttendanceLabel(item.my_status))}</small></div><button type="button" data-public-detail-close class="public-detail-close"><span class="material-symbols-rounded">close</span></button></div><div class="public-attendance-statuses">${choices.map(([v,l,i])=>`<button type="button" data-quick-status="${v}" class="public-attendance-choice ${selected===v?'active':''}"><span class="material-symbols-rounded">${i}</span>${l}</button>`).join('')}</div><div class="public-attendance-channels ${selected==='PRESENT'?'':'hidden'}" data-quick-channels><small>Mengikuti melalui</small><div>${channels.length?channels.map(ch=>`<button type="button" data-quick-channel="${esc(ch)}" class="public-channel-choice ${channel===ch?'active':''}">${esc(publicChannelLabel(ch))}</button>`).join(''):'<span class="soft-chip">Media tidak dibatasi</span>'}</div></div><label class="public-quick-note">Catatan (opsional)<input id="public-quick-att-note" value="${esc(item.my_note||'')}" placeholder="Catatan singkat"></label><div id="public-quick-att-status" class="public-quick-status"></div><button type="button" id="public-quick-att-submit" class="public-primary-action public-quick-submit">${item.my_status&&item.my_status!=='UNMARKED'?'Perbarui Presensi':'Kirim Presensi'}</button></div>`;
+  overlay.innerHTML=`<div class="public-detail-card public-attendance-card"><div class="public-detail-head"><div><span class="public-kicker">${ui.key==='LATE'?'PRESENSI TERLAMBAT':'PRESENSI AKTIF'}</span><h3>${esc(item.title||'Presensi Kelas')}</h3><small>${esc(publicAttendanceWindowText(item))}</small></div><button type="button" data-public-detail-close class="public-detail-close"><span class="material-symbols-rounded">close</span></button></div>${ui.key==='LATE'?'<div class="public-attendance-late-note"><span class="material-symbols-rounded">schedule</span><span>Kamu sudah melewati batas tepat waktu, tetapi presensi masih dibuka.</span></div>':''}<div class="public-attendance-statuses">${choices.map(([v,l,i])=>`<button type="button" data-quick-status="${v}" class="public-attendance-choice ${selected===v?'active':''}"><span class="material-symbols-rounded">${i}</span>${l}</button>`).join('')}</div><div class="public-attendance-channels" data-quick-channels><small>Mengikuti melalui</small><div>${channels.length?channels.map(ch=>`<button type="button" data-quick-channel="${esc(ch)}" class="public-channel-choice ${channel===ch?'active':''}">${esc(publicChannelLabel(ch))}</button>`).join(''):'<span class="soft-chip">Media tidak dibatasi</span>'}</div></div><label class="public-quick-note">Catatan (opsional)<input id="public-quick-att-note" value="" placeholder="Catatan singkat"></label><div id="public-quick-att-status" class="public-quick-status"></div><button type="button" id="public-quick-att-submit" class="public-primary-action public-quick-submit">Kirim Presensi</button><small class="public-attendance-lock-note">Setelah dikirim, presensi tidak dapat diubah dari Landing. Koreksi dilakukan pengelola kelas.</small></div>`;
   document.body.appendChild(overlay);overlay.querySelector('[data-public-detail-close]')?.addEventListener('click',closePublicDetail);overlay.addEventListener('click',e=>{if(e.target===overlay)closePublicDetail();});
   overlay.querySelectorAll('[data-quick-status]').forEach(btn=>btn.onclick=()=>{selected=btn.dataset.quickStatus;overlay.querySelectorAll('[data-quick-status]').forEach(x=>x.classList.toggle('active',x===btn));overlay.querySelector('[data-quick-channels]')?.classList.toggle('hidden',selected!=='PRESENT');});
   overlay.querySelectorAll('[data-quick-channel]').forEach(btn=>btn.onclick=()=>{channel=btn.dataset.quickChannel;overlay.querySelectorAll('[data-quick-channel]').forEach(x=>x.classList.toggle('active',x===btn));});
-  overlay.querySelector('#public-quick-att-submit')?.addEventListener('click',async()=>{const btn=overlay.querySelector('#public-quick-att-submit'),status=overlay.querySelector('#public-quick-att-status');if(btn.disabled)return;btn.disabled=true;status.textContent='Menyimpan presensi…';try{const result=await api('selfCheckInAttendance',{token:item.public_token,attendance_status:selected,attendance_channel:selected==='PRESENT'?channel:'',note:overlay.querySelector('#public-quick-att-note')?.value||''});item.my_status=result.attendance_status||selected;item.my_channel=result.attendance_channel||'';item.my_punctuality=result.punctuality||'';status.textContent=`Tersimpan: ${publicAttendanceLabel(item.my_status)}${item.my_channel?` • ${publicChannelLabel(item.my_channel)}`:''}`;showPublicNotice('Presensi berhasil disimpan.');setTimeout(closePublicDetail,700);}catch(err){status.textContent=err.message;btn.disabled=false;}});
+  overlay.querySelector('#public-quick-att-submit')?.addEventListener('click',async()=>{const btn=overlay.querySelector('#public-quick-att-submit'),status=overlay.querySelector('#public-quick-att-status');if(btn.disabled)return;btn.disabled=true;status.textContent='Menyimpan presensi…';try{const result=await api('selfCheckInAttendance',{token:item.public_token,attendance_status:selected,attendance_channel:selected==='PRESENT'?channel:'',note:overlay.querySelector('#public-quick-att-note')?.value||''});item.my_status=result.attendance_status||selected;item.my_channel=result.attendance_channel||'';item.my_punctuality=result.punctuality||'';status.textContent=`Tersimpan: ${publicAttendanceLabel(item.my_status)}${item.my_channel?` • ${publicChannelLabel(item.my_channel)}`:''}`;showPublicNotice('Presensi berhasil disimpan.');setTimeout(()=>{closePublicDetail();if(currentPublicData)render(currentPublicData,currentPublicMemberData,currentPublicAcademic);},450);}catch(err){status.textContent=err.message;btn.disabled=false;}});
 }
 
 function closePublicDetail(){document.getElementById('public-detail-overlay')?.remove();}
@@ -304,7 +337,7 @@ function showPublicAcademicDetail(type,id){
   }else if(type==='announcement'){
     item=(academic.announcements||[]).find(x=>String(x.announcement_id)===String(id));if(!item)return;title=item.title||'Informasi';meta=item.published_at?fmtDate(item.published_at):'Informasi kelas';body=`<p>${esc(item.body||'Tidak ada isi tambahan.')}</p>`;action=`<a href="/ruang-kelas" data-open-class-tab="announcements" data-class-id="${esc(currentPublicClassId)}" class="public-primary-action public-detail-action">Buka Pengumuman</a>`;
   }else if(type==='attendance'){
-    item=((academic.attendance_sessions||academic.attendance)||[]).find(x=>String(x.attendance_id)===String(id));if(!item)return;title=item.title||'Presensi';meta=item.start_at?fmtDate(item.start_at):'Sesi aktif';body='<p>Presensi menggunakan akun KelasKu agar identitas dan riwayat kehadiran tetap valid.</p>';action=item.public_token&&String(item.window_status||'').toUpperCase()==='OPEN'?`<button type="button" data-public-quick-attendance="${esc(item.attendance_id)}" class="public-primary-action public-detail-action">Presensi Sekarang</button>`:'';
+    item=((academic.attendance_sessions||academic.attendance)||[]).find(x=>String(x.attendance_id)===String(id));if(!item)return;const ui=publicAttendanceState(item);title=item.title||'Presensi';meta=publicAttendanceWindowText(item);body=`<p>Status saat ini: <strong>${esc(ui.label)}</strong>. Presensi Landing hanya dapat dikirim satu kali; koreksi dilakukan pengelola dari Ruang Kelas.</p>`;action=item.public_token&&String(item.my_status||'UNMARKED').toUpperCase()==='UNMARKED'&&['OPEN','LATE'].includes(ui.key)?`<button type="button" data-public-quick-attendance="${esc(item.attendance_id)}" class="public-primary-action public-detail-action">Isi Presensi</button>`:'';
   }
   closePublicDetail();const overlay=document.createElement('div');overlay.id='public-detail-overlay';overlay.className='public-detail-overlay';overlay.innerHTML=`<div class="public-detail-card"><div class="public-detail-head"><div><span class="public-kicker">DETAIL KELAS</span><h3>${esc(title)}</h3><small>${esc(meta)}</small></div><button type="button" data-public-detail-close class="public-detail-close"><span class="material-symbols-rounded">close</span></button></div><div class="public-detail-body">${body}</div>${action?`<div class="public-detail-actions">${action}</div>`:''}</div>`;document.body.appendChild(overlay);overlay.addEventListener('click',e=>{if(e.target===overlay)closePublicDetail();});overlay.querySelector('[data-public-detail-close]')?.addEventListener('click',closePublicDetail);overlay.querySelectorAll('[data-open-class-tab]').forEach(link=>link.addEventListener('click',()=>{sessionStorage.setItem('kelasku_selected_class',link.dataset.classId||'');sessionStorage.setItem('kelasku_class_tab',link.dataset.openClassTab||'overview');}));overlay.querySelectorAll('[data-public-quick-attendance]').forEach(btn=>btn.addEventListener('click',()=>showQuickAttendance(btn.dataset.publicQuickAttendance)));
 }

@@ -1,8 +1,8 @@
 {
-  "version": "6.7.5",
-  "build": "20260928.275",
+  "version": "6.7.6",
+  "build": "20260928.276",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Landing visual polish only: three compact image section heroes, latest KelasKu lockup, compact showcase actions, release metadata footer, lightweight class-title hover, and a read-only Hero Visual SOON placeholder in Class Settings. Attendance XLSX structure from v6.7.4 remains unchanged.",
-  "release_time_wib": "11:13 WIB"
+  "release_note": "Attendance Control: pengelola dapat edit/tutup sesi, Owner dapat menghapus sesi dari kelas aktif, presensi Landing satu kali submit, dan kartu presensi menampilkan waktu serta status terlambat.",
+  "release_time_wib": "12:42 WIB"
 }

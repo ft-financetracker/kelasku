@@ -1,6 +1,41 @@
 {
   "releases": [
     {
+      "version": "6.7.6",
+      "build": "20260928.276",
+      "date": "28 September 2026",
+      "title": "Attendance Control & Landing Cleanup",
+      "description": "Patch terfokus Absensi dan Landing tanpa perubahan schema. Pengelola dapat mengedit/menutup sesi, Owner mendapat aksi hapus sesi, self check-in menjadi sekali submit, dan Landing hanya menampilkan presensi yang masih perlu tindakan.",
+      "groups": [
+        {
+          "label": "Absensi",
+          "items": [
+            "Pengelola dapat edit waktu/judul/metode sesi dan menyelesaikan sesi dari Ruang Kelas.",
+            "Owner mendapat tombol Hapus Sesi; backend tetap memakai archive agar data existing tidak rusak.",
+            "Presensi mandiri dari Landing hanya dapat dikirim satu kali; koreksi setelah submit dilakukan pengelola kelas.",
+            "Sesi baru mewajibkan waktu selesai dari UI dan backend memvalidasi rentang waktu."
+          ]
+        },
+        {
+          "label": "Landing",
+          "items": [
+            "Presensi yang sudah diisi hilang dari Landing anggota.",
+            "Presensi yang belum diisi tetap tampil selama masih relevan; jika melewati batas tepat waktu tetapi belum ditutup, status menjadi Terlambat.",
+            "Kartu presensi menampilkan Mulai dan Selesai secara eksplisit.",
+            "Copy section dirapikan menjadi Jadwal & aktivitas kelas."
+          ]
+        },
+        {
+          "label": "Teknis",
+          "items": [
+            "Schema tetap 17; tidak ada migration.",
+            "Apps Script perlu redeploy karena ada business rule one-time self check-in dan action edit/tutup sesi.",
+            "Setelah redeploy backend, jalankan syncKelasKuRelease() satu kali; jangan jalankan setupKelasKu() atau migrateKelasKu()."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.7.5",
       "build": "20260928.275",
       "date": "28 September 2026",

@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.5-b275-landing-image-polish';
+const CACHE_NAME = 'kelasku-v6.7.6-b276-attendance-control';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -48,6 +48,7 @@ const APP_SHELL = [
   '/src/js/screens/notifications.js',
   '/assets/brand/logo-mark.svg',
   '/assets/brand/logo-lockup-latest.svg',
+  '/assets/brand/logo-latest.png',
   '/assets/public/hero-access.webp',
   '/assets/public/hero-links.webp',
   '/assets/public/hero-showcase.webp',
