@@ -1,8 +1,8 @@
 {
-  "version": "6.7.13",
-  "build": "20260928.283",
+  "version": "6.7.14",
+  "build": "20260928.314",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Mobile Fit Lock + kontrol tambah/hapus sesi seri jadwal tanpa menghapus histori.",
-  "release_time_wib": "21:20 WIB"
+  "release_note": "Dashboard urgent polish: carousel proportion stabilized on desktop/mobile, bottom navbar realigned, notification badge refined, and notification drawer now includes Baca Semua plus Hapus for faster cleanup.",
+  "release_time_wib": "23:40 WIB"
 }
