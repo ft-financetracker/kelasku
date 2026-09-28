@@ -1,6 +1,14 @@
 {
   "releases": [
     {
+      "version": "6.7.16",
+      "build": "20260928.316",
+      "date": "2026-09-28",
+      "type": "FRONTEND-ONLY",
+      "title": "Daftar Kelas Precision Polish",
+      "summary": "Fokus hanya halaman Daftar Kelas: search+Cari satu baris, tombol join/create compact, mobile room card dua baris dengan divider badge, dan seluruh card membuka detail/preview."
+    },
+    {
       "version": "6.7.15",
       "build": "20260928.315",
       "date": "2026-09-28",

@@ -2,14 +2,14 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.15-b315-dashboard-recovery';
+const CACHE_NAME = 'kelasku-v6.7.16-b316-classes-polish';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/404.html',
   '/robots.txt',
   '/sitemap.xml',
-  '/config.js?v=6715',
+  '/config.js?v=6716',
   '/manifest.json',
   '/app-version.json',
   '/changelog.json',
@@ -17,8 +17,8 @@ const APP_SHELL = [
   '/links.html',
   '/src/css/public-links.css?v=6712',
   '/src/js/screens/publicLinks.js?v=6712',
-  '/src/css/app.css?v=6715',
-  '/src/js/app.js?v=6715',
+  '/src/css/app.css?v=6716',
+  '/src/js/app.js?v=6716',
   '/src/js/core/state.js',
   '/src/js/core/storage.js',
   '/src/js/core/utils.js',
@@ -40,7 +40,7 @@ const APP_SHELL = [
   '/src/js/screens/academic.js',
   '/src/js/screens/account.js?v=6712',
   '/src/js/screens/settings.js',
-  '/src/js/screens/classes.js?v=6712',
+  '/src/js/screens/classes.js?v=6716',
   '/src/js/screens/classRoom.js?v=6713',
   '/src/js/screens/admin.js',
   '/src/js/screens/appInfo.js',

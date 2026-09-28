@@ -18,29 +18,31 @@ function publicLandingUrl(c={}) {
 
 export function renderClasses() {
   const content = `
-    <div class="page-head">
-      <div><div class="eyebrow">KELASKU • RUANG BELAJAR</div><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
-      <div class="page-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} Masuk dengan Kode</button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} Buat Kelas</button></div>
-    </div>
+    <div class="classes-page">
+      <div class="page-head classes-page-head">
+        <div><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
+      </div>
 
-    <section class="class-search panel">
-      <div class="class-search-box">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off"><button id="class-search-btn" class="btn btn-secondary">Cari</button></div>
-      <div id="class-search-results" class="search-results hidden"></div>
-    </section>
+      <section class="class-search panel classes-search-panel">
+        <div class="class-search-box classes-search-row">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off"><button id="class-search-btn" class="btn btn-secondary classes-search-btn">Cari</button></div>
+        <div class="classes-primary-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} Masuk dengan Kode</button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} Buat Kelas</button></div>
+        <div id="class-search-results" class="search-results hidden"></div>
+      </section>
 
-    <section class="class-list-section">
-      <div class="section-title-row class-section-head"><div><h2>Kelas Saya</h2><p id="class-count">Memuat kelas…</p></div><button type="button" id="my-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Saya"><span class="material-symbols-rounded">expand_less</span></button></div>
-      <div id="class-grid" class="class-table-shell">${classSkeleton()}</div>
-    </section>
+      <section class="class-list-section">
+        <div class="section-title-row class-section-head"><div><h2>Kelas Saya</h2><p id="class-count">Memuat kelas…</p></div><button type="button" id="my-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Saya"><span class="material-symbols-rounded">expand_less</span></button></div>
+        <div id="class-grid" class="class-table-shell class-card-stack">${classSkeleton()}</div>
+      </section>
 
-    <section class="class-list-section public-class-section">
-      <div class="section-title-row class-section-head"><div><h2>Kelas Umum</h2><p id="public-class-count">Kelas PUBLIC yang dapat dijelajahi.</p></div><div class="class-section-actions"><button id="public-class-refresh" class="btn btn-secondary small-btn">${svg('i-refresh')} Refresh</button><button type="button" id="public-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Umum"><span class="material-symbols-rounded">expand_less</span></button></div></div>
-      <div id="public-class-list" class="class-table-shell">${classSkeleton()}</div>
-      <div class="class-public-pager" id="public-class-pager"></div>
-    </section>`;
+      <section class="class-list-section public-class-section">
+        <div class="section-title-row class-section-head"><div><h2>Kelas Umum</h2><p id="public-class-count">Kelas PUBLIC yang dapat dijelajahi.</p></div><div class="class-section-actions"><button id="public-class-refresh" class="btn btn-secondary small-btn">${svg('i-refresh')} Refresh</button><button type="button" id="public-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Umum"><span class="material-symbols-rounded">expand_less</span></button></div></div>
+        <div id="public-class-list" class="class-table-shell class-card-stack">${classSkeleton()}</div>
+        <div class="class-public-pager" id="public-class-pager"></div>
+      </section>
+    </div>`;
 
-  document.getElementById('app').innerHTML = appShell({ active: 'classes', content, searchPlaceholder: 'Cari kelas, kode kelas, atau teman…' });
-  bindAppShell({ onSearch: () => document.getElementById('class-search-input')?.focus() });
+  document.getElementById('app').innerHTML = appShell({ active: 'classes', content, hideSearch: true });
+  bindAppShell();
 
   document.getElementById('create-class-btn').onclick = openCreateClass;
   document.getElementById('join-code-btn').onclick = openJoinCode;
@@ -148,7 +150,7 @@ function drawMyClasses(items) {
     return;
   }
 
-  grid.innerHTML = `<div class="class-table-head"><span>Kelas</span><span>Status</span><span></span></div>${items.map(c => classListRow(c, true)).join('')}`;
+  grid.innerHTML = items.map(c => classListRow(c, true)).join('');
   bindClassRows(grid);
 }
 
@@ -168,31 +170,53 @@ function syncCreateClassLimit(items = []) {
 
 function classListRow(c, mine = false) {
   const leader = c.is_class_leader ? '<span class="role-pill leader-role-pill">Ketua Kelas</span>' : '';
-  const action = mine || c.is_member
+  const isMember = Boolean(mine || c.is_member);
+  const action = isMember
     ? `<button type="button" class="class-row-action" data-open-class="${esc(c.class_id)}" aria-label="Buka ${esc(c.name || 'kelas')}">${svg('i-arrow')}<span>Buka</span></button>`
     : `<button type="button" class="class-row-action join" data-public-join="${esc(c.class_id)}" aria-label="Gabung ${esc(c.name || 'kelas')}">${svg('i-plus')}<span>Gabung</span></button>`;
   const memberCount = Number(c.member_count || 0);
-  const codeMeta = `<span class="class-code-inline">${esc(c.class_code || '')}${memberCount ? `<i>•</i><b class="class-member-inline">${memberCount} anggota</b>` : ''}</span>`;
-  return `<article class="class-list-row">
-    <div class="class-list-identity"><span class="class-symbol small">${svg('i-class')}</span><div class="class-list-copy"><small class="class-list-subtitle">${esc(c.institution || 'KelasKu')}${c.cohort ? ' · Angkatan ' + esc(c.cohort) : ''}</small><strong>${esc(c.name)}</strong>${codeMeta}</div></div>
-    <div class="class-list-badge-line">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile" aria-label="${memberCount} anggota">(${memberCount})</span>` : ''}</div>
-    <div class="class-list-action">${action}</div>
+  const desc = [c.institution || 'KelasKu', c.cohort ? `Angkatan ${c.cohort}` : '', c.class_code || ''].filter(Boolean).join(' · ');
+  const rowTarget = isMember ? `data-class-card-open="${esc(c.class_id)}"` : `data-class-card-preview="${esc(c.class_id)}"`;
+  return `<article class="class-list-row class-room-card" ${rowTarget} tabindex="0" role="button" aria-label="${isMember?'Buka':'Lihat'} ${esc(c.name || 'kelas')}">
+    <span class="class-symbol small class-room-icon">${svg('i-class')}</span>
+    <div class="class-list-copy class-room-copy"><strong>${esc(c.name)}</strong><small class="class-list-subtitle">${esc(desc)}</small></div>
+    <div class="class-list-badge-line class-room-badges">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : '<span class="soft-chip">Umum</span>'}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile" aria-label="${memberCount} anggota">${memberCount} anggota</span>` : ''}</div>
+    <div class="class-list-action class-room-action">${action}</div>
   </article>`;
 }
 
 function bindClassRows(root) {
-  root.querySelectorAll('[data-open-class]').forEach(el => {
-    el.onclick = () => {
-      state.selectedClassId = el.dataset.openClass;
-      sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
-      go('class');
+  const openClass = id => {
+    state.selectedClassId = id;
+    sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
+    go('class');
+  };
+  const previewClass = id => {
+    const item = (state.publicClasses?.items || []).find(x => String(x.class_id) === String(id));
+    if (item) openJoinPreview(item, item.class_code || '');
+  };
+
+  root.querySelectorAll('[data-class-card-open]').forEach(row => {
+    const activate = e => {
+      if (e?.target?.closest?.('button,a,input,select,textarea')) return;
+      openClass(row.dataset.classCardOpen);
     };
+    row.onclick = activate;
+    row.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(e); } };
+  });
+  root.querySelectorAll('[data-class-card-preview]').forEach(row => {
+    const activate = e => {
+      if (e?.target?.closest?.('button,a,input,select,textarea')) return;
+      previewClass(row.dataset.classCardPreview);
+    };
+    row.onclick = activate;
+    row.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(e); } };
+  });
+  root.querySelectorAll('[data-open-class]').forEach(el => {
+    el.onclick = e => { e.stopPropagation(); openClass(el.dataset.openClass); };
   });
   root.querySelectorAll('[data-public-join]').forEach(btn => {
-    btn.onclick = () => {
-      const item = (state.publicClasses?.items || []).find(x => String(x.class_id) === String(btn.dataset.publicJoin));
-      if (item) openJoinPreview(item, item.class_code || '');
-    };
+    btn.onclick = e => { e.stopPropagation(); previewClass(btn.dataset.publicJoin); };
   });
 }
 
@@ -218,7 +242,7 @@ function drawPublicClasses(data) {
   const items = data.items || [];
   if (count) count.textContent = `${Number(data.total || items.length)} kelas PUBLIC`;
   slot.innerHTML = items.length
-    ? `<div class="class-table-head"><span>Kelas</span><span>Status</span><span></span></div>${items.map(c => classListRow(c, false)).join('')}`
+    ? items.map(c => classListRow(c, false)).join('')
     : '<div class="search-empty">Belum ada kelas umum.</div>';
   bindClassRows(slot);
   if (pager) {

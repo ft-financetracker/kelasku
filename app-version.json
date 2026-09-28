@@ -1,8 +1,8 @@
 {
-  "version": "6.7.15",
-  "build": "20260928.315",
+  "version": "6.7.16",
+  "build": "20260928.316",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Emergency dashboard recovery from v6.7.13 visual baseline: restores image carousel, keeps compact desktop/mobile proportions, realigns bottom navigation, constrains notification indicators, and adds Baca Semua/Hapus in notification drawer.",
-  "release_time_wib": "23:55 WIB"
+  "release_note": "Daftar Kelas precision polish only: compact search/actions, mobile two-line room cards, aligned square room/action controls, cleaner badges, and full-card navigation.",
+  "release_time_wib": "23:52 WIB"
 }
