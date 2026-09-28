@@ -19,7 +19,7 @@ import { renderOnboarding } from './screens/onboarding.js';
 import { renderAuth } from './screens/auth.js';
 import { renderProfile } from './screens/profile.js';
 import { renderSetup } from './screens/setup.js';
-import { renderDashboard } from './screens/dashboard.js?v=6711';
+import { renderDashboard } from './screens/dashboard.js?v=6715';
 import { renderAccount } from './screens/account.js?v=678';
 import { renderSettings } from './screens/settings.js';
 import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6711';

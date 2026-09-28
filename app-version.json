@@ -1,8 +1,8 @@
 {
-  "version": "6.7.14",
-  "build": "20260928.314",
+  "version": "6.7.15",
+  "build": "20260928.315",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Dashboard urgent polish: carousel proportion stabilized on desktop/mobile, bottom navbar realigned, notification badge refined, and notification drawer now includes Baca Semua plus Hapus for faster cleanup.",
-  "release_time_wib": "23:40 WIB"
+  "release_note": "Emergency dashboard recovery from v6.7.13 visual baseline: restores image carousel, keeps compact desktop/mobile proportions, realigns bottom navigation, constrains notification indicators, and adds Baca Semua/Hapus in notification drawer.",
+  "release_time_wib": "23:55 WIB"
 }

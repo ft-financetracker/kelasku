@@ -3,14 +3,14 @@ import { api } from '../core/api.js';
 import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js';
 
 let carouselTimer = null;
 let carouselIndex = 0;
 let carouselPhysicalIndex = 1;
 let carouselMoving = false;
 let updateEventHandler = null;
-const NOTIF_DRAWER_HIDDEN_KEY = 'kelasku_notif_drawer_hidden_ids';
+let notificationEventHandler = null;
 
 export function renderDashboard() {
   const content = `
@@ -48,8 +48,10 @@ export function renderDashboard() {
   };
   window.addEventListener('kelasku-update-check', updateEventHandler);
 
+  if(notificationEventHandler)window.removeEventListener('kelasku-notifications-updated',notificationEventHandler);
+  notificationEventHandler=()=>{refreshNotificationSummary();refreshShellIndicators();if(!document.getElementById('notif-drawer')?.classList.contains('hidden'))renderNotificationDrawer();};
+  window.addEventListener('kelasku-notifications-updated',notificationEventHandler);
   refreshDashboard();
-  startNotificationPolling();
 }
 
 function empty(title, copy) {
@@ -148,9 +150,9 @@ function carouselHtml(d) {
   const nextTask = (d.tasks || [])[0];
   const classCount = Number(d.summary?.active_classes || 0);
   const slides = [
-    { icon:'i-class', eyebrow:'KELASKU • PHASE 6', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik sekarang terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', tone:'a' },
-    { icon:'i-calendar', eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', tone:'b' },
-    { icon:'i-task', eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', tone:'c' }
+    { eyebrow:'KELAS SAYA', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', image:'kelas' },
+    { eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', image:'agenda' },
+    { eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', image:'tugas' }
   ];
   const physical=[slides[slides.length-1],...slides,slides[0]];
   return `<section class="dashboard-carousel" id="dashboard-carousel" aria-label="Informasi utama">
@@ -160,7 +162,7 @@ function carouselHtml(d) {
 }
 
 function carouselSlide(x, index) {
-  return `<article class="dashboard-carousel-slide tone-${x.tone}" data-carousel-index="${index}"><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div><div class="carousel-art"><span class="carousel-diamond">${svg(x.icon)}</span><span class="carousel-orbit orbit-one"></span><span class="carousel-orbit orbit-two"></span></div></article>`;
+  return `<article class="dashboard-carousel-slide carousel-image-${esc(x.image)}" data-carousel-index="${index}"><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div></article>`;
 }
 
 function bindCarousel() {
@@ -189,37 +191,13 @@ function quickAction(icon,label,route) {
 function summaryMini(icon, value, label, route) {
   return `<button type="button" class="summary-mini" data-dashboard-route="${esc(route)}"><span class="summary-mini-icon">${svg(icon)}</span><span class="summary-mini-copy"><strong data-summary-value="${esc(route)}">${Number(value||0)}</strong><small>${esc(label)}</small></span></button>`;
 }
-function getHiddenNotifIds(){
-  try {
-    const raw = JSON.parse(localStorage.getItem(NOTIF_DRAWER_HIDDEN_KEY) || '[]');
-    return new Set(Array.isArray(raw) ? raw.map(String) : []);
-  } catch {
-    return new Set();
-  }
-}
-function saveHiddenNotifIds(ids){
-  localStorage.setItem(NOTIF_DRAWER_HIDDEN_KEY, JSON.stringify(Array.from(ids)));
-}
-function visibleUnreadNotifications(){
-  const hidden = getHiddenNotifIds();
-  return (state.notifications || []).filter(n => !n.read_at && !hidden.has(String(n.notification_id)));
-}
-function unreadNotificationCount(){ return visibleUnreadNotifications().length; }
-function formatBadgeCount(value){ const n = Number(value || 0); return n > 9 ? '9+' : String(n); }
+function unreadNotificationCount(){ return (state.notifications || []).filter(n => !n.read_at).length; }
+function badgeText(value){const n=Number(value||0);return n>9?'9+':String(n);}
 function refreshNotificationSummary(value = unreadNotificationCount()){
   const el=document.querySelector('[data-summary-value="notifications"]');
   if(el) el.textContent=String(Number(value||0));
-  const badge = document.getElementById('notif-badge');
-  if (badge) {
-    badge.textContent = formatBadgeCount(value);
-    badge.classList.toggle('hidden', !Number(value || 0));
-  }
-}
-function pruneHiddenNotifications(){
-  const unreadIds = new Set((state.notifications || []).filter(n => !n.read_at).map(n => String(n.notification_id)));
-  const hidden = getHiddenNotifIds();
-  const next = new Set(Array.from(hidden).filter(id => unreadIds.has(id)));
-  if (next.size !== hidden.size) saveHiddenNotifIds(next);
+  const badge=document.getElementById('notif-badge');
+  if(badge){badge.textContent=badgeText(value);badge.classList.toggle('hidden',!Number(value||0));}
 }
 function row(icon, title, copy, meta='') {
   return `<div class="list-row"><div class="status-icon">${svg(icon)}</div><div><h4>${esc(title)}</h4><p>${meta ? esc(meta)+' • ' : ''}${esc(copy)}</p></div></div>`;
@@ -255,9 +233,9 @@ async function fetchNotifications(showSystem) {
     const oldIds = new Set(state.notifications.map(n => n.notification_id));
     state.notifications = data.items || [];
     localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
+    window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
 
-    pruneHiddenNotifications();
-    const unread = visibleUnreadNotifications();
+    const unread = state.notifications.filter(n => !n.read_at);
     refreshNotificationSummary(unread.length);
 
     if (showSystem && 'Notification' in window && Notification.permission === 'granted') {
@@ -278,64 +256,35 @@ function renderNotificationDrawer() {
   if (!drawer) return;
 
   const updateAvailable = state.remoteConfig && semverCmp(C.APP_VERSION, state.remoteConfig.current_version) < 0;
-  const unreadItems = visibleUnreadNotifications();
-  const updateRow = updateAvailable ? `<button type="button" class="list-row notif-row update-notif-row" id="notif-update-app"><div class="status-icon">${svg('i-refresh')}</div><div><h4>Update KelasKu v${esc(state.remoteConfig.current_version)}</h4><p>${esc(state.remoteConfig.release_note || 'Pembaruan aplikasi tersedia.')}</p><p>Ketuk untuk memperbarui.</p></div><span class="notif-dot">●</span></button>` : '';
-  const notificationList = unreadItems.length ? unreadItems.map(n => `<div class="list-row notif-row unread" data-notif="${esc(n.notification_id)}"><div class="status-icon">${svg(n.type === 'TASK' ? 'i-task' : n.type === 'SCHEDULE' ? 'i-calendar' : n.type === 'ATTENDANCE' ? 'i-check' : n.type === 'MESSAGE' ? 'i-chat' : n.type === 'MATERIAL' ? 'i-file' : n.type === 'ANNOUNCEMENT' ? 'i-mega' : 'i-bell')}</div><div class="notif-copy"><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p><p>${fmtDate(n.created_at)}</p></div><span class="notif-dot">●</span></div>`).join('') : '';
+  const unreadCount = unreadNotificationCount();
+  const updateRow = updateAvailable ? `<button type="button" class="list-row notif-row update-notif-row" id="notif-update-app"><div class="status-icon">${svg('i-refresh')}</div><div class="notif-copy"><h4>Update KelasKu v${esc(state.remoteConfig.current_version)}</h4><p>${esc(state.remoteConfig.release_note || 'Pembaruan aplikasi tersedia.')}</p><p>Ketuk untuk memperbarui.</p></div><span class="notif-dot">●</span></button>` : '';
+  const notificationList = state.notifications.length ? state.notifications.map(n => `<div class="list-row notif-row ${n.read_at?'':'unread'}" data-notif="${esc(n.notification_id)}"><div class="status-icon">${svg(n.type === 'TASK' ? 'i-task' : n.type === 'SCHEDULE' ? 'i-calendar' : n.type === 'ATTENDANCE' ? 'i-check' : n.type === 'MESSAGE' ? 'i-chat' : n.type === 'MATERIAL' ? 'i-file' : n.type === 'ANNOUNCEMENT' ? 'i-mega' : 'i-bell')}</div><div class="notif-copy"><h4>${esc(n.title)}</h4><p>${esc(n.body)}</p><p>${fmtDate(n.created_at)}</p></div>${n.read_at ? '' : '<span class="notif-dot">●</span>'}</div>`).join('') : '';
 
-  drawer.innerHTML = `
-    <div class="notif-drawer-head">
-      <div>
-        <div class="panel-title">Notifikasi</div>
-        <small class="notif-drawer-sub">${unreadItems.length ? `${unreadItems.length} belum dibaca` : 'Semua notifikasi sudah rapi.'}</small>
-      </div>
-      <div class="notif-drawer-actions">
-        <button type="button" class="btn btn-ghost notif-drawer-btn" id="notif-mark-all" ${unreadItems.length ? '' : 'disabled'}>${svg('i-check')} Baca Semua</button>
-        <button type="button" class="btn btn-ghost notif-drawer-btn" id="notif-clear-all" ${(unreadItems.length || updateAvailable) ? '' : 'disabled'}>${svg('i-close')} Hapus</button>
-        <button class="icon-btn mini" id="close-notif" aria-label="Tutup notifikasi">${svg('i-close')}</button>
-      </div>
-    </div>
-    ${(updateRow || notificationList)
-      ? `<div class="list notif-drawer-list">${updateRow}${notificationList}</div>`
-      : empty('Belum ada notifikasi', 'Semua informasi penting akan tampil di sini saat diperlukan.')}
-  `;
+  drawer.innerHTML = `<div class="notif-drawer-head"><div><div class="panel-title">Notifikasi</div><small>${unreadCount ? `${unreadCount} belum dibaca` : 'Tidak ada notifikasi baru'}</small></div><div class="notif-drawer-actions"><button type="button" id="notif-mark-all" class="btn btn-ghost notif-drawer-btn" ${unreadCount?'':'disabled'}>${svg('i-check')} Baca Semua</button><button type="button" id="notif-clear" class="btn btn-ghost notif-drawer-btn" ${state.notifications.length?'':'disabled'}>${svg('i-close')} Hapus</button><button class="icon-btn mini" id="close-notif" aria-label="Tutup">${svg('i-close')}</button></div></div>${updateRow || notificationList ? `<div class="list notif-drawer-list">${updateRow}${notificationList}</div>` : empty('Belum ada notifikasi', 'Informasi penting akan tampil di sini.')}`;
 
   document.getElementById('close-notif')?.addEventListener('click', () => drawer.classList.add('hidden'));
   document.getElementById('notif-update-app')?.addEventListener('click', updateApp);
-  document.getElementById('notif-mark-all')?.addEventListener('click', async () => {
-    const btn = document.getElementById('notif-mark-all');
-    if (!btn || !unreadItems.length) return;
-    const old = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span><span>Memproses…</span>';
-    try {
-      const now = new Date().toISOString();
-      (state.notifications || []).forEach(n => { if (!n.read_at) n.read_at = now; });
-      localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
-      saveHiddenNotifIds(new Set());
-      renderNotificationDrawer();
-      refreshNotificationSummary();
-      await api('markAllNotificationsRead', { category: 'ALL' }, { onSlow: () => {} });
-      toast('Semua notifikasi sudah dibaca.');
-    } catch (err) {
-      btn.disabled = false;
-      btn.innerHTML = old;
-      toast(err.message || 'Gagal membaca semua notifikasi.');
-      fetchNotifications(false).catch(() => {});
-    }
+  document.getElementById('notif-mark-all')?.addEventListener('click', async()=>{
+    const btn=document.getElementById('notif-mark-all'); if(!btn||!unreadCount)return;
+    const old=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';
+    try{
+      await api('markAllNotificationsRead',{category:'ALL'},{onSlow:()=>{}});
+      const now=new Date().toISOString(); state.notifications=(state.notifications||[]).map(n=>({...n,read_at:n.read_at||now}));
+      localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));
+      window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
+      refreshNotificationSummary(0); renderNotificationDrawer(); toast('Semua notifikasi ditandai dibaca.');
+    }catch(err){toast(err.message||'Gagal menandai notifikasi.'); btn.disabled=false; btn.innerHTML=old;}
   });
-  document.getElementById('notif-clear-all')?.addEventListener('click', () => {
-    const next = new Set(getHiddenNotifIds());
-    unreadItems.forEach(n => next.add(String(n.notification_id)));
-    saveHiddenNotifIds(next);
-    renderNotificationDrawer();
-    refreshNotificationSummary();
-    toast('Baris notifikasi disembunyikan dari drawer.');
+  document.getElementById('notif-clear')?.addEventListener('click', async()=>{
+    if(!state.notifications.length)return;
+    try{await api('markAllNotificationsRead',{category:'ALL'},{onSlow:()=>{}});}catch{}
+    state.notifications=[];
+    localStorage.setItem('kelasku_notification_cache','[]');
+    window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:[]}}));
+    refreshNotificationSummary(0); renderNotificationDrawer(); toast('Notifikasi dibersihkan dari tampilan.');
   });
-  drawer.querySelectorAll('[data-notif]').forEach(el => {
-    el.onclick = () => markNotification(el.dataset.notif);
-  });
+  drawer.querySelectorAll('[data-notif]').forEach(el => { el.onclick = () => markNotification(el.dataset.notif); });
 }
-
 
 async function markNotification(id) {
   const n = state.notifications.find(x => x.notification_id === id);
@@ -343,10 +292,8 @@ async function markNotification(id) {
   const wasUnread=!n.read_at;
   if(wasUnread){
     n.read_at=new Date().toISOString();
-    const hidden = getHiddenNotifIds();
-    hidden.delete(String(id));
-    saveHiddenNotifIds(hidden);
     localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));
+    window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
     renderNotificationDrawer();
     refreshNotificationSummary();
   }
@@ -355,7 +302,7 @@ async function markNotification(id) {
     api('markNotificationRead',{notification_id:id},{onSlow:()=>{}}).catch(err=>{
       console.warn('Mark notification:',err);
       const current=state.notifications.find(x=>x.notification_id===id);
-      if(current){current.read_at='';localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));refreshNotificationSummary();}
+      if(current){current.read_at='';localStorage.setItem('kelasku_notification_cache',JSON.stringify(state.notifications));window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));refreshNotificationSummary();}
     });
   }
 }
