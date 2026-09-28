@@ -79,31 +79,9 @@ export function renderAccount() {
       </form>
     </section>
 
-    <section class="feedback-hero panel">
-      <div class="feedback-hero-art" aria-hidden="true">
-        <span class="feedback-bubble feedback-bubble-a">💡</span>
-        <span class="feedback-bubble feedback-bubble-b">💬</span>
-        <span class="feedback-bubble feedback-bubble-c">✨</span>
-      </div>
-      <div class="feedback-hero-copy">
-        <div class="eyebrow">Bantu KelasKu Berkembang</div>
-        <h2>Saran & Masukan</h2>
-        <p>Ada yang kurang nyaman, punya ide, atau sekadar ingin memberi apresiasi? Kirim langsung ke tim KelasKu. Feedback tersimpan di sistem dan dapat dipantau Super Admin.</p>
-        <button id="toggle-feedback-form" class="btn btn-primary" type="button">${svg('i-chat')} Berikan Saran</button>
-      </div>
-      <form id="feedback-form" class="feedback-form" hidden>
-        <div class="feedback-form-grid">
-          <div class="field"><label>Nama</label><input id="feedback-name" class="control" value="${esc(u.full_name || u.username || '')}" required></div>
-          <div class="field feedback-message-field"><label>Isi Saran / Masukan</label><textarea id="feedback-message" class="control" rows="4" maxlength="3000" placeholder="Tulis dengan singkat dan jelas…" required></textarea></div>
-        </div>
-        <div class="feedback-block"><span class="feedback-label">Respon Anda</span><div class="feedback-reactions">
-          ${reactionOption('LOVE','😄','Suka')}${reactionOption('GOOD','🙂','Baik',true)}${reactionOption('NEUTRAL','😐','Netral')}${reactionOption('ISSUE','😕','Kendala')}${reactionOption('IDEA','💡','Ide')}
-        </div></div>
-        <div class="feedback-reply-row"><div><strong>Perlu dibalas?</strong><small>Pilih “Ya” jika ingin menerima tindak lanjut melalui email.</small></div><div class="feedback-reply-options"><label><input type="radio" name="feedback-reply" value="NO" checked> Cukup saran</label><label><input type="radio" name="feedback-reply" value="YES"> Ya, balas</label></div></div>
-        <div id="feedback-email-wrap" class="field" hidden><label>Email Balasan</label><input id="feedback-email" class="control" type="email" autocomplete="email" placeholder="nama@email.com"></div>
-        <div id="feedback-status" class="request-status"></div>
-        <div class="feedback-actions"><button id="submit-feedback" class="btn btn-primary" type="submit">Kirim Feedback</button><button id="cancel-feedback" class="btn btn-secondary" type="button">Tutup</button></div>
-      </form>
+    <section class="feedback-hero panel" aria-label="Saran dan Masukan KelasKu">
+      <img class="feedback-hero-image" src="assets/feedback/saran-masukan.png?v=678" alt="Saran dan Masukan KelasKu">
+      <button id="toggle-feedback-form" class="feedback-hero-open" type="button" aria-label="Buka form Saran dan Masukan" title="Berikan Saran & Masukan"><span class="material-symbols-rounded">arrow_forward</span></button>
     </section>
 
     <section class="panel account-danger-zone">
@@ -220,21 +198,58 @@ function bindPasswordForm() {
 
 function bindFeedbackForm() {
   const toggle = document.getElementById('toggle-feedback-form');
+  if (!toggle) return;
+  toggle.onclick = openFeedbackModal;
+}
+
+function feedbackFormMarkup() {
+  const u = state.user || {};
+  return `
+    <div class="modal-head feedback-modal-head">
+      <div><div class="eyebrow">Bantu KelasKu Berkembang</div><h2>Saran & Masukan</h2><p>Punya ide, menemukan kendala, atau ingin memberi apresiasi? Kirim langsung ke tim KelasKu.</p></div>
+      <button class="icon-btn mini" type="button" data-close-feedback aria-label="Tutup">${svg('i-close')}</button>
+    </div>
+    <form id="feedback-form" class="feedback-form feedback-form-modal">
+      <div class="feedback-form-grid">
+        <div class="field"><label>Nama</label><input id="feedback-name" class="control" value="${esc(u.full_name || u.username || '')}" required></div>
+        <div class="field feedback-message-field"><label>Isi Saran / Masukan</label><textarea id="feedback-message" class="control" rows="4" maxlength="3000" placeholder="Tulis dengan singkat dan jelas…" required></textarea></div>
+      </div>
+      <div class="feedback-block"><span class="feedback-label">Respon Anda</span><div class="feedback-reactions">
+        ${reactionOption('LOVE','😄','Suka')}${reactionOption('GOOD','🙂','Baik',true)}${reactionOption('NEUTRAL','😐','Netral')}${reactionOption('ISSUE','😕','Kendala')}${reactionOption('IDEA','💡','Ide')}
+      </div></div>
+      <div class="feedback-reply-row"><div><strong>Perlu dibalas?</strong><small>Pilih “Ya” jika ingin menerima tindak lanjut melalui email.</small></div><div class="feedback-reply-options"><label><input type="radio" name="feedback-reply" value="NO" checked> Cukup saran</label><label><input type="radio" name="feedback-reply" value="YES"> Ya, balas</label></div></div>
+      <div id="feedback-email-wrap" class="field" hidden><label>Email Balasan</label><input id="feedback-email" class="control" type="email" autocomplete="email" placeholder="nama@email.com"></div>
+      <div id="feedback-status" class="request-status"></div>
+      <div class="feedback-actions"><button id="submit-feedback" class="btn btn-primary" type="submit">Kirim Feedback</button><button class="btn btn-secondary" type="button" data-close-feedback>Tutup</button></div>
+    </form>`;
+}
+
+function openFeedbackModal() {
+  closeFeedbackModal();
+  const overlay = document.createElement('div');
+  overlay.id = 'feedback-modal';
+  overlay.className = 'overlay feedback-modal-overlay';
+  overlay.innerHTML = `<div class="modal glass phase-modal-card feedback-modal-card" role="dialog" aria-modal="true" aria-label="Saran dan Masukan">${feedbackFormMarkup()}</div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll('[data-close-feedback]').forEach(btn => btn.onclick = closeFeedbackModal);
+  overlay.onclick = event => { if (event.target === overlay) closeFeedbackModal(); };
+  bindFeedbackModalForm();
+  setTimeout(() => document.getElementById('feedback-message')?.focus(), 20);
+}
+
+function closeFeedbackModal() {
+  document.getElementById('feedback-modal')?.remove();
+}
+
+function bindFeedbackModalForm() {
   const form = document.getElementById('feedback-form');
-  const cancel = document.getElementById('cancel-feedback');
-  if (!toggle || !form) return;
-  const setOpen = open => {
-    form.hidden = !open;
-    toggle.hidden = open;
-    if (open) setTimeout(() => document.getElementById('feedback-message')?.focus(), 20);
-  };
-  toggle.onclick = () => setOpen(true);
-  if (cancel) cancel.onclick = () => setOpen(false);
+  if (!form) return;
   document.querySelectorAll('input[name="feedback-reply"]').forEach(input => {
     input.onchange = () => {
       const yes = document.querySelector('input[name="feedback-reply"]:checked')?.value === 'YES';
       const wrap = document.getElementById('feedback-email-wrap');
       const email = document.getElementById('feedback-email');
+      if (!wrap || !email) return;
       wrap.hidden = !yes;
       email.required = yes;
       if (!yes) email.value = '';
@@ -263,13 +278,10 @@ function bindFeedbackForm() {
         app_version: window.KELASKU_CONFIG.APP_VERSION,
         app_build: window.KELASKU_CONFIG.BUILD
       });
-      document.getElementById('feedback-message').value = '';
-      document.getElementById('feedback-email').value = '';
-      document.querySelector('input[name="feedback-reply"][value="NO"]').checked = true;
-      document.getElementById('feedback-email-wrap').hidden = true;
       status.className = 'request-status ok';
       status.textContent = 'Terima kasih. Feedback sudah tersimpan ✓';
       toast('Feedback terkirim. Terima kasih.');
+      setTimeout(closeFeedbackModal, 650);
     } catch (err) {
       status.className = 'request-status error';
       status.textContent = err.message;
@@ -279,3 +291,4 @@ function bindFeedbackForm() {
     }
   };
 }
+

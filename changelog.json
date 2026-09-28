@@ -1,6 +1,42 @@
 {
   "releases": [
     {
+      "version": "6.7.8",
+      "build": "20260928.278",
+      "date": "28 September 2026",
+      "title": "Pre-Live UI Refinement",
+      "description": "Patch frontend-only terfokus pada Ruang Kelas, tipografi Absensi, dan visual Saran & Masukan.",
+      "groups": [
+        {
+          "label": "Ruang Kelas",
+          "items": [
+            "Desktop: Class Code dan Join Code kembali bertumpuk vertikal; isi masing-masing card tetap satu baris: label, titik dua, kode, dan tombol salin.",
+            "Mobile/tablet: Class Code dan Join Code tampil kiri-kanan dalam satu baris, dengan isi card tetap horizontal."
+          ]
+        },
+        {
+          "label": "Absensi",
+          "items": [
+            "Tipografi header, mata pelajaran/kegiatan, label sesi, window waktu, status, dan tombol diproporsionalkan agar konsisten dengan UI akademik lainnya."
+          ]
+        },
+        {
+          "label": "Saran & Masukan",
+          "items": [
+            "Hero feedback kini memakai image asset assets/feedback/saran-masukan.png sehingga mudah diganti tanpa mengubah source UI.",
+            "Form tidak lagi memanjang di dalam hero; tombol panah compact membuka form dalam popup/modal."
+          ]
+        },
+        {
+          "label": "Teknis",
+          "items": [
+            "Frontend-only; Apps Script dan schema 17 tidak berubah.",
+            "Asset/version/cache dinaikkan untuk mencegah stale cache pada PWA/browser."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.7.7",
       "build": "20260928.277",
       "date": "28 September 2026",

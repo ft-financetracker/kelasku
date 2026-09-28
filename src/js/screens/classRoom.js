@@ -151,8 +151,8 @@ function drawClass(data, preserveTab = true) {
         </div>
       </div>
       <aside class="class-hero-code-rail" aria-label="Kode kelas">
-        <div class="class-code-rail-item"><span>Class Code</span><div><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div></div>
-        ${p.can_manage_class ? `<div class="class-code-rail-item"><span>Join Code</span><div><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini" title="Salin Join Code">${svg('i-copy')}</button></div></div>`:''}
+        <div class="class-code-rail-item"><span>Class Code</span><i aria-hidden="true">:</i><strong>${esc(c.class_code || '-')}</strong><button data-copy="${esc(c.class_code || '')}" class="icon-btn mini" title="Salin Class Code">${svg('i-copy')}</button></div>
+        ${p.can_manage_class ? `<div class="class-code-rail-item"><span>Join Code</span><i aria-hidden="true">:</i><strong>${esc(c.join_code || '-')}</strong><button data-copy="${esc(c.join_code || '')}" class="icon-btn mini" title="Salin Join Code">${svg('i-copy')}</button></div>`:''}
       </aside>
     </section>
 

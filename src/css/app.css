@@ -1946,3 +1946,154 @@ html[data-theme="light"] .class-room-page .class-code-rail-item{background:#F7FB
   .attendance-room-v673 .schedule-session-main{gap:7px!important}
   .attendance-room-v673 .schedule-session-copy>span b{font-size:.78rem!important}
 }
+
+/* ============================================================
+   v6.7.8 — Pre-live UI refinement
+   Scope: Room Class code rail + Absensi typography + Feedback image/modal
+   ============================================================ */
+
+/* Room Class — desktop: Class Code / Join Code stacked, each card one line. */
+.class-room-page .class-hero-v51{
+  grid-template-columns:48px minmax(0,1fr) minmax(210px,245px)!important;
+}
+.class-room-page .class-hero-code-rail{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:6px!important;
+  width:100%!important;
+}
+.class-room-page .class-code-rail-item{
+  min-height:34px!important;
+  padding:5px 7px!important;
+  display:grid!important;
+  grid-template-columns:auto auto minmax(0,1fr) 24px!important;
+  align-items:center!important;
+  gap:5px!important;
+}
+.class-room-page .class-code-rail-item>span{
+  font-size:7px!important;
+  line-height:1!important;
+  letter-spacing:.08em!important;
+  white-space:nowrap;
+}
+.class-room-page .class-code-rail-item>i{
+  font-style:normal;
+  color:var(--muted);
+  font-size:8px;
+  line-height:1;
+}
+.class-room-page .class-code-rail-item strong{
+  font-size:8.8px!important;
+  line-height:1!important;
+}
+.class-room-page .class-code-rail-item .mini{
+  width:22px!important;
+  height:22px!important;
+  min-width:22px!important;
+}
+
+/* Absensi — match the compact academic typography, not oversized UI text. */
+.attendance-room-v673 .panel-head .panel-title{font-size:12.5px!important;line-height:1.2!important}
+.attendance-room-v673 .panel-head .panel-copy{font-size:9.3px!important;line-height:1.45!important;max-width:760px}
+.attendance-room-v673 .compact-create-btn{min-height:30px!important;padding:5px 9px!important;font-size:9.5px!important;border-radius:10px!important}
+.attendance-room-v673 .compact-create-btn .icon{width:15px!important;height:15px!important}
+.attendance-room-v673 .attendance-course-head{padding:9px 10px!important}
+.attendance-room-v673 .schedule-series-copy .eyebrow{font-size:7.4px!important;line-height:1.15!important;letter-spacing:.13em!important}
+.attendance-room-v673 .schedule-series-copy h3{margin:2px 0 1px!important;font-size:11.5px!important;line-height:1.22!important;letter-spacing:-.01em!important}
+.attendance-room-v673 .schedule-series-copy small{font-size:8.7px!important;line-height:1.3!important}
+.attendance-room-v673 .schedule-series-icon{font-size:17px!important}
+.attendance-room-v673 .schedule-series-chevron{font-size:18px!important}
+.attendance-room-v673 .schedule-session-main{min-height:54px!important;padding:7px 9px!important;gap:8px!important}
+.attendance-room-v673 .academic-date-tile.compact{width:34px!important;min-width:34px!important;height:38px!important;border-radius:9px!important}
+.attendance-room-v673 .academic-date-tile.compact strong{font-size:9px!important;line-height:1!important}
+.attendance-room-v673 .academic-date-tile.compact span{font-size:6.5px!important;line-height:1!important}
+.attendance-room-v673 .schedule-session-copy{gap:2px!important}
+.attendance-room-v673 .schedule-session-copy>span b{font-size:10.5px!important;line-height:1.18!important;font-weight:800!important}
+.attendance-room-v673 .schedule-session-copy>small{font-size:8.8px!important;line-height:1.28!important}
+.attendance-room-v673 .attendance-session-window{font-size:8.3px!important;line-height:1.3!important;margin-top:0!important}
+.attendance-room-v673 .attendance-hub-status{min-height:23px!important;padding:3px 6px!important;font-size:8px!important;gap:4px!important}
+.attendance-room-v673 .attendance-hub-status .material-symbols-rounded{font-size:13px!important}
+.attendance-room-v673 .row-chevron{font-size:18px!important}
+
+/* Feedback — the visual is an asset, not a hard-coded illustration. */
+.feedback-hero{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:0!important;
+  display:block!important;
+  background:#061b3b!important;
+  border-color:rgba(27,210,255,.28)!important;
+}
+.feedback-hero:before{display:none!important}
+.feedback-hero-image{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:2048/347;
+  object-fit:cover;
+}
+.feedback-hero-open{
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  width:42px;
+  height:42px;
+  border:1px solid rgba(81,241,220,.58);
+  border-radius:50%;
+  background:rgba(4,25,58,.82);
+  color:#EFFFFB;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,8,28,.28);
+  transition:transform .16s ease,border-color .16s ease,background .16s ease;
+}
+.feedback-hero-open:hover{transform:translateX(2px);background:#0A3767;border-color:#5FF0DA}
+.feedback-hero-open .material-symbols-rounded{font-size:22px}
+.feedback-modal-card{width:min(680px,100%)!important}
+.feedback-modal-head p{margin:6px 0 0!important;max-width:560px;font-size:11px!important;line-height:1.5!important}
+.feedback-form-modal{display:grid!important;gap:10px!important;padding-top:13px!important;border-top:1px solid var(--line)!important}
+.feedback-form-modal .feedback-form-grid{grid-template-columns:minmax(155px,.34fr) minmax(0,1fr)!important}
+.feedback-form-modal .feedback-message-field textarea{min-height:108px}
+.feedback-form-modal .feedback-actions{justify-content:flex-end}
+html[data-theme="light"] .feedback-hero{background:#EAF4FC!important;border-color:#CFE5F5!important}
+
+@media(max-width:900px){
+  /* Mobile/tablet: the two code cards sit left-right, each still one line internally. */
+  .class-room-page .class-hero-code-rail{
+    grid-column:1/-1!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:5px!important;
+  }
+  .class-room-page .class-code-rail-item{
+    grid-template-columns:auto auto minmax(0,1fr) 22px!important;
+    min-height:32px!important;
+    padding:4px 6px!important;
+    gap:4px!important;
+  }
+  .class-room-page .class-code-rail-item>span{font-size:6.5px!important}
+  .class-room-page .class-code-rail-item>i{font-size:7px!important}
+  .class-room-page .class-code-rail-item strong{font-size:8.2px!important}
+  .class-room-page .class-code-rail-item .mini{width:20px!important;height:20px!important;min-width:20px!important}
+}
+
+@media(max-width:620px){
+  .attendance-room-v673 .panel-head{align-items:flex-start!important;gap:8px!important}
+  .attendance-room-v673 .panel-head .panel-title{font-size:11.5px!important}
+  .attendance-room-v673 .panel-head .panel-copy{font-size:8.7px!important;line-height:1.4!important}
+  .attendance-room-v673 .compact-create-btn{min-height:28px!important;padding:4px 7px!important;font-size:8.8px!important}
+  .attendance-room-v673 .attendance-course-head{padding:8px 9px!important}
+  .attendance-room-v673 .schedule-series-copy .eyebrow{font-size:6.9px!important}
+  .attendance-room-v673 .schedule-series-copy h3{font-size:10.8px!important}
+  .attendance-room-v673 .schedule-series-copy small{font-size:8.2px!important}
+  .attendance-room-v673 .schedule-session-main{min-height:51px!important;padding:6px 8px!important;gap:6px!important}
+  .attendance-room-v673 .academic-date-tile.compact{width:32px!important;min-width:32px!important;height:36px!important}
+  .attendance-room-v673 .schedule-session-copy>span b{font-size:9.8px!important}
+  .attendance-room-v673 .schedule-session-copy>small{font-size:8.2px!important}
+  .attendance-room-v673 .attendance-session-window{font-size:7.8px!important}
+  .attendance-room-v673 .attendance-hub-status{font-size:7.4px!important;min-height:21px!important;padding:3px 5px!important}
+  .feedback-hero-open{right:8px;bottom:8px;width:36px;height:36px}
+  .feedback-hero-open .material-symbols-rounded{font-size:19px}
+  .feedback-modal-card{width:min(96vw,680px)!important}
+  .feedback-form-modal .feedback-form-grid{grid-template-columns:1fr!important}
+}

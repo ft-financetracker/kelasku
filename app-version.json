@@ -1,8 +1,8 @@
 {
-  "version": "6.7.7",
-  "build": "20260928.277",
+  "version": "6.7.8",
+  "build": "20260928.278",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Room Class pre-live polish: header dipadatkan, hero dirapikan, code rail satu baris, tombol Landing dipindahkan ke Ringkasan, dan label sesi Absensi dibuat eksplisit.",
-  "release_time_wib": "14:17 WIB"
+  "release_note": "Pre-live UI polish: code card Ruang Kelas diperjelas, tipografi Absensi diproporsionalkan, dan Saran & Masukan memakai image asset dengan form popup.",
+  "release_time_wib": "14:45 WIB"
 }
