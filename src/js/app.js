@@ -22,7 +22,7 @@ import { renderDashboard } from './screens/dashboard.js';
 import { renderAccount } from './screens/account.js';
 import { renderSettings } from './screens/settings.js';
 import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js';
-import { renderClassRoom } from './screens/classRoom.js?v=6719';
+import { renderClassRoom } from './screens/classRoom.js?v=6720';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';

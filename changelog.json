@@ -1,5 +1,17 @@
 [
   {
+    "version": "6.7.20",
+    "build": "20260929.320",
+    "date": "2026-09-29",
+    "title": "Room Class Recovery + Update Delivery Fix",
+    "changes": [
+      "Memperbaiki mismatch frontend config 6.7.18 vs app-version/service-worker 6.7.19 yang membuat update berulang/nyangkut.",
+      "Memulihkan source Room Class dan CSS ke baseline v6.7.18 yang lengkap sebelum patch visual baru diterapkan.",
+      "Merapikan hero Room Class, navigasi utama, dropdown submenu mobile, dan header/KPI Jadwal tanpa mengubah card sesi jadwal.",
+      "Tombol tambah di modul Akademik menjadi ikon + yang compact dengan ID/action lama tetap dipertahankan."
+    ]
+  },
+  {
     "version": "6.7.19",
     "build": "20260929.319",
     "date": "2026-09-29",

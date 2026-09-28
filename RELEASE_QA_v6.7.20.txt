@@ -1,0 +1,26 @@
+KelasKu v6.7.20 — Recovery QA
+Build: 20260929.320
+Schema: 17 (unchanged)
+Type: FRONTEND-ONLY
+
+Root cause fixed:
+- config.js on deployed backup was still 6.7.18 / build .318
+- app-version.json + service-worker + index assets were already 6.7.19 / build .319
+- this mismatch made the client keep detecting an update after reload.
+- v6.7.19 classRoom.js/CSS had also replaced newer v6.7.18 logic with an older baseline.
+
+Recovery method:
+- restored classRoom.js + app.css from known-good v6.7.18 package
+- re-applied ONLY scoped Room Class improvements
+- synchronized frontend version/build/cache-busters/service-worker to 6.7.20/.320
+
+Static QA:
+- classRoom.js syntax PASS
+- app.js syntax PASS
+- service-worker.js syntax PASS
+- app-version.json PASS
+- changelog.json PASS
+- Service Worker APP_SHELL has no missing files
+- CSS brace balance 0
+- stable v6.7.18 class member pagination + attendance logic restored
+- no Apps Script or schema change required

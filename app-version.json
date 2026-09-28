@@ -1,8 +1,8 @@
 {
-  "version": "6.7.19",
-  "build": "20260929.319",
+  "version": "6.7.20",
+  "build": "20260929.320",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Class Room precision patch: room hero refined, main navigation compact with mobile scroll controls, submenu dropdown on mobile, academic add buttons compacted to [+], overview link/code layout cleaned, and schedule header/KPI presentation tightened without changing schedule cards.",
-  "release_time_wib": "02:26 WIB"
+  "release_note": "Recovery release: sinkronisasi version/build/cache untuk memutus update loop dan memulihkan baseline v6.7.18 pada Room Class sebelum menerapkan polish hero, navigasi, submenu mobile, dan header Jadwal secara scoped.",
+  "release_time_wib": "Recovery Build"
 }
