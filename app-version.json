@@ -1,8 +1,8 @@
 {
-  "version": "6.7.6",
-  "build": "20260928.276",
+  "version": "6.7.7",
+  "build": "20260928.277",
   "schema": 17,
   "release_date": "2026-09-28",
-  "release_note": "Frontend-only visual micro-patch: geometric background pattern visibility reduced by 40% across the main app and public class landing, with Light Mode kept proportionally softer. No Apps Script or schema changes.",
-  "release_updated_wib": "28 Sep 2026, 09:26 WIB"
+  "release_note": "Frontend-only hotfix: geometric background pattern visibility reduced by 40% and asset cache-busters updated so the new CSS/JS is actually fetched by browsers/PWA. No Apps Script or schema changes.",
+  "release_updated_wib": "28 Sep 2026, 10:19 WIB"
 }

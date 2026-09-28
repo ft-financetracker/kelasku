@@ -524,7 +524,7 @@ function renderError(message) {
 
 function registerPublicServiceWorker(){
   if(!('serviceWorker' in navigator))return;
-  navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(err=>console.warn('Public SW:',err));
+  navigator.serviceWorker.register('/service-worker.js',{scope:'/',updateViaCache:'none'}).catch(err=>console.warn('Public SW:',err));
 }
 
 async function init() {
