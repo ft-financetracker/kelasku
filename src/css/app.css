@@ -1744,3 +1744,205 @@ html[data-theme="light"] .class-appearance-soon{background:#f8fbfe;border-color:
   .attendance-session-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .attendance-session-actions .btn-danger{grid-column:1/-1}
 }
+
+
+/* ============================================================
+   v6.7.7 — Room Class pre-live visual polish (frontend-only)
+   Scope: header, hero, compact code rail, attendance session label
+   ============================================================ */
+.class-room-page>.class-room-head{
+  align-items:center;
+  margin:2px 0 12px;
+  min-height:42px;
+}
+.class-room-page>.class-room-head h1{
+  margin:0;
+  font-size:clamp(26px,2.3vw,34px);
+  line-height:1.08;
+  letter-spacing:-.035em;
+}
+.class-room-back-btn{
+  min-height:36px!important;
+  padding:8px 12px!important;
+  gap:7px!important;
+  border-radius:11px!important;
+  font-size:11.5px!important;
+  line-height:1!important;
+}
+.class-room-back-btn .icon{width:16px!important;height:16px!important}
+
+.class-room-page .class-hero-v51{
+  grid-template-columns:48px minmax(0,1fr) minmax(270px,330px)!important;
+  align-items:center!important;
+  gap:14px!important;
+  padding:14px 15px!important;
+}
+.class-room-page .class-hero-v51 .class-hero-icon{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  border-radius:14px!important;
+}
+.class-room-page .class-hero-v51 .class-hero-icon .icon{width:25px!important;height:25px!important}
+.class-room-page .class-hero-v51 .class-hero-main{display:grid;align-content:center;min-width:0}
+.class-room-page .class-hero-v51 .class-primary-meta{
+  margin:0 0 3px!important;
+  font-size:10px!important;
+  line-height:1.35!important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.class-room-page .class-hero-v51 .class-hero-main h2{
+  margin:0!important;
+  font-size:18px!important;
+  line-height:1.2!important;
+  letter-spacing:-.02em;
+}
+.class-room-page .class-hero-v51 .class-hero-description{
+  display:block!important;
+  margin:5px 0 0!important;
+  font-size:10.5px!important;
+  line-height:1.4!important;
+}
+.class-room-page .class-hero-bottomline{
+  margin-top:7px!important;
+  gap:6px!important;
+  flex-wrap:nowrap!important;
+  overflow:hidden;
+}
+.class-room-page .class-secondary-meta{
+  gap:5px!important;
+  font-size:8.5px!important;
+  line-height:1!important;
+  white-space:nowrap;
+}
+.class-room-page .class-hero-v51 .visibility-badge,
+.class-room-page .class-hero-v51 .role-pill{
+  min-height:21px!important;
+  padding:3px 7px!important;
+  border-radius:999px!important;
+  font-size:8px!important;
+  line-height:1!important;
+  letter-spacing:.02em!important;
+  white-space:nowrap;
+}
+.class-room-page .class-hero-v51 .class-badge-line{gap:5px!important;flex-wrap:nowrap!important;min-width:0}
+
+.class-room-page .class-hero-code-rail{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:6px!important;
+  align-self:center!important;
+  width:100%!important;
+  padding-left:0!important;
+}
+.class-room-page .class-code-rail-item{
+  min-height:40px!important;
+  padding:6px 7px!important;
+  border-left:0!important;
+  border:1px solid rgba(91,160,240,.13)!important;
+  border-radius:10px!important;
+  background:rgba(7,31,66,.42)!important;
+  display:grid!important;
+  gap:2px!important;
+}
+.class-room-page .class-code-rail-item>span{
+  font-size:6.8px!important;
+  line-height:1!important;
+  letter-spacing:.09em!important;
+}
+.class-room-page .class-code-rail-item>div{gap:5px!important;min-width:0}
+.class-room-page .class-code-rail-item strong{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px!important;
+  line-height:1.15!important;
+}
+.class-room-page .class-code-rail-item .mini{
+  width:24px!important;
+  height:24px!important;
+  min-width:24px!important;
+  border-radius:8px!important;
+}
+.class-room-page .class-code-rail-item .mini .icon{width:14px!important;height:14px!important}
+html[data-theme="light"] .class-room-page .class-code-rail-item{background:#F7FBFF!important;border-color:#DCE8F3!important}
+
+.class-room-page .detail-row-link-actions .small-btn{
+  min-height:29px!important;
+  padding:5px 8px!important;
+  border-radius:9px!important;
+  font-size:10px!important;
+}
+
+.attendance-room-v673 .schedule-session-copy>span b{
+  font-size:.82rem!important;
+  letter-spacing:.01em;
+}
+.attendance-room-v673 .attendance-session-window{
+  margin-top:2px;
+  font-size:.69rem!important;
+  line-height:1.35!important;
+}
+
+@media(max-width:900px){
+  .class-room-page .class-hero-v51{
+    grid-template-columns:44px minmax(0,1fr)!important;
+    gap:10px!important;
+    padding:12px!important;
+  }
+  .class-room-page .class-hero-v51 .class-hero-icon{
+    width:44px!important;height:44px!important;min-width:44px!important;border-radius:13px!important;
+  }
+  .class-room-page .class-hero-code-rail{
+    grid-column:1/-1!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    margin-top:0!important;
+  }
+}
+
+@media(max-width:620px){
+  .class-room-page>.class-room-head{display:flex!important;grid-template-columns:none!important;justify-content:space-between!important;align-items:center!important;margin:0 2px 9px;min-height:38px}
+  .class-room-page>.class-room-head h1{font-size:23px!important}
+  .class-room-back-btn{
+    min-height:32px!important;
+    padding:6px 9px!important;
+    border-radius:10px!important;
+    font-size:10.5px!important;
+    gap:5px!important;
+  }
+  .class-room-back-btn .icon{width:14px!important;height:14px!important}
+  .class-room-page .class-hero-v51{
+    grid-template-columns:38px minmax(0,1fr)!important;
+    gap:8px!important;
+    padding:10px!important;
+  }
+  .class-room-page .class-hero-v51 .class-hero-icon{
+    width:38px!important;height:38px!important;min-width:38px!important;border-radius:11px!important;
+  }
+  .class-room-page .class-hero-v51 .class-hero-icon .icon{width:20px!important;height:20px!important}
+  .class-room-page .class-hero-v51 .class-primary-meta{
+    margin:0 0 2px!important;
+    font-size:8.8px!important;
+  }
+  .class-room-page .class-hero-v51 .class-primary-meta span+span::before{margin:0 4px!important}
+  .class-room-page .class-hero-v51 .class-hero-main h2{font-size:15.5px!important;line-height:1.18!important}
+  .class-room-page .class-hero-v51 .class-hero-description{display:none!important}
+  .class-room-page .class-hero-bottomline{margin-top:5px!important;gap:5px!important}
+  .class-room-page .class-secondary-meta{font-size:7.5px!important}
+  .class-room-page .class-hero-v51 .visibility-badge,
+  .class-room-page .class-hero-v51 .role-pill{
+    min-height:19px!important;
+    padding:3px 6px!important;
+    font-size:7.3px!important;
+  }
+  .class-room-page .class-hero-code-rail{gap:5px!important}
+  .class-room-page .class-code-rail-item{min-height:35px!important;padding:5px 6px!important;border-radius:9px!important}
+  .class-room-page .class-code-rail-item>span{font-size:6.2px!important}
+  .class-room-page .class-code-rail-item strong{font-size:8.4px!important}
+  .class-room-page .class-code-rail-item .mini{width:22px!important;height:22px!important;min-width:22px!important}
+  .attendance-room-v673 .schedule-session-main{gap:7px!important}
+  .attendance-room-v673 .schedule-session-copy>span b{font-size:.78rem!important}
+}

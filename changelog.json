@@ -1,6 +1,31 @@
 {
   "releases": [
     {
+      "version": "6.7.7",
+      "build": "20260928.277",
+      "date": "28 September 2026",
+      "title": "Room Class Pre-Live Polish",
+      "description": "Patch frontend-only untuk merapikan Ruang Kelas pada desktop dan mobile tanpa mengubah backend/schema.",
+      "groups": [
+        {
+          "label": "Ruang Kelas",
+          "items": [
+            "Label Phase 6 dan Class Code di bawah judul Ruang Kelas dihapus; tombol Kembali dipadatkan.",
+            "Hero kelas dipadatkan, pill visibility/role diperkecil, dan Class Code + Join Code dibuat satu baris compact.",
+            "Tombol Buka Landing dihapus dari hero; akses Landing tetap tersedia dari Ringkasan melalui Link Kelas.",
+            "Label sesi Absensi selalu eksplisit sebagai Sesi - 01, Sesi - 02, dan seterusnya dengan urutan waktu."
+          ]
+        },
+        {
+          "label": "Teknis",
+          "items": [
+            "Frontend-only; Apps Script dan schema 17 tidak berubah.",
+            "Cache/version frontend dinaikkan untuk memastikan asset baru benar-benar termuat."
+          ]
+        }
+      ]
+    },
+    {
       "version": "6.7.6",
       "build": "20260928.276",
       "date": "28 September 2026",
