@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.21-b321-room-submenu-popover';
+const CACHE_NAME = 'kelasku-v6.7.22-b322-mobile-room-nav-polish';
 const APP_SHELL = [
   '/',
   '/index.html',

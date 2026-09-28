@@ -1135,6 +1135,7 @@ function memberRow(m,p) {
     <div class="member-main-v52">
       <strong class="member-name-v52">${esc(m.full_name||m.username)}</strong>
       <span class="member-id-v52">@${esc(m.username||'-')} · ${esc(m.kelasku_id||'-')}</span>
+      <span class="member-bio-mobile-v6722">@${esc(m.username||'-')} · ${esc(academic)}</span>
     </div>
     <div class="member-academic-v52">${esc(academic)}</div>
     <div class="member-side member-side-v52">

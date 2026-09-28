@@ -1,24 +1,10 @@
-KelasKu v6.7.21 — Room Submenu Popover Hotfix
+KelasKu v6.7.22 — Mobile Room Member + Submenu + Bottom Nav Polish
 
-SCOPE ONLY:
-- Room Class navigation submenu behavior
-- Version/cache synchronization required for this frontend patch
+Scope patch (frontend-only):
+- Mobile submenu popover: icon lebih besar, header 1 baris.
+- Mobile member card: 2 baris identitas + footer badge/action.
+- Mobile bottom nav: 5 icon sejajar, active highlight compact, tanpa CTA besar.
 
-PERUBAHAN:
-- Submenu Akademik/Kelola tidak tampil permanen di bawah navigasi.
-- Klik tombol Akademik atau Kelola -> submenu muncul sebagai panel di luar container navigasi.
-- Klik item -> pindah submenu lalu panel menutup.
-- Klik tombol utama yang sama -> toggle buka/tutup.
-- Desktop: grid compact 3 kolom.
-- Mobile: grid 2 kolom, 1 kolom di layar sangat sempit.
+Tidak mengubah Apps Script / schema / database.
 
-TIDAK BERUBAH:
-- Dashboard
-- Daftar Kelas
-- Hero Room
-- Jadwal/card sesi
-- Absensi
-- Backend/API/Schema
-
-Apps Script: TIDAK PERLU UPDATE.
-Schema: 17.
+Overwrite file sesuai struktur ZIP, commit + push, tunggu GitHub Pages selesai, lalu tutup total PWA/tab dan buka kembali.

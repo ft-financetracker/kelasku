@@ -1,5 +1,16 @@
 [
   {
+    "version": "6.7.22",
+    "build": "20260929.322",
+    "date": "2026-09-29",
+    "title": "Mobile Room Member + Submenu + Bottom Nav Polish",
+    "changes": [
+      "Larger submenu icons and one-line submenu header on mobile.",
+      "Member cards use two-line identity with a separate badge/action footer on mobile.",
+      "Bottom navigation uses five equal icon stations with a compact active highlight and no CTA block."
+    ]
+  },
+  {
     "version": "6.7.21",
     "build": "20260929.321",
     "date": "2026-09-29",

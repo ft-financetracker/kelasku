@@ -1,8 +1,8 @@
 {
-  "version": "6.7.21",
-  "build": "20260929.321",
+  "version": "6.7.22",
+  "build": "20260929.322",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Scoped Room Class navigation fix: Academic/Manage submenu no longer occupies a permanent row. The submenu now appears only when its main button is clicked, outside the navigation container, and closes after selection.",
-  "release_time_wib": "03:24 WIB"
+  "release_note": "Mobile polish: submenu icons enlarged with one-line header, member cards simplified into two-line identity plus badge footer, and bottom navigation rebuilt as equal icon stations without CTA blocks.",
+  "release_time_wib": "03:28 WIB"
 }
