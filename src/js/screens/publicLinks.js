@@ -155,15 +155,16 @@ function publicHero(cls) {
     cls.institution || '',
     cls.study_program && !String(cls.name || '').toLowerCase().includes(String(cls.study_program).toLowerCase()) ? cls.study_program : '',
     cls.cohort ? `Angkatan ${cls.cohort}` : '',
-    cls.semester || '',
-    cls.visibility || 'KELAS'
+    cls.semester || ''
   ].filter(Boolean);
+  const visibility = cls.visibility || 'KELAS';
   return `<section class="public-hero">
     <span class="public-hero-icon material-symbols-rounded">school</span>
     <div class="public-hero-copy">
-      <span class="public-kicker">SATU LINK KELAS</span>
-      <h1>${esc(cls.name || 'Kelas')}</h1>
-      <div class="public-meta-line">${meta.map((item,index)=>`${index?'<i>•</i>':''}<span>${esc(item)}</span>`).join('')}</div>
+      <div class="public-hero-heading">
+        <h1>${esc(cls.name || 'Kelas')}</h1>
+      </div>
+      <div class="public-meta-line">${meta.map((item,index)=>`${index?'<i>•</i>':''}<span>${esc(item)}</span>`).join('')}<span class="public-visibility-badge">${esc(visibility)}</span></div>
       <div class="public-hero-foot">
         <p>${esc(cls.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
         <small class="public-class-code">${esc(cls.class_code || '')}${cls.status?` • ${esc(cls.status)}`:''}</small>
