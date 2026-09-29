@@ -248,3 +248,11 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 /* v6.7.9 — compact activity signals */
 .public-room-tab{position:relative}.public-tab-signal{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#46E4CC;color:#06243B;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;line-height:1;margin-left:2px}.public-room-tab.active .public-tab-signal{background:#D9FFFA;color:#063A44}
 @media(max-width:560px){.public-tab-signal{min-width:16px;height:16px;font-size:8px;padding:0 4px}.public-room-tab{gap:5px!important}}
+
+
+/* v6.7.25 — per-class landing hero appearance */
+.public-hero-custom-v6725{position:relative;isolation:isolate;overflow:hidden;background:#071d42!important;border-color:rgba(68,188,255,.28)!important}
+.public-hero-bg-v6725,.public-hero-bg-v6725 img{position:absolute;inset:0;width:100%;height:100%;display:block}.public-hero-bg-v6725{z-index:-3}.public-hero-bg-v6725 img{object-fit:cover;object-position:center right}
+.public-hero-shade-v6725{position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,rgba(3,17,45,.95),rgba(3,21,53,.78) 46%,rgba(3,22,55,.18) 78%,rgba(3,22,55,.04));pointer-events:none}
+.public-hero-custom-v6725 h1,.public-hero-custom-v6725 p,.public-hero-custom-v6725 .public-meta-line{color:#F4FAFF}
+@media(max-width:720px){.public-hero-shade-v6725{background:linear-gradient(90deg,rgba(3,17,45,.97),rgba(3,21,53,.86) 54%,rgba(3,22,55,.35))}}

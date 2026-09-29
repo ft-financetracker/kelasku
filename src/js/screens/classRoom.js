@@ -140,13 +140,18 @@ function drawClass(data, preserveTab = true) {
   if(roomSubtitle) roomSubtitle.textContent='';
 
   document.getElementById('class-room-slot').innerHTML = `
-    <section class="class-hero class-hero-v51 class-hero-v6720 panel">
-      <div class="class-hero-icon class-room-cover-v6720">${c.cover_url?`<img src="${esc(c.cover_url)}" alt="" loading="lazy">`:svg('i-class')}</div>
-      <div class="class-hero-main">
+    <section class="class-hero class-hero-v51 class-hero-v6720 class-hero-v6725 panel">
+      <picture class="class-hero-bg-v6725" aria-hidden="true">
+        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'ROOM_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6725'))}">
+        <img src="${esc(classAppearanceUrl(data,'ROOM_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6725'))}" alt="" loading="eager" decoding="async">
+      </picture>
+      <div class="class-hero-shade-v6725" aria-hidden="true"></div>
+      <div class="class-hero-icon class-room-cover-v6720 class-room-cover-v6725">${c.cover_url?`<img src="${esc(c.cover_url)}" alt="" loading="lazy">`:svg('i-class')}</div>
+      <div class="class-hero-main class-hero-copy-v6725">
         <div class="class-primary-meta class-hero-subtitle"><span>${esc(c.institution || 'KelasKu')}</span>${c.study_program?`<span>${esc(c.study_program)}</span>`:''}${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}${c.semester?`<span>${esc(c.semester)}</span>`:''}</div>
         <h2>${esc(c.name)}</h2>
         <p class="class-hero-description">${esc(c.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
-        <div class="class-hero-mobile-rule-v6720" aria-hidden="true"></div>
+        <div class="class-hero-mobile-rule-v6720 class-hero-rule-v6725" aria-hidden="true"></div>
         <div class="class-hero-bottomline">
           <div class="class-secondary-meta"><span>Class</span><span class="visibility-badge visibility-${String(c.visibility||'DISCOVERABLE').toLowerCase()}">${esc(c.visibility || 'DISCOVERABLE')}</span></div>
           <div class="class-badge-line class-badge-bottom"><span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role || 'MEMBER'))}</span>${leader && String(leader.user_id)===String(state.user?.user_id)?'<span class="role-pill leader-role-pill">Ketua Kelas</span>':''}</div>
@@ -1172,12 +1177,99 @@ function requestsHtml(data) {
   return `<section class="panel"><div class="panel-head"><div><div class="panel-title">Permintaan Bergabung</div><p class="panel-copy">Setiap tindakan dikunci selama request berjalan agar tidak terkirim dua kali.</p></div></div><div class="member-list">${items.length?items.map(r=>`<div class="member-row join-request-row" data-request-row="${esc(r.request_id)}"><div class="member-avatar">${avatarMarkup(r)}</div><div class="member-info"><strong>${esc(r.full_name||r.username)}</strong><span>@${esc(r.username||'-')} · ${esc(r.kelasku_id||'-')}</span><small>${esc(r.message||'Tanpa pesan')}</small><span class="inline-request-status" data-request-status></span></div><div class="member-actions"><button class="btn btn-secondary small-btn" data-request="${esc(r.request_id)}" data-decision="REJECT">Tolak</button><button class="btn btn-primary small-btn" data-request="${esc(r.request_id)}" data-decision="APPROVE">Terima</button></div></div>`).join(''):'<div class="search-empty">Tidak ada permintaan yang menunggu.</div>'}</div></section>`;
 }
 
+
+const CLASS_APPEARANCE_META = Object.freeze({
+  ROOM_DESKTOP:{label:'Hero Room Class — Desktop',size:'2048 × 384 px',ratio:'5.33 : 1',maxEdge:2048},
+  ROOM_MOBILE:{label:'Hero Room Class — Mobile',size:'1440 × 320 px',ratio:'4.50 : 1',maxEdge:1440},
+  LANDING_DESKTOP:{label:'Hero Landing — Desktop',size:'2048 × 384 px',ratio:'5.33 : 1',maxEdge:2048},
+  LANDING_MOBILE:{label:'Hero Landing — Mobile',size:'1440 × 320 px',ratio:'4.50 : 1',maxEdge:1440}
+});
+function classAppearanceUrl(data,slot,fallback=''){
+  return data?.appearance?.active?.[slot]?.url || fallback;
+}
+function classAppearanceSlotCard(slot,data){
+  const meta=CLASS_APPEARANCE_META[slot];
+  const item=data?.appearance?.active?.[slot]||null;
+  const isRoom=slot.indexOf('ROOM_')===0;
+  const fallback=isRoom?(slot==='ROOM_DESKTOP'?'assets/classroom/hero-room-default-desktop.jpg?v=6725':'assets/classroom/hero-room-default-mobile.jpg?v=6725'):'';
+  const preview=item?.url||fallback;
+  return `<article class="appearance-slot-card" data-appearance-slot-card="${slot}">
+    <div class="appearance-slot-preview">${preview?`<img src="${esc(preview)}" alt="Preview ${esc(meta.label)}" loading="lazy">`:`<div class="appearance-slot-placeholder"><span class="material-symbols-rounded">web_asset</span><strong>Default KelasKu</strong></div>`}</div>
+    <div class="appearance-slot-copy"><div><strong>${esc(meta.label)}</strong><small>Rekomendasi ${esc(meta.size)} · rasio ${esc(meta.ratio)} · JPG/PNG/WebP</small></div><span class="soft-chip">${item?'CUSTOM':'DEFAULT'}</span></div>
+    <div class="appearance-slot-actions">
+      <label class="btn btn-primary appearance-upload-btn"><span class="material-symbols-rounded">upload</span> Upload<input type="file" accept="image/png,image/jpeg,image/webp" data-appearance-file="${slot}" hidden></label>
+      ${item?`<button type="button" class="btn btn-secondary" data-appearance-default="${slot}"><span class="material-symbols-rounded">restart_alt</span> Default</button>`:''}
+    </div>
+    <div class="request-status" data-appearance-status="${slot}"></div>
+  </article>`;
+}
+function classAppearanceLibraryHtml(data){
+  const items=(data?.appearance?.library||[]).filter(x=>x?.media_id&&x?.url);
+  if(!items.length)return `<div class="appearance-library-empty"><span class="material-symbols-rounded">photo_library</span><div><strong>Album masih kosong</strong><small>Setiap upload baru akan tetap tersimpan di sini sehingga dapat dipakai lagi.</small></div></div>`;
+  return `<div class="appearance-library-grid">${items.map(item=>{
+    const meta=CLASS_APPEARANCE_META[item.slot]||{label:item.slot||'Hero'};
+    return `<article class="appearance-library-card ${item.active?'is-active':''}"><img src="${esc(item.url)}" alt="${esc(meta.label)}" loading="lazy"><div><strong>${esc(meta.label)}</strong><small>${esc(item.filename||'Gambar kelas')} · ${item.created_at?esc(new Date(item.created_at).toLocaleDateString('id-ID')):''}</small></div><button type="button" class="btn ${item.active?'btn-primary':'btn-secondary'} small-btn" data-appearance-use="${esc(item.media_id)}" data-appearance-slot="${esc(item.slot)}" ${item.active?'disabled':''}>${item.active?'Aktif':'Gunakan'}</button></article>`;
+  }).join('')}</div>`;
+}
+function classAppearanceHtml(data){
+  return `<div class="appearance-settings-v6725">
+    <div class="appearance-guide"><span class="material-symbols-rounded">crop_landscape</span><div><strong>Area aman teks berada di sisi kiri.</strong><small>Gunakan gambar dengan fokus visual di kanan agar judul kelas tetap terbaca di desktop dan mobile. Upload otomatis dikompresi sebelum disimpan ke Google Drive.</small></div></div>
+    <div class="appearance-section-title"><div><strong>Hero Room Class</strong><small>Dipakai di dalam Ruang Kelas.</small></div></div>
+    <div class="appearance-slot-grid">${classAppearanceSlotCard('ROOM_DESKTOP',data)}${classAppearanceSlotCard('ROOM_MOBILE',data)}</div>
+    <div class="appearance-section-title"><div><strong>Hero Landing Page</strong><small>Dipakai pada landing publik kelas.</small></div></div>
+    <div class="appearance-slot-grid">${classAppearanceSlotCard('LANDING_DESKTOP',data)}${classAppearanceSlotCard('LANDING_MOBILE',data)}</div>
+    <div class="appearance-section-title appearance-library-title"><div><strong>Album Tampilan</strong><small>Gambar lama tidak dihapus saat kamu mengganti hero. Pilih kembali kapan saja.</small></div></div>
+    ${classAppearanceLibraryHtml(data)}
+  </div>`;
+}
+async function refreshAppearancePane(data){
+  const slot=document.getElementById('room-content');
+  if(!slot)return;
+  slot.innerHTML=settingsHtml(data);bindTab('settings',data);activateClassSettingPane('appearance');
+}
+async function uploadClassAppearance(slot,input,data){
+  const file=input?.files?.[0]; if(!file)return;
+  const meta=CLASS_APPEARANCE_META[slot]; if(!meta)return;
+  const status=document.querySelector(`[data-appearance-status="${slot}"]`);
+  input.disabled=true;
+  if(status){status.className='request-status progress';status.textContent='Menyiapkan dan mengunggah gambar…';}
+  try{
+    if(file.size>10*1024*1024)throw new Error('File awal maksimal 10 MB.');
+    const prepared=await compressImageFile(file,{maxEdge:meta.maxEdge,targetBytes:700000,minQuality:.5});
+    const result=await api('uploadClassAppearanceMedia',{class_id:state.selectedClassId,slot,data_url:prepared.dataUrl,filename:file.name,width:prepared.width,height:prepared.height},{onSlow:()=>{if(status)status.textContent='Upload masih diproses di Google Drive…';}});
+    if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}
+    toast('Hero kelas tersimpan. Gambar lama tetap ada di album.');
+    await refreshAppearancePane(currentClassData||data);
+    applyRoomHeroAppearance(currentClassData||data);
+  }catch(err){if(status){status.className='request-status error';status.textContent=err.message;}toast(err.message);}finally{if(document.body.contains(input))input.disabled=false;}
+}
+async function useClassAppearance(mediaId,slot,data){
+  try{
+    const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot,media_id:mediaId||''});
+    if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}
+    toast(mediaId?'Gambar album digunakan kembali.':'Hero dikembalikan ke gambar default.');
+    await refreshAppearancePane(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);
+  }catch(err){toast(err.message);}
+}
+function applyRoomHeroAppearance(data){
+  const picture=document.querySelector('.class-hero-bg-v6725');if(!picture)return;
+  const source=picture.querySelector('source');const img=picture.querySelector('img');
+  const mobile=classAppearanceUrl(data,'ROOM_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6725');
+  const desktop=classAppearanceUrl(data,'ROOM_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6725');
+  if(source)source.srcset=mobile;if(img)img.src=desktop;
+}
+function bindClassAppearanceSettings(data){
+  document.querySelectorAll('[data-appearance-file]').forEach(input=>input.addEventListener('change',()=>uploadClassAppearance(input.dataset.appearanceFile,input,data)));
+  document.querySelectorAll('[data-appearance-use]').forEach(btn=>btn.addEventListener('click',()=>useClassAppearance(btn.dataset.appearanceUse,btn.dataset.appearanceSlot,data)));
+  document.querySelectorAll('[data-appearance-default]').forEach(btn=>btn.addEventListener('click',()=>useClassAppearance('',btn.dataset.appearanceDefault,data)));
+}
+
 function settingsHtml(data) {
   const c=data.class||{},s=data.settings||{},p=data.permissions||{},links=data.class_links||[],publicUrl=publicClassLinksUrl(c.class_code||'',c.public_slug||''),joinUrl=joinClassUrl(c.class_code||'',c.public_slug||'');
   const roleRows=p.is_owner?(data.members||[]).filter(m=>String(m.class_role)!=='OWNER').map(m=>`<div class="class-role-setting-row"><div class="member-avatar">${avatarMarkup(m)}</div><div><strong>${esc(m.full_name||m.username)}</strong><small>@${esc(m.username||'-')} · ${m.is_class_leader?'Ketua Kelas · ':''}${esc(roleLabel(m.class_role||'MEMBER'))}</small></div><select class="control compact-control" data-role-user="${esc(m.user_id)}"><option value="MEMBER" ${m.class_role==='MEMBER'?'selected':''}>Member</option><option value="MODERATOR" ${m.class_role==='MODERATOR'?'selected':''}>Moderator</option><option value="COORDINATOR" ${m.class_role==='COORDINATOR'?'selected':''}>Koordinator</option><option value="TEACHER" ${m.class_role==='TEACHER'?'selected':''}>Pengajar</option><option value="OBSERVER" ${m.class_role==='OBSERVER'?'selected':''}>Pengamat</option></select></div>`).join(''):'';
   return `<form id="class-settings-form" class="class-settings-console"><div class="class-settings-tabs" role="tablist"><button type="button" class="active" data-class-setting-tab="identity">Identitas</button><button type="button" data-class-setting-tab="appearance">Tampilan</button><button type="button" data-class-setting-tab="access">Akses</button>${p.is_owner?'<button type="button" data-class-setting-tab="roles">Role</button>':''}<button type="button" data-class-setting-tab="links">Link Kelas</button></div>
     <section class="panel class-setting-pane active" data-class-setting-pane="identity"><div class="settings-compact-head"><div><h2>Identitas Kelas</h2><p>Informasi utama kelas.</p></div>${svg('i-class')}</div><div class="field"><label>Nama Kelas</label><input class="control" name="name" value="${esc(c.name||'')}"></div><div class="field"><label>Deskripsi</label><textarea class="control" rows="3" name="description">${esc(c.description||'')}</textarea></div><div class="form-grid"><div class="field"><label>Institusi</label><input class="control" name="institution" value="${esc(c.institution||'')}"></div><div class="field"><label>Program Studi</label><input class="control" name="study_program" value="${esc(c.study_program||'')}"></div><div class="field"><label>Angkatan</label><input class="control" name="cohort" value="${esc(c.cohort||'')}"></div><div class="field"><label>Semester</label><input class="control" name="semester" value="${esc(c.semester||'')}"></div></div>${p.is_owner?`<div class="field"><label>Custom URL Kelas</label><div class="slug-control"><span>klasku.my.id/</span><input class="control" name="public_slug" value="${esc(c.public_slug||'')}" placeholder="esy3"></div><div class="form-help">Opsional. Class Code tetap menjadi fallback permanen.</div></div>`:''}<button type="button" id="save-class-profile" class="btn btn-primary">Simpan Identitas</button></section>
-    <section class="panel class-setting-pane" data-class-setting-pane="appearance"><div class="settings-compact-head"><div><h2>Tampilan Kelas</h2><p>Personalisasi visual kelas tanpa mengubah struktur akademik.</p></div><span class="material-symbols-rounded">palette</span></div><div class="class-appearance-soon"><span class="material-symbols-rounded">image</span><div><strong>Hero Landing & Room Class</strong><p>Gambar hero khusus per kelas akan tersedia pada update berikutnya.</p></div><span class="soft-chip">SOON</span></div></section>
+    <section class="panel class-setting-pane" data-class-setting-pane="appearance"><div class="settings-compact-head"><div><h2>Tampilan Kelas</h2><p>Kelola background Hero Room Class dan Landing Page. Gambar lama tetap tersimpan sebagai album.</p></div><span class="material-symbols-rounded">palette</span></div>${classAppearanceHtml(data)}</section>
     <section class="panel class-setting-pane" data-class-setting-pane="access"><div class="settings-compact-head"><div><h2>Akses & Permission</h2><p>Join, visibility, dan hak default member.</p></div>${svg('i-shield')}</div><div class="settings-compact-grid"><div>${selectRow('Visibilitas','visibility',c.visibility,[['PUBLIC','Public'],['DISCOVERABLE','Discoverable'],['PRIVATE','Private']])}${toggleRow('Perlu persetujuan','join_approval',s.join_approval)}${toggleRow('Join Code aktif','join_code_enabled',s.join_code_enabled)}${toggleRow('Daftar anggota terlihat','member_list_visible',s.member_list_visible)}</div><div>${toggleRow('Boleh posting diskusi','allow_member_posts',s.allow_member_posts)}${toggleRow('Boleh upload file','allow_member_uploads',s.allow_member_uploads)}${toggleRow('Boleh invite orang','allow_member_invites',s.allow_member_invites)}</div></div><div class="page-actions">${p.can_regenerate_join_code?'<button type="button" id="regen-code" class="btn btn-secondary">Generate Ulang Join Code</button>':''}<button id="save-class-settings" type="submit" class="btn btn-primary">Simpan Pengaturan</button></div><div id="class-settings-status" class="request-status"></div></section>
     ${p.is_owner?`<section class="panel class-setting-pane" data-class-setting-pane="roles"><div class="settings-compact-head"><div><h2>Role Kelas</h2><p>Owner mengatur role existing + Pengajar/Pengamat. Pengajar dan Pengamat dapat memantau data kelas tetapi tidak masuk roster Absensi/Tugas peserta.</p></div>${svg('i-users')}</div><div class="class-role-settings-list">${roleRows||'<div class="search-empty">Belum ada anggota yang dapat diatur.</div>'}</div></section>`:''}
     <section class="panel class-setting-pane class-links-settings" data-class-setting-pane="links"><div class="settings-compact-head"><div><h2>Link Grup & Link Penting</h2><p>Satu landing page untuk kebutuhan kelas.</p></div>${svg('i-link')}</div><label class="setting-row public-links-toggle"><span><strong>Landing page publik</strong><small>Guest dapat melihat bahwa link Anggota tersedia, tetapi URL private tidak pernah dikirim ke browser sebelum membership tervalidasi.</small></span><span class="switch"><input type="checkbox" id="public-links-enabled" ${truthy(s.public_links_enabled)?'checked':''}><span></span></span></label><div class="class-public-url ${truthy(s.public_links_enabled)?'':'is-disabled'}"><div><span>LINK PUBLIK KELAS</span><strong>${esc(publicUrl)}</strong></div><button type="button" id="copy-public-links" class="icon-btn" title="Salin link publik">${svg('i-copy')}</button><a href="${esc(publicUrl)}" target="_blank" rel="noopener noreferrer" class="icon-btn" title="Preview"><span class="material-symbols-rounded">open_in_new</span></a></div><div class="class-public-url join-class-url"><div><span>LINK BERGABUNG</span><strong>${esc(joinUrl)}</strong><small>Klik link → login bila perlu → ajukan bergabung → tunggu approval.</small></div><button type="button" id="copy-join-link" class="icon-btn" title="Salin link bergabung">${svg('i-copy')}</button></div>${classLinksManagerHtml(links)}<div class="class-links-actions"><button type="button" id="add-class-link" class="btn btn-secondary">${svg('i-plus')} Tambah Link</button><button type="button" id="save-class-links" class="btn btn-primary">Simpan Link</button></div><div id="class-links-status" class="request-status"></div></section>
@@ -1218,6 +1310,7 @@ function bindTab(tab,data) {
     document.getElementById('regen-code')?.addEventListener('click',regenerateJoinCode);
     document.querySelectorAll('[data-class-setting-tab]').forEach(btn=>btn.onclick=()=>activateClassSettingPane(btn.dataset.classSettingTab));
     document.querySelectorAll('[data-role-user]').forEach(sel=>sel.onchange=()=>changeRole(sel.dataset.roleUser,sel.value,sel));
+    bindClassAppearanceSettings(data);
     bindClassLinksSettings(data);
   }
 }

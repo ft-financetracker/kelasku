@@ -1,8 +1,8 @@
 {
-  "version": "6.7.24",
-  "build": "20260929.324",
+  "version": "6.7.25",
+  "build": "20260929.325",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Precision patch: academic badges now count only active attendance that still needs the current user, completed attendance clears the signal, Room hero graduation icon is larger with divider on desktop/mobile, Ringkasan folds are clickable on desktop, and future attendance states use compact clock icons.",
-  "release_time_wib": "09:28 WIB"
+  "release_time_wib": "09:55 WIB",
+  "release_note": "Hero Room Class final visual + Settings Tampilan aktif dengan upload desktop/mobile, album media lama, dan sinkron hero Landing Page menggunakan Google Drive tanpa schema baru."
 }

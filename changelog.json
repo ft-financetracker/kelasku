@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.7.25",
+    "build": "20260929.325",
+    "date": "2026-09-29",
+    "type": "FEATURE",
+    "title": "Class Appearance Library + Hero Final",
+    "summary": "Hero Room Class final visual + Settings Tampilan aktif dengan upload desktop/mobile, album media lama, dan sinkron hero Landing Page menggunakan Google Drive tanpa schema baru."
+  },
+  {
     "version": "6.7.24",
     "build": "20260929.324",
     "date": "2026-09-29",

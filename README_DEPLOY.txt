@@ -1,17 +1,16 @@
-KelasKu v6.7.24 — Room Academic Signal Precision
-Build 20260929.324 | Schema 17 | Frontend-only
+KelasKu v6.7.25 — FRONTEND PATCH
+Build: 20260929.325
+Schema: 17
 
-Scope:
-1. Badge Jadwal/Absensi hanya menghitung sesi absensi yang sedang OPEN dan status user masih UNMARKED.
-2. Sesi future/belum dibuka tidak menambah badge.
-3. Setelah presensi tersimpan dan academic cache refresh, badge hilang otomatis.
-4. Icon toga hero room diperbesar; divider hero aktif di desktop + mobile.
-5. Ringkasan details tetap default tertutup, tetapi summary bisa dibuka juga di desktop.
-6. Status "Belum dibuka" pada row Jadwal/Absensi dipadatkan menjadi icon jam dengan tooltip/aria-label.
+Fokus:
+- Hero Room Class menggunakan background responsive desktop/mobile.
+- Typography/icon hero dipadatkan sesuai komposisi final.
+- Settings > Tampilan aktif: upload Hero Room dan Hero Landing untuk Desktop/Mobile.
+- Album tampilan: gambar lama tetap tersimpan dan dapat digunakan kembali.
+- Landing page hanya berubah bila custom Landing Hero dipilih; default landing lama tetap dipertahankan.
 
-Deploy:
-- Timpa file sesuai struktur folder ke frontend GitHub Pages.
-- Tidak ada Apps Script/schema change.
-- Tunggu Pages selesai deploy.
-- Tutup total PWA/tab, lalu buka ulang.
-- Pastikan v6.7.24 / build 20260929.324.
+WAJIB deploy Apps Script v6.7.25 terlebih dahulu karena frontend memakai API baru:
+- uploadClassAppearanceMedia
+- setClassAppearanceMedia
+
+File frontend yang ditimpa sesuai struktur ZIP ini.

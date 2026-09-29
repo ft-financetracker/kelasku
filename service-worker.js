@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.24-b324-room-academic-signal-precision';
+const CACHE_NAME = 'kelasku-v6.7.25-b325-class-appearance';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -51,6 +51,8 @@ const APP_SHELL = [
   '/assets/public/hero-access.webp',
   '/assets/public/hero-links.webp',
   '/assets/public/hero-showcase.webp',
+  '/assets/classroom/hero-room-default-desktop.jpg',
+  '/assets/classroom/hero-room-default-mobile.jpg',
   '/assets/icons/favicon.svg',
   '/assets/icons/favicon-32.png',
   '/assets/icons/favicon-64.png',

@@ -3193,3 +3193,77 @@ html[data-theme="light"] .bottom-material-item.active .bottom-material-hit{backg
   }
   .attendance-state-icon-only .material-symbols-rounded{font-size:17px!important}
 }
+
+
+/* ============================================================
+   KelasKu v6.7.25 — Class Hero Background + Appearance Library
+   Scope: Room Class hero and Settings > Tampilan only.
+   ============================================================ */
+.class-room-page .class-hero-v6725{
+  position:relative!important;isolation:isolate!important;overflow:hidden!important;
+  display:grid!important;grid-template-columns:86px minmax(0,560px)!important;align-items:center!important;
+  gap:18px!important;min-height:164px!important;padding:20px 24px!important;
+  border-radius:22px!important;background:#071d42!important;border:1px solid rgba(68,188,255,.30)!important;
+  box-shadow:0 16px 36px rgba(0,8,28,.18)!important
+}
+.class-room-page .class-hero-bg-v6725,.class-room-page .class-hero-bg-v6725 img{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block!important
+}
+.class-room-page .class-hero-bg-v6725{z-index:-3!important}
+.class-room-page .class-hero-bg-v6725 img{object-fit:cover!important;object-position:center right!important}
+.class-room-page .class-hero-shade-v6725{
+  position:absolute!important;inset:0!important;z-index:-2!important;pointer-events:none!important;
+  background:linear-gradient(90deg,rgba(3,17,45,.94) 0%,rgba(3,21,53,.84) 28%,rgba(3,22,55,.54) 48%,rgba(3,22,55,.12) 70%,rgba(3,22,55,.03) 100%)!important
+}
+.class-room-page .class-room-cover-v6725{
+  position:relative!important;z-index:1!important;width:78px!important;height:78px!important;min-width:78px!important;
+  border-radius:18px!important;background:linear-gradient(145deg,rgba(6,77,139,.86),rgba(4,42,92,.84))!important;
+  border:1px solid rgba(34,224,199,.28)!important;box-shadow:0 12px 28px rgba(0,10,35,.24)!important;overflow:hidden!important
+}
+.class-room-page .class-room-cover-v6725 .icon{width:43px!important;height:43px!important;stroke-width:1.75!important}
+.class-room-page .class-room-cover-v6725 img{width:100%!important;height:100%!important;object-fit:cover!important}
+.class-room-page .class-hero-copy-v6725{position:relative!important;z-index:1!important;min-width:0!important;width:100%!important}
+.class-room-page .class-hero-v6725 .class-primary-meta{margin:0 0 5px!important;color:#BFD1E5!important;font-size:10px!important;line-height:1.25!important}
+.class-room-page .class-hero-v6725 .class-hero-main h2{margin:0!important;color:#FFFFFF!important;font-size:25px!important;line-height:1.15!important;letter-spacing:-.035em!important;text-shadow:0 2px 14px rgba(0,8,26,.35)!important}
+.class-room-page .class-hero-v6725 .class-hero-description{display:block!important;margin:5px 0 0!important;max-width:510px!important;color:#D7E4F2!important;font-size:10.5px!important;line-height:1.45!important}
+.class-room-page .class-hero-rule-v6725{display:block!important;height:1px!important;margin:10px 0 8px!important;background:linear-gradient(90deg,rgba(199,224,246,.48),rgba(199,224,246,.18),transparent)!important}
+.class-room-page .class-hero-v6725 .class-hero-bottomline{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;margin:0!important;flex-wrap:wrap!important}
+.class-room-page .class-hero-v6725 .class-secondary-meta{gap:7px!important;color:#9CB2CA!important;font-size:9px!important}
+.class-room-page .class-hero-v6725 .class-secondary-meta>span:first-child{font-size:8px!important;letter-spacing:.16em!important;text-transform:uppercase!important;color:#93A8C0!important}
+.class-room-page .class-hero-v6725 .visibility-badge,.class-room-page .class-hero-v6725 .role-pill{min-height:21px!important;padding:3px 7px!important;font-size:7.7px!important}
+
+.appearance-settings-v6725{display:grid;gap:14px;margin-top:14px}
+.appearance-guide{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;border-radius:14px;background:rgba(34,224,199,.06);border:1px solid rgba(34,224,199,.13)}
+.appearance-guide>.material-symbols-rounded{font-size:24px;color:var(--tosca)}
+.appearance-guide div{display:grid;gap:3px}.appearance-guide strong{font-size:11px}.appearance-guide small{font-size:9.5px;line-height:1.5;color:var(--muted)}
+.appearance-section-title{display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding-top:4px}
+.appearance-section-title div{display:grid;gap:2px}.appearance-section-title strong{font-size:12px}.appearance-section-title small{font-size:9px;color:var(--muted)}
+.appearance-slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.appearance-slot-card{padding:11px;border-radius:16px;border:1px solid rgba(91,160,240,.14);background:rgba(7,29,63,.43);display:grid;gap:9px}
+.appearance-slot-preview{aspect-ratio:5.3/1;border-radius:12px;overflow:hidden;background:#061731;border:1px solid rgba(91,160,240,.12)}
+.appearance-slot-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.appearance-slot-copy{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.appearance-slot-copy>div{display:grid;gap:3px;min-width:0}.appearance-slot-copy strong{font-size:10.5px}.appearance-slot-copy small{font-size:8.5px;line-height:1.45;color:var(--muted)}
+.appearance-slot-actions{display:flex;gap:7px;flex-wrap:wrap}.appearance-slot-actions .btn{min-height:34px;padding:7px 10px;font-size:9px}.appearance-upload-btn{cursor:pointer}
+.appearance-library-title{padding-top:10px;border-top:1px solid rgba(91,160,240,.10)}
+.appearance-library-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.appearance-library-card{display:grid;grid-template-columns:92px minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px;border-radius:13px;border:1px solid rgba(91,160,240,.12);background:rgba(6,26,58,.43)}
+.appearance-library-card.is-active{border-color:rgba(34,224,199,.28);background:rgba(34,224,199,.05)}
+.appearance-library-card img{width:92px;height:42px;object-fit:cover;border-radius:9px}.appearance-library-card>div{display:grid;gap:2px;min-width:0}.appearance-library-card strong{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.appearance-library-card small{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appearance-library-empty{display:flex;align-items:center;gap:10px;padding:13px;border-radius:13px;border:1px dashed rgba(91,160,240,.18);color:var(--muted)}.appearance-library-empty>.material-symbols-rounded{font-size:25px}.appearance-library-empty div{display:grid;gap:2px}.appearance-library-empty strong{font-size:10px;color:var(--text)}.appearance-library-empty small{font-size:8.5px}
+html[data-theme="light"] .appearance-slot-card,html[data-theme="light"] .appearance-library-card{background:#FFFFFF;border-color:#DCE8F3}
+
+@media(max-width:720px){
+  .class-room-page .class-hero-v6725{grid-template-columns:66px minmax(0,1fr)!important;gap:12px!important;min-height:148px!important;padding:14px!important;border-radius:18px!important}
+  .class-room-page .class-hero-shade-v6725{background:linear-gradient(90deg,rgba(3,17,45,.96) 0%,rgba(3,21,53,.88) 40%,rgba(3,22,55,.58) 68%,rgba(3,22,55,.18) 100%)!important}
+  .class-room-page .class-room-cover-v6725{width:62px!important;height:62px!important;min-width:62px!important;border-radius:15px!important}
+  .class-room-page .class-room-cover-v6725 .icon{width:34px!important;height:34px!important}
+  .class-room-page .class-hero-v6725 .class-primary-meta{font-size:8.6px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;margin-bottom:4px!important}
+  .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:19px!important;line-height:1.17!important}
+  .class-room-page .class-hero-v6725 .class-hero-description{font-size:9px!important;line-height:1.35!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+  .class-room-page .class-hero-rule-v6725{margin:7px 0 6px!important}
+  .appearance-slot-grid,.appearance-library-grid{grid-template-columns:1fr}
+  .appearance-slot-preview{aspect-ratio:4.5/1}
+  .appearance-library-card{grid-template-columns:78px minmax(0,1fr) auto}.appearance-library-card img{width:78px;height:40px}
+}
+
+.appearance-slot-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:7px;background:linear-gradient(135deg,#082454,#0B132B);color:#8FAAC6}.appearance-slot-placeholder .material-symbols-rounded{font-size:20px;color:var(--tosca)}.appearance-slot-placeholder strong{font-size:9px}

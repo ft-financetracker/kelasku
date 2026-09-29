@@ -152,7 +152,7 @@ function linkPeriodUi(items=[]) {
   return {nav,panels};
 }
 
-function publicHero(cls) {
+function publicHero(cls, appearance={}) {
   const meta = [
     cls.institution || '',
     cls.study_program && !String(cls.name || '').toLowerCase().includes(String(cls.study_program).toLowerCase()) ? cls.study_program : '',
@@ -160,7 +160,11 @@ function publicHero(cls) {
     cls.semester || ''
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
-  return `<section class="public-hero">
+  const desktop=appearance?.active?.LANDING_DESKTOP?.url || '';
+  const mobile=appearance?.active?.LANDING_MOBILE?.url || desktop;
+  const customHero=Boolean(desktop||mobile);
+  return `<section class="public-hero ${customHero?'public-hero-custom-v6725':''}">
+    ${customHero?`<picture class="public-hero-bg-v6725" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(mobile||desktop)}"><img src="${esc(desktop||mobile)}" alt="" loading="eager" decoding="async"></picture><span class="public-hero-shade-v6725" aria-hidden="true"></span>`:''}
     <span class="public-hero-icon material-symbols-rounded">school</span>
     <div class="public-hero-copy">
       <div class="public-hero-heading">
@@ -278,7 +282,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
     ? memberAcademicHub(academic||{},cls.class_id||'')
     : (membershipLoading ? academicLoading() : guestAcademicHub(loggedIn,data.public_academic||{}));
 
-  content.innerHTML = `${publicHero(cls)}
+  content.innerHTML = `${publicHero(cls,data.appearance||{})}
     ${infoSection}
     ${linkUi.nav?`<div class="public-period-standalone">${linkUi.nav}</div>`:''}
     <section class="public-section-block">${imageSectionHead('links','LINK CEPAT','Akses penting kelas','Pilih tab, lalu buka kategori link yang dibutuhkan.')}${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
