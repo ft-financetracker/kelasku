@@ -115,5 +115,5 @@ function sideItem(icon, label, route, active, homeCta = false) {
 
 function bottomMaterialItem(symbol, label, route, active) {
   const cls = `bottom-item bottom-material-item ${active ? 'active' : ''}`;
-  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}" aria-label="${esc(label)}"><span class="material-symbols-rounded bottom-material-icon">${esc(symbol)}</span>${signalForRoute(route)}</button>`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}" aria-label="${esc(label)}"><span class="bottom-material-hit"><span class="material-symbols-rounded bottom-material-icon">${esc(symbol)}</span></span>${signalForRoute(route)}</button>`;
 }

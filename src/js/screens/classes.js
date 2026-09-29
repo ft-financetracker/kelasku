@@ -69,9 +69,25 @@ export function renderClasses() {
 function bindClassSectionToggle(buttonId, contentId, storageKey, extraId='') {
   const btn=document.getElementById(buttonId), content=document.getElementById(contentId), extra=extraId?document.getElementById(extraId):null;
   if(!btn||!content)return;
-  const apply=collapsed=>{content.classList.toggle('class-section-collapsed',collapsed);if(extra)extra.classList.toggle('class-section-collapsed',collapsed);btn.setAttribute('aria-expanded',collapsed?'false':'true');btn.title=collapsed?'Buka daftar kelas':'Ciutkan daftar kelas';const icon=btn.querySelector('.material-symbols-rounded');if(icon)icon.textContent=collapsed?'expand_more':'expand_less';};
-  let collapsed=localStorage.getItem(storageKey)==='1'; apply(collapsed);
-  btn.onclick=()=>{collapsed=!collapsed;localStorage.setItem(storageKey,collapsed?'1':'0');apply(collapsed);};
+  const head=btn.closest('.class-section-head');
+  const apply=collapsed=>{
+    content.classList.toggle('class-section-collapsed',collapsed);
+    if(extra)extra.classList.toggle('class-section-collapsed',collapsed);
+    btn.setAttribute('aria-expanded',collapsed?'false':'true');
+    btn.title=collapsed?'Buka daftar kelas':'Ciutkan daftar kelas';
+    const icon=btn.querySelector('.material-symbols-rounded');
+    if(icon)icon.textContent=collapsed?'expand_more':'expand_less';
+    head?.classList.toggle('is-collapsed',collapsed);
+  };
+  let collapsed=localStorage.getItem(storageKey)==='1';
+  const toggle=()=>{collapsed=!collapsed;localStorage.setItem(storageKey,collapsed?'1':'0');apply(collapsed);};
+  apply(collapsed);
+  btn.onclick=e=>{e.preventDefault();e.stopPropagation();toggle();};
+  if(head) head.onclick=e=>{
+    if(e.target.closest('button:not(#'+buttonId+')'))return;
+    if(e.target.closest('a,input,select,textarea'))return;
+    toggle();
+  };
 }
 export async function prefetchMyClasses() {
   return loadMyClasses(true);

@@ -227,41 +227,36 @@ function closeRoomSubmenu(){
   if(!host)return;
   host.hidden=true;
   host.innerHTML='';
-  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.remove('submenu-open'));
+  host.dataset.main='';
 }
-function toggleRoomSubmenu(main,data,anchor){
+function renderRoomSubmenu(main,data){
   const host=document.getElementById('room-subnav');
   if(!host)return;
   const items=roomSubmenuItems(main,data);
   if(!items.length){closeRoomSubmenu();return;}
-  const isSame=!host.hidden && host.dataset.main===main;
-  if(isSame){closeRoomSubmenu();return;}
-  const currentMain=roomMainKey(activeTab);
   const label=main==='academic'?'Menu Akademik':'Kelola Kelas';
   host.dataset.main=main;
-  host.innerHTML=`<div class="room-subnav-popover-v6721" role="menu" aria-label="${label}">
-    <div class="room-subnav-popover-head-v6721"><div><small>${label}</small><strong>Pilih menu</strong></div><button type="button" class="icon-btn mini" data-close-room-submenu aria-label="Tutup submenu">${svg('i-close')}</button></div>
-    <div class="room-subnav-list-v6721">
-      ${items.map(([key,icon,itemLabel])=>`<button type="button" role="menuitem" class="room-subnav-option-v6721 ${activeTab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span class="room-subnav-option-copy-v6721"><strong>${esc(itemLabel)}</strong><small>${key==='announcements'?'Informasi kelas':key==='schedule'?'Agenda & pertemuan':key==='tasks'?'Tugas & deadline':key==='materials'?'Materi pembelajaran':key==='attendance'?'Presensi kelas':key==='analytics'?'Ringkasan akademik':key==='requests'?'Permintaan anggota':'Pengaturan kelas'}</small></span>${main==='academic'?roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId]):''}</button>`).join('')}
-    </div>
-  </div>`;
   host.hidden=false;
-  document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('submenu-open',btn===anchor));
-  host.querySelector('[data-close-room-submenu]')?.addEventListener('click',e=>{e.stopPropagation();closeRoomSubmenu();});
+  host.innerHTML=`<div class="room-subnav-horizontal-v6723" role="tablist" aria-label="${label}">
+    ${items.map(([key,icon,itemLabel])=>`<button type="button" role="tab" aria-selected="${activeTab===key?'true':'false'}" class="room-subnav-horizontal-item-v6723 ${activeTab===key?'active':''}" data-room-sub="${key}"><span class="material-symbols-rounded">${icon}</span><span>${esc(itemLabel)}</span>${main==='academic'?roomAcademicSignal(key,state.classAcademic?.[state.selectedClassId]):''}</button>`).join('')}
+  </div>`;
   host.querySelectorAll('[data-room-sub]').forEach(btn=>btn.addEventListener('click',e=>{
     e.stopPropagation();
-    const key=btn.dataset.roomSub;
-    closeRoomSubmenu();
-    switchTab(key,data);
+    switchTab(btn.dataset.roomSub,data);
   }));
-  requestAnimationFrame(()=>host.scrollIntoView({block:'nearest',behavior:'smooth'}));
 }
 function bindRoomNavigation(data){
   document.querySelectorAll('[data-room-main]').forEach(btn=>btn.onclick=(event)=>{
     event.stopPropagation();
     const key=btn.dataset.roomMain;
-    if(key==='academic'||key==='manage'){
-      toggleRoomSubmenu(key,data,btn);
+    if(key==='academic'){
+      if(roomMainKey(activeTab)!=='academic') return switchTab('announcements',data);
+      renderRoomSubmenu('academic',data);
+      return;
+    }
+    if(key==='manage'){
+      if(roomMainKey(activeTab)!=='manage') return switchTab((data.pending_requests||[]).length?'requests':'settings',data);
+      renderRoomSubmenu('manage',data);
       return;
     }
     closeRoomSubmenu();
@@ -273,8 +268,8 @@ function roomAcademicSignal(key,data){if(!data||key==='analytics')return '';cons
 function refreshRoomNavigation(tab,data){
   const main=roomMainKey(tab);
   document.querySelectorAll('[data-room-main]').forEach(btn=>btn.classList.toggle('active',btn.dataset.roomMain===main));
-  const host=document.getElementById('room-subnav');
-  if(host && !host.hidden && host.dataset.main!==main)closeRoomSubmenu();
+  if(main==='academic'||main==='manage') renderRoomSubmenu(main,data);
+  else closeRoomSubmenu();
 }
 
 function switchTab(tab, data) {
@@ -359,14 +354,14 @@ function overviewHtml(data) {
   const leader=(data.members||[]).find(m=>m.is_class_leader);
   const joinCodeTile=p.can_manage_class?`<div class="overview-code-tile"><span>Join Code</span><strong>${esc(c.join_code||'-')}</strong><button type="button" class="icon-btn mini" id="overview-copy-join-code" title="Salin Join Code">${svg('i-copy')}</button></div>`:'';
   return `<section class="room-overview room-overview-v68">
-    <details class="panel overview-fold-card overview-info-card" open>
+    <details class="panel overview-fold-card overview-info-card">
       <summary><span class="overview-fold-icon material-symbols-rounded">info</span><span><strong>Informasi Kelas</strong><small>Identitas utama dan struktur kelas.</small></span><span class="material-symbols-rounded overview-fold-chevron">expand_more</span></summary>
       <div class="overview-fold-body"><div class="detail-list">
         ${detail('Institusi',c.institution||'KelasKu')}${detail('Program Studi',c.study_program||'-')}${detail('Angkatan',c.cohort?`Angkatan ${c.cohort}`:'-')}${detail('Semester',c.semester||'-')}${detail('Ketua Kelas',leader?(leader.full_name||leader.username):'Belum ditetapkan')}
       </div></div>
     </details>
 
-    <details class="panel overview-fold-card overview-status-card" open>
+    <details class="panel overview-fold-card overview-status-card">
       <summary><span class="overview-fold-icon material-symbols-rounded">verified_user</span><span><strong>Status Kelas</strong><small>Keanggotaan, akses, dan kode kelas.</small></span><span class="material-symbols-rounded overview-fold-chevron">expand_more</span></summary>
       <div class="overview-fold-body"><div class="detail-list overview-status-list">
         ${detail('Role kamu',roleLabel(c.role||'MEMBER'))}<div class="detail-row"><span>Visibilitas</span><strong><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span></strong></div>${detail('Anggota aktif',String((data.members||[]).length))}

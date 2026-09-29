@@ -1,8 +1,8 @@
 {
-  "version": "6.7.22",
-  "build": "20260929.322",
+  "version": "6.7.23",
+  "build": "20260929.323",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Mobile polish: submenu icons enlarged with one-line header, member cards simplified into two-line identity plus badge footer, and bottom navigation rebuilt as equal icon stations without CTA blocks.",
-  "release_time_wib": "03:28 WIB"
+  "release_note": "UI precision: class-list collapse restored with visible section headers, Room Ringkasan starts collapsed, Academic/Manage submenu restored to horizontal strip, room hero icon enlarged, and mobile bottom navigation hard-reset for equal icon alignment.",
+  "release_time_wib": "03:47 WIB"
 }

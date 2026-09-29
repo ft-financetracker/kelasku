@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.7.23",
+    "build": "20260929.323",
+    "date": "2026-09-29",
+    "type": "PATCH",
+    "title": "Room + Classes + Bottom Nav Precision",
+    "summary": "Restore class collapse/header surface, default-collapsed Room overview, horizontal submenus, larger room hero icon, and stable equal-slot mobile bottom navigation."
+  },
+  {
     "version": "6.7.22",
     "build": "20260929.322",
     "date": "2026-09-29",

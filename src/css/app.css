@@ -3022,3 +3022,118 @@ html[data-theme="light"] .bottom-material-item.active{color:#087D74!important}
 html[data-theme="light"] .bottom-material-item.active::before{
   background:linear-gradient(145deg,#E9FBF7,#EEF6FF)!important;border-color:#CDEBE5!important;box-shadow:0 6px 16px rgba(70,111,146,.10)!important
 }
+
+
+/* ============================================================
+   KelasKu v6.7.23 — Classes collapse + Room summary/subnav + Bottom Nav lock
+   Scope: classes section header/collapse, room overview defaults, horizontal submenu,
+   room hero icon sizing, bottom navigation consistency.
+   ============================================================ */
+
+/* Classes list headers regain a clear table/header surface and whole header can toggle. */
+.classes-page .class-section-head{
+  margin:14px 0 8px!important;padding:10px 12px!important;
+  border:1px solid rgba(91,160,240,.14)!important;border-radius:14px!important;
+  background:linear-gradient(180deg,rgba(10,40,82,.70),rgba(7,30,66,.62))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;cursor:pointer!important
+}
+.classes-page .class-section-head:hover{border-color:rgba(34,224,199,.20)!important}
+.classes-page .class-section-head.is-collapsed{background:linear-gradient(180deg,rgba(8,33,71,.62),rgba(6,26,58,.56))!important}
+.classes-page .class-section-toggle{position:relative!important;z-index:2!important;pointer-events:auto!important}
+.classes-page .class-section-collapsed{display:none!important}
+html[data-theme="light"] .classes-page .class-section-head{background:linear-gradient(180deg,#F8FBFF,#F2F7FC)!important;border-color:#DCE8F3!important}
+
+/* Ringkasan cards start collapsed; user explicitly opens what they need. */
+.room-overview-v68 .overview-fold-card>summary{cursor:pointer!important;user-select:none!important}
+.room-overview-v68 .overview-fold-card:not([open]){padding-bottom:0!important}
+.room-overview-v68 .overview-fold-card:not([open]) summary{border-bottom:0!important}
+
+/* Academic / Manage submenus: always horizontal, outside the main nav container. */
+.room-subnav-host-v6721{margin:-3px 0 12px!important;padding:0!important;overflow:hidden!important}
+.room-subnav-horizontal-v6723{
+  display:flex!important;align-items:center!important;gap:7px!important;overflow-x:auto!important;
+  padding:8px!important;border:1px solid rgba(91,160,240,.14)!important;border-radius:15px!important;
+  background:rgba(6,26,59,.58)!important;scrollbar-width:none!important
+}
+.room-subnav-horizontal-v6723::-webkit-scrollbar{display:none!important}
+.room-subnav-horizontal-item-v6723{
+  position:relative!important;flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;
+  min-height:38px!important;padding:8px 11px!important;border-radius:11px!important;
+  border:1px solid transparent!important;background:transparent!important;color:#8FA8C3!important;
+  font:inherit!important;font-size:10px!important;font-weight:750!important;white-space:nowrap!important;cursor:pointer!important
+}
+.room-subnav-horizontal-item-v6723>.material-symbols-rounded{font-size:18px!important;line-height:1!important}
+.room-subnav-horizontal-item-v6723:hover{background:rgba(91,160,240,.07)!important;color:#DCE9F7!important}
+.room-subnav-horizontal-item-v6723.active{
+  color:#062137!important;background:linear-gradient(135deg,#72F2B8,#22E0C7)!important;border-color:transparent!important;
+  box-shadow:0 7px 18px rgba(26,222,199,.12)!important
+}
+.room-subnav-horizontal-item-v6723 .room-nav-signal{position:static!important;margin-left:1px!important}
+html[data-theme="light"] .room-subnav-horizontal-v6723{background:#F7FAFD!important;border-color:#DCE8F3!important}
+html[data-theme="light"] .room-subnav-horizontal-item-v6723{color:#69819B!important}
+html[data-theme="light"] .room-subnav-horizontal-item-v6723.active{color:#07332E!important}
+
+/* Room hero graduation mark — larger but still balanced. */
+.class-room-page .class-room-cover-v6720{width:82px!important;height:82px!important;min-width:82px!important;border-radius:20px!important}
+.class-room-page .class-room-cover-v6720 .icon{width:42px!important;height:42px!important}
+.class-room-page .class-hero-v6720{grid-template-columns:82px minmax(0,1fr)!important;gap:16px!important;min-height:132px!important}
+
+/* Bottom nav hard reset: equal stations, no stray inherited CTA/layout rules. */
+@media(max-width:900px){
+  .main{padding-bottom:84px!important}
+  .bottom-nav.bottom-nav-minimal{
+    position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:50!important;
+    display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:center!important;justify-items:stretch!important;
+    height:calc(66px + env(safe-area-inset-bottom))!important;min-height:calc(66px + env(safe-area-inset-bottom))!important;
+    padding:7px 10px calc(7px + env(safe-area-inset-bottom))!important;margin:0!important;
+    background:rgba(4,17,41,.985)!important;border-top:1px solid rgba(91,160,240,.14)!important;
+    box-shadow:0 -10px 28px rgba(0,7,25,.18)!important;overflow:visible!important
+  }
+  .bottom-nav.bottom-nav-minimal::before,.bottom-material-item::before,.bottom-material-item::after{display:none!important;content:none!important}
+  .bottom-nav.bottom-nav-minimal .bottom-material-item{
+    all:unset!important;box-sizing:border-box!important;position:relative!important;display:grid!important;place-items:center!important;
+    width:100%!important;height:52px!important;min-width:0!important;cursor:pointer!important;color:#7891AE!important;
+    -webkit-tap-highlight-color:transparent!important
+  }
+  .bottom-material-hit{
+    width:42px!important;height:42px!important;border-radius:14px!important;display:grid!important;place-items:center!important;
+    background:transparent!important;border:1px solid transparent!important;transition:.16s ease!important
+  }
+  .bottom-material-icon{
+    font-size:25px!important;line-height:1!important;color:inherit!important;
+    font-variation-settings:'FILL' 0,'wght' 420,'GRAD' 0,'opsz' 24!important
+  }
+  .bottom-material-item.active{color:var(--tosca)!important}
+  .bottom-material-item.active .bottom-material-hit{
+    background:linear-gradient(145deg,rgba(34,224,199,.13),rgba(25,118,255,.10))!important;
+    border-color:rgba(34,224,199,.20)!important;box-shadow:0 7px 18px rgba(0,8,28,.18)!important
+  }
+  .bottom-material-item.active .bottom-material-icon{font-variation-settings:'FILL' 1,'wght' 520,'GRAD' 0,'opsz' 24!important}
+  .bottom-material-item .nav-signal{
+    position:absolute!important;z-index:4!important;top:3px!important;left:calc(50% + 10px)!important;right:auto!important;
+    min-width:16px!important;height:16px!important;padding:0 4px!important;margin:0!important;border-radius:999px!important;
+    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    background:#39E2CA!important;color:#05243D!important;border:2px solid #041129!important;font-size:8px!important;font-weight:850!important;line-height:1!important;box-shadow:none!important
+  }
+  .bottom-material-item .nav-signal.dot{width:8px!important;min-width:8px!important;height:8px!important;padding:0!important;top:7px!important;left:calc(50% + 11px)!important}
+}
+
+@media(max-width:720px){
+  .class-room-page .class-room-cover-v6720{width:70px!important;height:70px!important;min-width:70px!important;border-radius:18px!important}
+  .class-room-page .class-room-cover-v6720 .icon{width:35px!important;height:35px!important}
+  .class-room-page .class-hero-v6720{grid-template-columns:70px minmax(0,1fr)!important;gap:12px!important;min-height:112px!important;padding:13px 14px!important}
+  .room-subnav-horizontal-v6723{padding:7px!important;gap:6px!important;border-radius:14px!important}
+  .room-subnav-horizontal-item-v6723{min-height:37px!important;padding:8px 10px!important;font-size:9.6px!important}
+  .room-subnav-horizontal-item-v6723>.material-symbols-rounded{font-size:17px!important}
+}
+
+@media(max-width:390px){
+  .bottom-nav.bottom-nav-minimal{padding-left:6px!important;padding-right:6px!important}
+  .bottom-material-hit{width:40px!important;height:40px!important;border-radius:13px!important}
+  .bottom-material-icon{font-size:24px!important}
+}
+
+html[data-theme="light"] .bottom-nav.bottom-nav-minimal{background:rgba(250,253,255,.985)!important;border-color:#DCE8F3!important}
+html[data-theme="light"] .bottom-material-item{color:#7289A5!important}
+html[data-theme="light"] .bottom-material-item.active{color:#087D74!important}
+html[data-theme="light"] .bottom-material-item.active .bottom-material-hit{background:linear-gradient(145deg,#E9FBF7,#EEF6FF)!important;border-color:#CDEBE5!important;box-shadow:0 6px 16px rgba(70,111,146,.10)!important}

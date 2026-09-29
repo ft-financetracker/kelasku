@@ -1,10 +1,14 @@
-KelasKu v6.7.22 — Mobile Room Member + Submenu + Bottom Nav Polish
+KelasKu v6.7.23 — Room + Classes + Bottom Nav Precision Patch
+Build: 20260929.323
+Schema: 17
+Type: FRONTEND ONLY
 
-Scope patch (frontend-only):
-- Mobile submenu popover: icon lebih besar, header 1 baris.
-- Mobile member card: 2 baris identitas + footer badge/action.
-- Mobile bottom nav: 5 icon sejajar, active highlight compact, tanpa CTA besar.
+Scope:
+- Restore Kelas Saya/Kelas Umum collapse and visible section-header background.
+- Ringkasan Information/Status cards start collapsed.
+- Academic/Manage submenu is horizontal outside the main Room navigation.
+- Larger Room hero graduation icon.
+- Mobile bottom nav hard-reset into five equal icon stations.
 
-Tidak mengubah Apps Script / schema / database.
-
-Overwrite file sesuai struktur ZIP, commit + push, tunggu GitHub Pages selesai, lalu tutup total PWA/tab dan buka kembali.
+Overwrite only the files in this package.
+No Apps Script update. No migration. No setup.
