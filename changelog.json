@@ -1,29 +1,15 @@
 [
   {
-    "version": "6.7.32",
-    "build": "20260929.332",
+    "version": "6.7.33",
+    "build": "20260929.333",
     "date": "2026-09-29",
-    "title": "Hero & Notification Stability",
+    "title": "Live Landing & Hero Stability",
     "changes": [
-      "Menghapus icon/frame dari Hero Room Class dan Landing serta menggeser blok teks ke kiri agar lebih lega.",
-      "Mengembalikan Hero Desktop dan Mobile sebagai dua upload terpisah; keduanya tetap dipakai bersama oleh Room Class dan Landing sesuai perangkat.",
-      "Menghapus menu Icon/Foto Kelas dari Tampilan tanpa mengubah Album yang sudah disukai.",
-      "Mengaktifkan polling notifikasi global di seluruh aplikasi dan memperkuat deteksi update pada startup/focus/service-worker update."
-    ]
-  },
-  {
-    "version": "6.7.31",
-    "build": "20260929.331",
-    "date": "2026-09-29",
-    "title": "Appearance Consolidation & Startup Polish",
-    "changes": [
-      "Hero Kelas cukup satu upload master; Desktop 2048\u00d7384 dan Mobile 1440\u00d7320 dibuat otomatis lalu dipakai Room Class + Landing.",
-      "Icon/foto kelas menggunakan draft selection dan satu tombol Simpan Perubahan, tanpa request pada setiap klik.",
-      "Background section Landing dapat memilih preset bawaan, media album, atau upload custom per kelas.",
-      "Album Tampilan diubah menjadi grid compact dengan filter dan pagination 12 item per halaman.",
-      "Menu Tampilan mempertahankan tab/category saat data background selesai dimuat; tidak lagi terasa refresh ke awal.",
-      "Startup user terautentikasi tidak lagi dipaksa masuk ke halaman Setup.",
-      "Frame identitas Hero dibesarkan kembali tanpa membesarkan glyph/icon."
+      "Hero Room memakai cache visual per kelas agar custom background tidak berkedip kembali ke default saat membuka kelas.",
+      "Hero Landing mengingat appearance terakhir dan tidak mendaftarkan PWA aplikasi dari halaman publik.",
+      "Gradient Hero Room/Landing dipendekkan hanya untuk menjaga area teks tanpa menggelapkan visual kanan.",
+      "Tombol Simpan Perubahan pada Tampilan kembali ke normal document flow sehingga tidak menutupi konten.",
+      "Link Landing baru memakai links.html?c=... dan dibuka di tab browser baru dari Room Class."
     ]
   }
 ]

@@ -1,8 +1,8 @@
 {
-  "version": "6.7.32",
-  "build": "20260929.332",
+  "version": "6.7.33",
+  "build": "20260929.333",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "v6.7.32 \u2014 Hero Room/Landing tanpa icon/frame, Hero Desktop dan Mobile kembali terpisah, Tampilan disederhanakan tanpa menu Icon/Foto, serta perbaikan deteksi update dan polling notifikasi global.",
-  "release_time_wib": "18:20 WIB"
+  "release_note": "Live polish: Hero Room/Landing memakai cache visual agar tidak kembali ke default saat masuk, gradient dipendekkan agar visual tetap terang, tombol Simpan Tampilan kembali ke alur normal, dan Landing publik tidak lagi mendaftarkan app shell PWA.",
+  "release_time_wib": "19:10 WIB"
 }

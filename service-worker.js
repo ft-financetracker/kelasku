@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.32-b332-hero-notification-stability';
+const CACHE_NAME = 'kelasku-v6.7.33-b333-live-landing-hero-stability';
 const APP_SHELL = [
   '/',
   '/index.html',

@@ -108,6 +108,8 @@ async function loadClassDetail(background = false, force = false) {
   const request = (async () => {
     try {
       const data = await api('getClassDetail', { class_id: classId });
+      syncClassHeroCache(data,{authoritative:true});
+      syncPublicLandingAppearanceCache(data);
       const previous = state.classDetails[classId];
       const changed = !sameData(previous, data);
       persistClassCache('classDetails','classDetailsAt','kelasku_class_details_cache','kelasku_class_details_cache_at',classId,data);
@@ -153,8 +155,8 @@ function drawClass(data, preserveTab = true) {
   document.getElementById('class-room-slot').innerHTML = `
     <section class="class-hero class-hero-v51 class-hero-v6720 class-hero-v6725 panel">
       <picture class="class-hero-bg-v6725" aria-hidden="true">
-        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6732'))}">
-        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6732'))}" alt="" loading="eager" decoding="async">
+        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6733'))}">
+        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6733'))}" alt="" loading="eager" decoding="async">
       </picture>
       <div class="class-hero-shade-v6725" aria-hidden="true"></div>
       <div class="class-hero-main class-hero-copy-v6725 class-hero-copy-v6728">
@@ -1201,10 +1203,10 @@ const CLASS_ICON_PRESETS=Object.freeze([
   ['school','Kelas'],['language','Bahasa'],['menu_book','Buku'],['calculate','Ekonomi'],['science','Sains'],['computer','Teknologi'],['groups','Komunitas'],['account_balance','Institusi'],['psychology','Belajar'],['history_edu','Akademik'],['business_center','Bisnis'],['sports_soccer','Olahraga']
 ]);
 const LANDING_PRESET_ASSETS=Object.freeze({
-  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6732',mobile:'assets/public/hero-access.webp?v=6732'},
-  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6732',mobile:'assets/public/hero-links.webp?v=6732'},
-  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6732',mobile:'assets/public/hero-showcase.webp?v=6732'},
-  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6732',mobile:'assets/public/campus-landscape-mobile.png?v=6732'}
+  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6733',mobile:'assets/public/hero-access.webp?v=6733'},
+  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6733',mobile:'assets/public/hero-links.webp?v=6733'},
+  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6733',mobile:'assets/public/hero-showcase.webp?v=6733'},
+  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6733',mobile:'assets/public/campus-landscape-mobile.png?v=6733'}
 });
 const LANDING_SECTION_META=Object.freeze({
   access:{label:'Informasi Kelas',copy:'Header jadwal, presensi, tugas, dan informasi kelas.',slot:'LANDING_ACCESS'},
@@ -1218,10 +1220,74 @@ let appearanceAlbumPage=1;
 let appearanceAlbumFilter='ALL';
 let activeClassSettingPane='identity';
 
-function classAppearanceUrl(data,slot,fallback=''){ return data?.appearance?.active?.[slot]?.url || fallback; }
+function classHeroCacheKey(classId=''){ return `kelasku_class_hero_cache_v6733_${String(classId||'').trim()}`; }
+function readClassHeroCache(classId=''){
+  if(!classId)return {};
+  try{return JSON.parse(localStorage.getItem(classHeroCacheKey(classId))||'{}')||{};}catch{return {};}
+}
+function syncClassHeroCache(data,{authoritative=false}={}){
+  const classId=String(data?.class?.class_id||state.selectedClassId||'').trim();
+  if(!classId)return;
+  const active=data?.appearance?.active||{};
+  const prev=readClassHeroCache(classId);
+  const next={
+    desktop:String(active?.HERO_DESKTOP?.url||active?.ROOM_DESKTOP?.url||(!authoritative?prev.desktop:'')||''),
+    mobile:String(active?.HERO_MOBILE?.url||active?.ROOM_MOBILE?.url||(!authoritative?prev.mobile:'')||'')
+  };
+  try{localStorage.setItem(classHeroCacheKey(classId),JSON.stringify(next));}catch{}
+}
+function syncPublicLandingAppearanceCache(data){
+  const classId=String(data?.class?.class_id||state.selectedClassId||'');
+  if(!classId)return;
+  try{
+    const active=data?.appearance?.active||{};
+    const hero={
+      desktop:String(active?.HERO_DESKTOP?.url||active?.ROOM_DESKTOP?.url||''),
+      mobile:String(active?.HERO_MOBILE?.url||active?.ROOM_MOBILE?.url||'')
+    };
+    const refs=[String(data?.class?.class_code||'').replace(/^KLS-/i,'').toLowerCase(),String(data?.class?.public_slug||'').trim().toLowerCase()].filter(Boolean);
+    refs.forEach(ref=>localStorage.setItem(`kelasku_public_appearance_v6733_${ref}`,JSON.stringify(hero)));
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!key.startsWith('kelasku_public_links_cache_v676_'))continue;
+      const cached=JSON.parse(localStorage.getItem(key)||'null');
+      if(String(cached?.data?.class?.class_id||'')!==classId)continue;
+      cached.data.appearance=data?.appearance||cached.data.appearance||{};
+      cached.at=Date.now();
+      localStorage.setItem(key,JSON.stringify(cached));
+    }
+  }catch{}
+}
+function persistCurrentClassVisualCache(data){
+  const classId=String(data?.class?.class_id||state.selectedClassId||'');
+  if(!classId||!data)return;
+  syncClassHeroCache(data,{authoritative:true});
+  syncPublicLandingAppearanceCache(data);
+  try{
+    state.classDetails ||= {};
+    state.classDetailsAt ||= {};
+    state.classDetails[classId]=data;
+    state.classDetailsAt[classId]=Date.now();
+    localStorage.setItem('kelasku_class_details_cache',JSON.stringify(state.classDetails));
+    localStorage.setItem('kelasku_class_details_cache_at',JSON.stringify(state.classDetailsAt));
+  }catch{}
+}
+function classAppearanceUrl(data,slot,fallback=''){
+  const direct=data?.appearance?.active?.[slot]?.url || (slot==='HERO_DESKTOP'?data?.appearance?.active?.ROOM_DESKTOP?.url:'') || (slot==='HERO_MOBILE'?data?.appearance?.active?.ROOM_MOBILE?.url:'');
+  const classId=String(data?.class?.class_id||state.selectedClassId||'');
+  if(direct){
+    const prev=readClassHeroCache(classId);
+    const next={...prev,[slot==='HERO_DESKTOP'?'desktop':'mobile']:String(direct)};
+    try{localStorage.setItem(classHeroCacheKey(classId),JSON.stringify(next));}catch{}
+    return direct;
+  }
+  const cached=readClassHeroCache(classId);
+  const saved=slot==='HERO_DESKTOP'?cached.desktop:slot==='HERO_MOBILE'?cached.mobile:'';
+  return saved || fallback;
+}
 function appearanceFallback(slot){
-  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6732';
-  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6732';
+  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6733';
+  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6733';
   return '';
 }
 function currentClassIcon(data){ return String(data?.class?.icon_key || data?.appearance?.icon_key || 'school').trim() || 'school'; }
@@ -1363,14 +1429,14 @@ function openHeroMasterCropper(file,data){
   const bindHeroStages=()=>{render();stages.forEach((stage,i)=>{const img=imgs[i];if(img.dataset.dragBound==='1')return;const bind=()=>{if(img.dataset.dragBound==='1'||!img.naturalWidth)return;img.dataset.dragBound='1';bindFocusStage(stage,img,()=>cropState,v=>cropState=v,render);render();};if(img.complete&&img.naturalWidth)bind();else img.addEventListener('load',bind,{once:true});});};
   imgs[0].addEventListener('load',bindHeroStages,{once:true});if(imgs[0].complete&&imgs[0].naturalWidth)bindHeroStages();
   slider?.addEventListener('input',()=>{cropState.zoom=Number(slider.value||1);render();});
-  save?.addEventListener('click',async()=>{if(save.disabled)return;save.disabled=true;const old=save.innerHTML;save.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';try{const master=imgs[0];if(!master.naturalWidth)throw new Error('Gambar belum siap.');status.className='request-status progress';status.textContent='Membuat versi Desktop dan Mobile…';const desktop=await croppedJpegData(master,2048,384,cropState.focusX,cropState.focusY,cropState.zoom),mobile=await croppedJpegData(master,1440,320,cropState.focusX,cropState.focusY,cropState.zoom);status.textContent='Mengunggah dua versi dalam satu proses…';const result=await api('uploadClassHeroPair',{class_id:state.selectedClassId,filename:file.name,desktop_data_url:desktop.dataUrl,mobile_data_url:mobile.dataUrl},{onSlow:()=>{status.textContent='Masih menyimpan ke Drive…';}});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}closeModal();toast('Hero Desktop + Mobile tersimpan.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){status.className='request-status error';status.textContent=err.message;save.disabled=false;save.innerHTML=old;toast(err.message);}finally{URL.revokeObjectURL(objectUrl);}});
+  save?.addEventListener('click',async()=>{if(save.disabled)return;save.disabled=true;const old=save.innerHTML;save.innerHTML='<span class="btn-spinner"></span><span>Memproses…</span>';try{const master=imgs[0];if(!master.naturalWidth)throw new Error('Gambar belum siap.');status.className='request-status progress';status.textContent='Membuat versi Desktop dan Mobile…';const desktop=await croppedJpegData(master,2048,384,cropState.focusX,cropState.focusY,cropState.zoom),mobile=await croppedJpegData(master,1440,320,cropState.focusX,cropState.focusY,cropState.zoom);status.textContent='Mengunggah dua versi dalam satu proses…';const result=await api('uploadClassHeroPair',{class_id:state.selectedClassId,filename:file.name,desktop_data_url:desktop.dataUrl,mobile_data_url:mobile.dataUrl},{onSlow:()=>{status.textContent='Masih menyimpan ke Drive…';}});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}closeModal();toast('Hero Desktop + Mobile tersimpan.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){status.className='request-status error';status.textContent=err.message;save.disabled=false;save.innerHTML=old;toast(err.message);}finally{URL.revokeObjectURL(objectUrl);}});
 }
 function openSingleAppearanceCropper(slot,file,data,onUploaded,options={}){
   const meta=CLASS_APPEARANCE_META[slot];if(!meta)return;const activate=Boolean(options.activate),saveLabel=String(options.saveLabel||'Simpan ke Album');const objectUrl=URL.createObjectURL(file);let cropState={focusX:.5,focusY:.5,zoom:1};
   showModal(`<div class="modal-head"><div><div class="eyebrow">ATUR GAMBAR</div><h2>${esc(meta.label)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="appearance-cropper"><div class="appearance-crop-help"><span class="material-symbols-rounded">open_with</span><span>Geser dan zoom sampai framing sesuai.</span></div><div class="appearance-crop-stage" data-single-crop-stage style="aspect-ratio:${meta.width}/${meta.height}"><img src="${esc(objectUrl)}" alt="Preview crop" draggable="false"></div><label class="appearance-zoom-control"><span>Zoom</span><input data-single-crop-zoom type="range" min="1" max="2.5" step="0.01" value="1"><b data-single-crop-value>100%</b></label><div class="request-status" data-single-crop-status></div><div class="modal-actions"><button type="button" class="btn btn-secondary" data-close-modal>Batal</button><button type="button" class="btn btn-primary" data-single-crop-save>${esc(saveLabel)}</button></div></div>`);
   const stage=document.querySelector('[data-single-crop-stage]'),img=stage?.querySelector('img'),slider=document.querySelector('[data-single-crop-zoom]'),value=document.querySelector('[data-single-crop-value]'),save=document.querySelector('[data-single-crop-save]'),status=document.querySelector('[data-single-crop-status]');
   const render=()=>{renderFocusPreview(stage,img,cropState);if(value)value.textContent=`${Math.round(cropState.zoom*100)}%`;};img.onload=()=>{render();bindFocusStage(stage,img,()=>cropState,v=>cropState=v,render);};slider?.addEventListener('input',()=>{cropState.zoom=Number(slider.value||1);render();});
-  save?.addEventListener('click',async()=>{if(save.disabled)return;save.disabled=true;const old=save.innerHTML;save.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{const prepared=await croppedJpegData(img,meta.width,meta.height,cropState.focusX,cropState.focusY,cropState.zoom);const result=await api('uploadClassAppearanceMedia',{class_id:state.selectedClassId,slot,filename:file.name,data_url:prepared.dataUrl,activate});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}closeModal();onUploaded?.(result.uploaded?.file_id,result);renderAppearancePaneOnly(currentClassData||data);if(activate){applyRoomHeroAppearance(currentClassData||data);toast(`${meta.label} tersimpan.`);}else{toast('Gambar masuk Album. Simpan perubahan untuk mengaktifkannya.');}}catch(err){status.className='request-status error';status.textContent=err.message;save.disabled=false;save.innerHTML=old;toast(err.message);}finally{URL.revokeObjectURL(objectUrl);}});
+  save?.addEventListener('click',async()=>{if(save.disabled)return;save.disabled=true;const old=save.innerHTML;save.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{const prepared=await croppedJpegData(img,meta.width,meta.height,cropState.focusX,cropState.focusY,cropState.zoom);const result=await api('uploadClassAppearanceMedia',{class_id:state.selectedClassId,slot,filename:file.name,data_url:prepared.dataUrl,activate});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}closeModal();onUploaded?.(result.uploaded?.file_id,result);renderAppearancePaneOnly(currentClassData||data);if(activate){applyRoomHeroAppearance(currentClassData||data);toast(`${meta.label} tersimpan.`);}else{toast('Gambar masuk Album. Simpan perubahan untuk mengaktifkannya.');}}catch(err){status.className='request-status error';status.textContent=err.message;save.disabled=false;save.innerHTML=old;toast(err.message);}finally{URL.revokeObjectURL(objectUrl);}});
 }
 function openLandingBackgroundPicker(section,data){
   const meta=LANDING_SECTION_META[section],draft=ensureAppearanceDraft(data),cfg=draft.landing[section],custom=(data?.appearance?.library||[]).filter(x=>x.slot===meta.slot&&x.url&&String(x.status||'').toUpperCase()!=='DELETED');
@@ -1381,29 +1447,29 @@ function openLandingBackgroundPicker(section,data){
 }
 async function saveAppearanceDraft(data){
   const draft=ensureAppearanceDraft(data),btn=document.querySelector('[data-appearance-save]');if(!draft.dirty||btn?.disabled)return;if(btn)btn.disabled=true;
-  try{const landing_sections={};Object.keys(LANDING_SECTION_META).forEach(section=>{const cfg=draft.landing[section];landing_sections[section]=cfg.type==='MEDIA'?{type:'MEDIA',media_id:cfg.mediaId}:{type:'PRESET',preset:cfg.preset};});const result=await api('saveClassAppearanceSettings',{class_id:state.selectedClassId,icon_mode:draft.iconMode,icon_key:draft.iconKey,icon_media_id:draft.iconMediaId,landing_sections},{onSlow:()=>toast('Masih menyimpan tampilan…')});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;if(result.class)currentClassData.class={...currentClassData.class,...result.class};state.classDetails[state.selectedClassId]=currentClassData;}syncClassIdentityState(result.class?.cover_url||'',result.class?.icon_key||draft.iconKey);resetAppearanceDraft(currentClassData||data);toast('Tampilan kelas tersimpan ✓');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);if(btn)btn.disabled=false;}
+  try{const landing_sections={};Object.keys(LANDING_SECTION_META).forEach(section=>{const cfg=draft.landing[section];landing_sections[section]=cfg.type==='MEDIA'?{type:'MEDIA',media_id:cfg.mediaId}:{type:'PRESET',preset:cfg.preset};});const result=await api('saveClassAppearanceSettings',{class_id:state.selectedClassId,icon_mode:draft.iconMode,icon_key:draft.iconKey,icon_media_id:draft.iconMediaId,landing_sections},{onSlow:()=>toast('Masih menyimpan tampilan…')});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;if(result.class)currentClassData.class={...currentClassData.class,...result.class};state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}syncClassIdentityState(result.class?.cover_url||'',result.class?.icon_key||draft.iconKey);resetAppearanceDraft(currentClassData||data);toast('Tampilan kelas tersimpan ✓');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);if(btn)btn.disabled=false;}
 }
-async function activateHeroPair(pairId,data){ try{const result=await api('setClassHeroPair',{class_id:state.selectedClassId,pair_id:pairId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}toast('Hero lama digunakan kembali.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);} }
+async function activateHeroPair(pairId,data){ try{const result=await api('setClassHeroPair',{class_id:state.selectedClassId,pair_id:pairId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}toast('Hero lama digunakan kembali.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);} }
 async function useLegacyAppearance(mediaId,slot,data){
   if(slot==='CARD_SQUARE'){const d=ensureAppearanceDraft(data);d.iconMode='MEDIA';d.iconMediaId=mediaId;setAppearanceDirty();appearanceOpenCategory='icon';renderAppearancePaneOnly(data);return;}
   if(slot?.startsWith('LANDING_')){const section=landingSectionKeyFromSlot(slot),d=ensureAppearanceDraft(data);d.landing[section]={type:'MEDIA',preset:'',mediaId};setAppearanceDirty();appearanceOpenCategory='landing';renderAppearancePaneOnly(data);return;}
-  try{const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot,media_id:mediaId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}toast('Gambar digunakan kembali.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}
+  try{const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot,media_id:mediaId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}toast('Gambar digunakan kembali.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}
 }
 async function deleteClassAppearance(mediaId,slot,data){
   const ok=await confirmDialog({title:'Hapus gambar permanen?',message:'File akan dipindahkan ke Trash Google Drive dan hilang dari Album KelasKu. Tindakan ini tidak dapat dibatalkan dari KelasKu.',confirmText:'Hapus Permanen',danger:true});if(!ok)return;
-  try{const result=await api('deleteClassAppearanceMedia',{class_id:state.selectedClassId,media_id:mediaId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}appearanceAlbumPage=1;resetAppearanceDraft(currentClassData||data);toast('Gambar dihapus permanen.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}
+  try{const result=await api('deleteClassAppearanceMedia',{class_id:state.selectedClassId,media_id:mediaId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}appearanceAlbumPage=1;resetAppearanceDraft(currentClassData||data);toast('Gambar dihapus permanen.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}
 }
-async function deleteHeroPair(pairId,data){const ok=await confirmDialog({title:'Hapus Hero permanen?',message:'Versi Desktop dan Mobile dari hero ini akan dipindahkan ke Trash Google Drive. Tindakan ini tidak dapat dibatalkan dari KelasKu.',confirmText:'Hapus Permanen',danger:true});if(!ok)return;try{const result=await api('deleteClassAppearanceGroup',{class_id:state.selectedClassId,pair_id:pairId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}appearanceAlbumPage=1;toast('Hero dihapus permanen.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}}
+async function deleteHeroPair(pairId,data){const ok=await confirmDialog({title:'Hapus Hero permanen?',message:'Versi Desktop dan Mobile dari hero ini akan dipindahkan ke Trash Google Drive. Tindakan ini tidak dapat dibatalkan dari KelasKu.',confirmText:'Hapus Permanen',danger:true});if(!ok)return;try{const result=await api('deleteClassAppearanceGroup',{class_id:state.selectedClassId,pair_id:pairId});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}appearanceAlbumPage=1;toast('Hero dihapus permanen.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}}
 async function setHeroSlotDefault(slot,data){
   try{
     const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot,media_id:''});
-    if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}
+    if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}
     toast(`${CLASS_APPEARANCE_META[slot]?.label||'Hero'} kembali ke default.`);
     renderAppearancePaneOnly(currentClassData||data);
     applyRoomHeroAppearance(currentClassData||data);
   }catch(err){toast(err.message);}
 }
-async function setHeroDefault(data){try{await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot:'HERO_DESKTOP',media_id:''});const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot:'HERO_MOBILE',media_id:''});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}toast('Hero kembali ke default.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}}
+async function setHeroDefault(data){try{await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot:'HERO_DESKTOP',media_id:''});const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot:'HERO_MOBILE',media_id:''});if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;persistCurrentClassVisualCache(currentClassData);}toast('Hero kembali ke default.');renderAppearancePaneOnly(currentClassData||data);applyRoomHeroAppearance(currentClassData||data);}catch(err){toast(err.message);}}
 function openAppearancePreview(url){showModal(`<div class="modal-head"><div><div class="eyebrow">PREVIEW</div><h2>Gambar Tampilan</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><img class="appearance-full-preview" src="${esc(url)}" alt="Preview">`);}
 function syncClassIdentityState(url='',iconKey='school'){
   if(currentClassData?.class){currentClassData.class.cover_url=url||'';currentClassData.class.icon_key=iconKey||'school';}
@@ -1454,7 +1520,7 @@ function bindTab(tab,data) {
     document.getElementById('overview-copy-class-code')?.addEventListener('click',()=>copyText(data.class?.class_code||''));
     document.getElementById('overview-copy-join-code')?.addEventListener('click',()=>copyText(data.class?.join_code||''));
     document.getElementById('overview-copy-class-link')?.addEventListener('click',()=>copyText(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
-    document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.location.assign(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
+    document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.open(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||''),'_blank','noopener,noreferrer'));
     document.getElementById('overview-copy-join-link')?.addEventListener('click',()=>copyText(joinClassUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('class-exit-action')?.addEventListener('click',()=>handleClassExit(data));
   }
@@ -1689,7 +1755,7 @@ function bindClassLinksManagerEvents(){
   document.querySelectorAll('[data-add-link-section]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClassLinkEditor(null,{section:btn.dataset.addLinkSection||'Umum',platform:btn.dataset.addLinkPlatform||'OTHER'});});
   document.querySelectorAll('[data-link-category]').forEach(category=>applyClassLinkPagination(category));bindClassLinkDrag();
 }
-function publicClassLinksUrl(classCode,slug=''){const clean=String(slug||'').trim().toLowerCase();return clean?primaryUrl('/'+clean).toString():primaryUrl('/links.html',{c:String(classCode||'').replace(/^KLS-/i,'')}).toString();}
+function publicClassLinksUrl(classCode,slug=''){const clean=String(slug||'').trim().toLowerCase();const ref=clean||String(classCode||'').replace(/^KLS-/i,'');return primaryUrl('/links.html',{c:ref}).toString();}
 function joinClassUrl(classCode,slug=''){const ref=String(slug||'').trim().toLowerCase()||String(classCode||'').replace(/^KLS-/i,'');return primaryUrl('/join',{c:ref}).toString();}
 function bindClassLinksSettings(data){
   bindClassLinksManagerEvents();

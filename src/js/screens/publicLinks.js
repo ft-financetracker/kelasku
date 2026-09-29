@@ -14,10 +14,10 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=6732',mobile:'assets/public/hero-access.webp?v=6732'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=6732',mobile:'assets/public/hero-links.webp?v=6732'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6732',mobile:'assets/public/hero-showcase.webp?v=6732'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6732',mobile:'assets/public/campus-landscape-mobile.png?v=6732'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6733',mobile:'assets/public/hero-access.webp?v=6733'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6733',mobile:'assets/public/hero-links.webp?v=6733'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6733',mobile:'assets/public/hero-showcase.webp?v=6733'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6733',mobile:'assets/public/campus-landscape-mobile.png?v=6733'}
 });
 
 const PLATFORM = {
@@ -35,6 +35,21 @@ const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','
 const classCode = rawCode;
 const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v676_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
+const PUBLIC_APPEARANCE_CACHE_KEY = classCode ? `kelasku_public_appearance_v6733_${classCode.toLowerCase()}` : '';
+function readPublicAppearanceCache(){
+  if(!PUBLIC_APPEARANCE_CACHE_KEY)return {};
+  try{return JSON.parse(localStorage.getItem(PUBLIC_APPEARANCE_CACHE_KEY)||'{}')||{};}catch{return {};}
+}
+function writePublicAppearanceCache(data){
+  if(!PUBLIC_APPEARANCE_CACHE_KEY||!data)return;
+  const active=data?.appearance?.active||{};
+  const current=readPublicAppearanceCache();
+  const next={
+    desktop:String(active?.HERO_DESKTOP?.url||active?.ROOM_DESKTOP?.url||current.desktop||''),
+    mobile:String(active?.HERO_MOBILE?.url||active?.ROOM_MOBILE?.url||current.mobile||'')
+  };
+  try{localStorage.setItem(PUBLIC_APPEARANCE_CACHE_KEY,JSON.stringify(next));}catch{}
+}
 const fmtDate = value => { try { return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value)); } catch { return value || '-'; } };
 const isFuture = value => value && new Date(value).getTime() >= Date.now();
 const scheduleStillActive = x => { const end=x?.end_at?new Date(x.end_at).getTime():new Date(x?.start_at||0).getTime()+3*60*60*1000; return Number.isFinite(end)&&end>=Date.now(); };
@@ -171,8 +186,9 @@ function publicHero(cls, appearance={}, memberData=null) {
     cls.semester || ''
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || 'assets/classroom/hero-room-default-desktop.jpg?v=6732';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6732';
+  const remembered=readPublicAppearanceCache();
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6733';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6733';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
@@ -295,6 +311,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   currentPublicData = data;
   currentPublicMemberData = memberData;
   currentPublicAppearance = data.appearance || {};
+  writePublicAppearanceCache(data);
   const infoSection = isMember
     ? memberAcademicHub(academic||{},cls.class_id||'')
     : (membershipLoading ? academicLoading() : guestAcademicHub(loggedIn,data.public_academic||{}));
@@ -564,13 +581,9 @@ function renderError(message) {
   content.innerHTML = `<section class="public-empty error"><span class="material-symbols-rounded">link_off</span><strong>Link kelas tidak tersedia</strong><p>${esc(message || 'Periksa kembali tautan yang dibagikan.')}</p><a href="/" class="public-promo-btn">Buka KelasKu</a></section>`;
 }
 
-function registerPublicServiceWorker(){
-  if(!('serviceWorker' in navigator))return;
-  navigator.serviceWorker.register('/service-worker.js',{scope:'/'}).catch(err=>console.warn('Public SW:',err));
-}
-
 async function init() {
-  registerPublicServiceWorker();
+  // Landing publik sengaja tidak mendaftarkan PWA/Service Worker aplikasi.
+  // Ini menjaga klik Landing tetap terasa sebagai halaman web publik, bukan membuka app shell.
   if (!classCode) return renderError('Kode kelas tidak ditemukan pada URL.');
   const cached=readPublicCache();
   if(cached){

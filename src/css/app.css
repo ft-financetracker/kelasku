@@ -3577,7 +3577,7 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
 
 
 /* ============================================================
-   v6.7.32 — Final hero cleanup + appearance simplification
+   v6.7.33 — Final hero cleanup + appearance simplification
    Scope locked: Room hero, Appearance menu. Album grid unchanged.
    ============================================================ */
 .class-room-page .class-hero-v6725{
@@ -3623,4 +3623,40 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
   .class-room-page .class-hero-v6725{min-height:126px!important;padding:13px 14px!important}
   .class-room-page .class-hero-copy-v6725{width:82%!important;max-width:82%!important}
   .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:19px!important}
+}
+
+
+/* ============================================================
+   v6.7.33 — Live polish: hero paint stability + shorter shade + savebar flow
+   Album grid intentionally untouched.
+   ============================================================ */
+.class-room-page .class-hero-shade-v6725{
+  inset:0 auto 0 0!important;
+  width:min(62%,760px)!important;
+  background:linear-gradient(90deg,rgba(3,17,45,.88) 0%,rgba(3,21,53,.72) 44%,rgba(3,22,55,.30) 74%,rgba(3,22,55,0) 100%)!important;
+}
+.class-room-page .class-hero-copy-v6725{
+  width:min(55%,620px)!important;
+  max-width:620px!important;
+}
+.appearance-savebar{
+  position:static!important;
+  inset:auto!important;
+  bottom:auto!important;
+  z-index:auto!important;
+  margin-top:12px!important;
+  backdrop-filter:none!important;
+  box-shadow:none!important;
+}
+@media(max-width:720px){
+  .class-room-page .class-hero-shade-v6725{
+    width:82%!important;
+    background:linear-gradient(90deg,rgba(3,17,45,.90) 0%,rgba(3,21,53,.73) 46%,rgba(3,22,55,.30) 76%,rgba(3,22,55,0) 100%)!important;
+  }
+  .class-room-page .class-hero-copy-v6725{width:72%!important;max-width:72%!important}
+  .appearance-savebar{margin-bottom:6px!important}
+}
+@media(max-width:430px){
+  .class-room-page .class-hero-shade-v6725{width:86%!important}
+  .class-room-page .class-hero-copy-v6725{width:76%!important;max-width:76%!important}
 }
