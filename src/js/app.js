@@ -21,8 +21,8 @@ import { renderSetup } from './screens/setup.js';
 import { renderDashboard } from './screens/dashboard.js';
 import { renderAccount } from './screens/account.js';
 import { renderSettings } from './screens/settings.js';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6729';
-import { renderClassRoom } from './screens/classRoom.js?v=6729';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6731';
+import { renderClassRoom } from './screens/classRoom.js?v=6731';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
@@ -170,7 +170,7 @@ async function boot() {
 function routeReadyUser() {
   if (!state.user) return;
   if (!state.user.profile_complete) return go('profile');
-  if (shouldShowAppSetup()) return go('setup');
+  // App Setup tidak lagi memblokir startup. Pengguna yang sudah login langsung masuk ke halaman utama/startup page.
   scheduleCoreWarmup();
 
   const currentUrl = new URL(window.location.href);

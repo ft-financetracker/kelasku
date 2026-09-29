@@ -14,10 +14,10 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=6728',mobile:'assets/public/hero-access.webp?v=6728'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=6728',mobile:'assets/public/hero-links.webp?v=6728'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6728',mobile:'assets/public/hero-showcase.webp?v=6728'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6728',mobile:'assets/public/campus-landscape-mobile.png?v=6728'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6731',mobile:'assets/public/hero-access.webp?v=6731'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6731',mobile:'assets/public/hero-links.webp?v=6731'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6731',mobile:'assets/public/hero-showcase.webp?v=6731'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6731',mobile:'assets/public/campus-landscape-mobile.png?v=6731'}
 });
 
 const PLATFORM = {
@@ -171,8 +171,8 @@ function publicHero(cls, appearance={}, memberData=null) {
     cls.semester || ''
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || 'assets/classroom/hero-room-default-desktop.jpg?v=6728';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6728';
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || 'assets/classroom/hero-room-default-desktop.jpg?v=6731';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6731';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
@@ -212,9 +212,12 @@ function publicScheduleBlock(schedules=[], activeAttendance=null, {guest=false,c
 
 function imageSectionHead(kind,kicker,title,copy='',extra='') {
   const section=String(kind||'').toLowerCase();
+  const slot=({access:'LANDING_ACCESS',links:'LANDING_LINKS',showcase:'LANDING_SHOWCASE'})[section]||'';
+  const custom=slot?currentPublicAppearance?.active?.[slot]?.url:'';
   const configured=String(currentPublicAppearance?.landing_sections?.[section]||section).toUpperCase();
   const preset=LANDING_PRESET_ASSETS[configured]||LANDING_PRESET_ASSETS[String(section).toUpperCase()]||LANDING_PRESET_ASSETS.ACCESS;
-  return `<div class="public-image-head public-image-head-${esc(kind)} public-image-head-v6728"><picture class="public-image-head-bg-v6728" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(preset.mobile)}"><img src="${esc(preset.desktop)}" alt="" loading="lazy"></picture><span class="public-image-head-shade-v6728" aria-hidden="true"></span><div class="public-image-head-copy"><span class="public-kicker">${esc(kicker)}</span><h2>${esc(title)}</h2>${copy?`<p>${esc(copy)}</p>`:''}</div>${extra||''}</div>`;
+  const desktop=custom||preset.desktop,mobile=custom||preset.mobile;
+  return `<div class="public-image-head public-image-head-${esc(kind)} public-image-head-v6728"><picture class="public-image-head-bg-v6728" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(mobile)}"><img src="${esc(desktop)}" alt="" loading="lazy"></picture><span class="public-image-head-shade-v6728" aria-hidden="true"></span><div class="public-image-head-copy"><span class="public-kicker">${esc(kicker)}</span><h2>${esc(title)}</h2>${copy?`<p>${esc(copy)}</p>`:''}</div>${extra||''}</div>`;
 }
 
 function memberAcademicHub(academic={}, classId='') {
