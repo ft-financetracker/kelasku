@@ -1,0 +1,98 @@
+[
+  {
+    "version": "6.7.28",
+    "build": "20260929.328",
+    "date": "2026-09-29",
+    "type": "RELEASE",
+    "title": "Final Class Identity + Landing Presets",
+    "summary": "Hero Room/Landing parity, icon class presets, built-in Landing section presets per class, and preserved media album/crop/delete flow."
+  },
+  {
+    "version": "6.7.27",
+    "build": "20260929.327",
+    "date": "2026-09-29",
+    "type": "RELEASE",
+    "title": "Unified Class Appearance",
+    "summary": "Hero kelas unified Room + Landing, Card Room square image, crop/reposition upload, album per class, permanent delete."
+  },
+  {
+    "version": "6.7.26",
+    "build": "20260929.326",
+    "date": "2026-09-29",
+    "type": "PATCH",
+    "title": "Appearance Category Accordion + Built-in Landing Assets",
+    "summary": "Settings Tampilan diringkas menjadi kategori accordion default tertutup; Landing Page menampilkan asset section bawaan yang sudah terpasang tanpa upload ulang, sementara hero custom dan album Google Drive tetap dipertahankan."
+  },
+  {
+    "version": "6.7.25",
+    "build": "20260929.325",
+    "date": "2026-09-29",
+    "type": "FEATURE",
+    "title": "Class Appearance Library + Hero Final",
+    "summary": "Hero Room Class final visual + Settings Tampilan aktif dengan upload desktop/mobile, album media lama, dan sinkron hero Landing Page menggunakan Google Drive tanpa schema baru."
+  },
+  {
+    "version": "6.7.24",
+    "build": "20260929.324",
+    "date": "2026-09-29",
+    "title": "Room Academic Signal Precision",
+    "changes": [
+      "Jadwal and Absensi signals now count only currently open attendance sessions still UNMARKED for the current participant; future sessions are excluded and completed attendance clears the count.",
+      "Room hero graduation visual enlarged and divider enabled on desktop and mobile.",
+      "Ringkasan fold cards remain collapsed by default but can now be opened on desktop.",
+      "Belum dibuka states in Jadwal and Absensi are represented by a compact clock icon instead of a long text pill."
+    ]
+  },
+  {
+    "version": "6.7.23",
+    "build": "20260929.323",
+    "date": "2026-09-29",
+    "type": "PATCH",
+    "title": "Room + Classes + Bottom Nav Precision",
+    "summary": "Restore class collapse/header surface, default-collapsed Room overview, horizontal submenus, larger room hero icon, and stable equal-slot mobile bottom navigation."
+  },
+  {
+    "version": "6.7.22",
+    "build": "20260929.322",
+    "date": "2026-09-29",
+    "title": "Mobile Room Member + Submenu + Bottom Nav Polish",
+    "changes": [
+      "Larger submenu icons and one-line submenu header on mobile.",
+      "Member cards use two-line identity with a separate badge/action footer on mobile.",
+      "Bottom navigation uses five equal icon stations with a compact active highlight and no CTA block."
+    ]
+  },
+  {
+    "version": "6.7.21",
+    "build": "20260929.321",
+    "date": "2026-09-29",
+    "type": "HOTFIX",
+    "title": "Room submenu click popover",
+    "summary": "Submenu Akademik/Kelola hanya muncul saat tombol utama diklik dan dirender di luar container navigasi."
+  },
+  {
+    "version": "6.7.20",
+    "build": "20260929.320",
+    "date": "2026-09-29",
+    "title": "Room Class Recovery + Update Delivery Fix",
+    "changes": [
+      "Memperbaiki mismatch frontend config 6.7.18 vs app-version/service-worker 6.7.19 yang membuat update berulang/nyangkut.",
+      "Memulihkan source Room Class dan CSS ke baseline v6.7.18 yang lengkap sebelum patch visual baru diterapkan.",
+      "Merapikan hero Room Class, navigasi utama, dropdown submenu mobile, dan header/KPI Jadwal tanpa mengubah card sesi jadwal.",
+      "Tombol tambah di modul Akademik menjadi ikon + yang compact dengan ID/action lama tetap dipertahankan."
+    ]
+  },
+  {
+    "version": "6.7.19",
+    "build": "20260929.319",
+    "date": "2026-09-29",
+    "title": "Class Room Hero, Nav, and Schedule Precision Patch",
+    "changes": [
+      "Refined Class Room hero for desktop and mobile, with larger square room visual and cleaner typography.",
+      "Compressed main room navigation and added mobile left/right scrollers for overflow.",
+      "Converted Academic/Manage submenus to a dropdown list on mobile while preserving chip navigation on desktop.",
+      "Moved Class Code and Join Code to the Ringkasan status block and kept room links in a dedicated panel.",
+      "Unified academic add actions into compact [+] buttons and tightened the schedule header and KPI strip."
+    ]
+  }
+]

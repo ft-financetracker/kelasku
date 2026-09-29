@@ -12,6 +12,13 @@ let currentPublicAcademic = null;
 let currentPublicClassId = '';
 let currentPublicData = null;
 let currentPublicMemberData = null;
+let currentPublicAppearance = {};
+const LANDING_PRESET_ASSETS = Object.freeze({
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6728',mobile:'assets/public/hero-access.webp?v=6728'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6728',mobile:'assets/public/hero-links.webp?v=6728'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6728',mobile:'assets/public/hero-showcase.webp?v=6728'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6728',mobile:'assets/public/campus-landscape-mobile.png?v=6728'}
+});
 
 const PLATFORM = {
   WHATSAPP: ['WhatsApp', 'chat', 'Ruang komunikasi dan grup kelas'],
@@ -152,7 +159,11 @@ function linkPeriodUi(items=[]) {
   return {nav,panels};
 }
 
-function publicHero(cls, appearance={}) {
+function publicRoleLabel(role='') {
+  const key=String(role||'').toUpperCase();
+  return ({OWNER:'Owner',COORDINATOR:'Koordinator',MODERATOR:'Moderator',TEACHER:'Pengajar',OBSERVER:'Pengamat',MEMBER:'Member'})[key]||'';
+}
+function publicHero(cls, appearance={}, memberData=null) {
   const meta = [
     cls.institution || '',
     cls.study_program && !String(cls.name || '').toLowerCase().includes(String(cls.study_program).toLowerCase()) ? cls.study_program : '',
@@ -160,21 +171,21 @@ function publicHero(cls, appearance={}) {
     cls.semester || ''
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
-  const desktop=appearance?.active?.LANDING_DESKTOP?.url || '';
-  const mobile=appearance?.active?.LANDING_MOBILE?.url || desktop;
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || 'assets/classroom/hero-room-default-desktop.jpg?v=6728';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6728';
   const customHero=Boolean(desktop||mobile);
-  return `<section class="public-hero ${customHero?'public-hero-custom-v6725':''}">
+  const role=String(memberData?.class?.role||'').toUpperCase();
+  const isLeader=Boolean(memberData?.permissions?.is_class_leader);
+  const iconKey=String(cls.icon_key||appearance?.icon_key||'school').trim()||'school';
+  return `<section class="public-hero public-hero-v6728 ${customHero?'public-hero-custom-v6725':''}">
     ${customHero?`<picture class="public-hero-bg-v6725" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(mobile||desktop)}"><img src="${esc(desktop||mobile)}" alt="" loading="eager" decoding="async"></picture><span class="public-hero-shade-v6725" aria-hidden="true"></span>`:''}
-    <span class="public-hero-icon material-symbols-rounded">school</span>
+    ${cls.cover_url?`<span class="public-hero-icon public-hero-cover"><img src="${esc(cls.cover_url)}" alt="" loading="eager"></span>`:`<span class="public-hero-icon material-symbols-rounded">${esc(iconKey)}</span>`}
     <div class="public-hero-copy">
-      <div class="public-hero-heading">
-        <h1>${esc(cls.name || 'Kelas')}</h1>
-      </div>
-      <div class="public-meta-line">${meta.map((item,index)=>`${index?'<i>•</i>':''}<span>${esc(item)}</span>`).join('')}<span class="public-visibility-badge">${esc(visibility)}</span></div>
-      <div class="public-hero-foot">
-        <p>${esc(cls.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
-        <small class="public-class-code">${esc(cls.class_code || '')}${cls.status?` • ${esc(cls.status)}`:''}</small>
-      </div>
+      <h1>${esc(cls.name || 'Kelas')}</h1>
+      <div class="public-meta-line">${meta.map((item,index)=>`${index?'<i>•</i>':''}<span>${esc(item)}</span>`).join('')}</div>
+      <p class="public-hero-description-v6728">${esc(cls.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
+      <div class="public-hero-rule-v6728" aria-hidden="true"></div>
+      <div class="public-hero-pills-v6728"><span class="public-class-label-v6728">CLASS</span><span class="public-visibility-badge">${esc(visibility)}</span>${role?`<span class="public-role-badge-v6728">${esc(publicRoleLabel(role))}</span>`:''}${isLeader?'<span class="public-role-badge-v6728 leader">Ketua Kelas</span>':''}</div>
     </div>
   </section>`;
 }
@@ -200,7 +211,10 @@ function publicScheduleBlock(schedules=[], activeAttendance=null, {guest=false,c
 
 
 function imageSectionHead(kind,kicker,title,copy='',extra='') {
-  return `<div class="public-image-head public-image-head-${esc(kind)}"><div class="public-image-head-copy"><span class="public-kicker">${esc(kicker)}</span><h2>${esc(title)}</h2>${copy?`<p>${esc(copy)}</p>`:''}</div>${extra||''}</div>`;
+  const section=String(kind||'').toLowerCase();
+  const configured=String(currentPublicAppearance?.landing_sections?.[section]||section).toUpperCase();
+  const preset=LANDING_PRESET_ASSETS[configured]||LANDING_PRESET_ASSETS[String(section).toUpperCase()]||LANDING_PRESET_ASSETS.ACCESS;
+  return `<div class="public-image-head public-image-head-${esc(kind)} public-image-head-v6728"><picture class="public-image-head-bg-v6728" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(preset.mobile)}"><img src="${esc(preset.desktop)}" alt="" loading="lazy"></picture><span class="public-image-head-shade-v6728" aria-hidden="true"></span><div class="public-image-head-copy"><span class="public-kicker">${esc(kicker)}</span><h2>${esc(title)}</h2>${copy?`<p>${esc(copy)}</p>`:''}</div>${extra||''}</div>`;
 }
 
 function memberAcademicHub(academic={}, classId='') {
@@ -259,7 +273,7 @@ function showcase() {
 function syncPublicReleaseFooter(){
   const version=document.getElementById('public-footer-version');
   const updated=document.getElementById('public-footer-updated');
-  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.6'}`;
+  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.28'}`;
   if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'28 Sep 2026, 11:13 WIB';
 }
 
@@ -278,11 +292,12 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   currentPublicClassId = cls.class_id || '';
   currentPublicData = data;
   currentPublicMemberData = memberData;
+  currentPublicAppearance = data.appearance || {};
   const infoSection = isMember
     ? memberAcademicHub(academic||{},cls.class_id||'')
     : (membershipLoading ? academicLoading() : guestAcademicHub(loggedIn,data.public_academic||{}));
 
-  content.innerHTML = `${publicHero(cls,data.appearance||{})}
+  content.innerHTML = `${publicHero(cls,data.appearance||{},memberData)}
     ${infoSection}
     ${linkUi.nav?`<div class="public-period-standalone">${linkUi.nav}</div>`:''}
     <section class="public-section-block">${imageSectionHead('links','LINK CEPAT','Akses penting kelas','Pilih tab, lalu buka kategori link yang dibutuhkan.')}${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>

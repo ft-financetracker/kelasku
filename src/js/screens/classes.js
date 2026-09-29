@@ -193,6 +193,14 @@ function syncCreateClassLimit(items = []) {
   btn.innerHTML = full ? `${svg('i-lock')} Batas 3 Kelas` : `${svg('i-plus')} Buat Kelas`;
 }
 
+
+function classIdentityIconMarkup(c){
+  const cover=String(c?.cover_url||'').trim();
+  if(cover)return `<img src="${esc(cover)}" alt="" loading="lazy">`;
+  const icon=String(c?.icon_key||'school').trim()||'school';
+  return `<span class="material-symbols-rounded class-list-material-icon">${esc(icon)}</span>`;
+}
+
 function classListRow(c, mine = false) {
   const leader = c.is_class_leader ? '<span class="role-pill leader-role-pill">Ketua Kelas</span>' : '';
   const isMember = Boolean(mine || c.is_member);
@@ -203,7 +211,7 @@ function classListRow(c, mine = false) {
   const desc = [c.institution || 'KelasKu', c.cohort ? `Angkatan ${c.cohort}` : '', c.class_code || ''].filter(Boolean).join(' · ');
   const rowTarget = isMember ? `data-class-card-open="${esc(c.class_id)}"` : `data-class-card-preview="${esc(c.class_id)}"`;
   return `<article class="class-list-row class-room-card" ${rowTarget} tabindex="0" role="button" aria-label="${isMember?'Buka':'Lihat'} ${esc(c.name || 'kelas')}">
-    <span class="class-symbol small class-room-icon">${svg('i-class')}</span>
+    <span class="class-symbol small class-room-icon ${c.cover_url?'has-cover':''}">${classIdentityIconMarkup(c)}</span>
     <div class="class-list-copy class-room-copy"><strong>${esc(c.name)}</strong><small class="class-list-subtitle">${esc(desc)}</small></div>
     <div class="class-list-badge-line class-room-badges">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : ''}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile class-card-kpi" aria-label="${memberCount} anggota"><span class="material-symbols-rounded">group</span>${memberCount}</span>` : ''}</div>
     <div class="class-list-action class-room-action">${action}</div>
@@ -346,7 +354,7 @@ function bindSearchRows(box,items,query){
 
 function searchCard(c) {
   const meta=[c.class_code||'',c.institution||'',c.cohort?`Angkatan ${c.cohort}`:''].filter(Boolean).join(' · ');
-  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon">${svg('i-class')}</span><span class="search-class-inline"><strong>${esc(c.name)}</strong><small>${esc(meta)}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
+  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon ${c.cover_url?'has-cover':''}">${classIdentityIconMarkup(c)}</span><span class="search-class-inline"><strong>${esc(c.name)}</strong><small>${esc(meta)}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
 }
 
 function selectSearchClass(c, query = '') {

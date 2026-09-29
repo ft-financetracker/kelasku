@@ -6,9 +6,9 @@
  */
 window.KELASKU_CONFIG = Object.freeze({
   APP_NAME: 'KelasKu',
-  APP_VERSION: '6.7.27',
-  BUILD: '20260929.327',
-  RELEASED_AT_WIB: '29 Sep 2026, 11:35 WIB',
+  APP_VERSION: '6.7.28',
+  BUILD: '20260929.328',
+  RELEASED_AT_WIB: '29 Sep 2026, 13:50 WIB',
 
   API_URL: 'https://script.google.com/macros/s/AKfycbyIsv19DU3M-zWu2HCvDvRQgYbstNy1wHF-8ehaMh0OnQ8ousYswuGmsz23S_QD2FRH/exec',
 

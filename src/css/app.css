@@ -3308,3 +3308,90 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
   .appearance-builtin-card{grid-template-columns:92px minmax(0,1fr) auto}.appearance-builtin-card img{width:92px;height:42px}
   .appearance-slot-grid{grid-template-columns:1fr!important}
 }
+
+
+/* ============================================================
+   v6.7.27 — Unified Class Identity Media
+   ============================================================ */
+.classes-page .class-room-icon.has-cover{padding:0!important;overflow:hidden!important;background:#061a36!important}
+.classes-page .class-room-icon.has-cover img,.search-class-row .status-icon.has-cover img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+.search-class-row .status-icon.has-cover{padding:0!important;overflow:hidden!important}
+.appearance-card-single{max-width:430px}
+.appearance-card-single .appearance-slot-grid{grid-template-columns:1fr}
+.appearance-slot-preview.is-square{aspect-ratio:1/1;max-width:190px}
+.appearance-library-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+.appearance-delete-btn{color:#ff93a4!important;border-color:rgba(248,113,113,.22)!important;background:rgba(239,68,68,.07)!important}
+.appearance-delete-btn:hover{background:rgba(239,68,68,.14)!important;border-color:rgba(248,113,113,.36)!important}
+.appearance-cropper{display:grid;gap:12px}
+.appearance-crop-help{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-radius:12px;background:rgba(34,224,199,.05);border:1px solid rgba(34,224,199,.1);font-size:9.5px;line-height:1.45;color:var(--muted)}
+.appearance-crop-help .material-symbols-rounded{font-size:20px;color:var(--tosca)}
+.appearance-crop-stage{position:relative;width:100%;max-height:340px;overflow:hidden;border-radius:14px;background:#041226;border:1px solid rgba(91,160,240,.18);cursor:grab;touch-action:none;user-select:none}
+.appearance-crop-stage:active{cursor:grabbing}
+.appearance-crop-stage img{position:absolute;left:50%;top:50%;max-width:none!important;max-height:none!important;transform-origin:center center;will-change:transform;pointer-events:none}
+.appearance-crop-safe{position:absolute;right:8px;bottom:7px;padding:3px 6px;border-radius:7px;background:rgba(3,17,39,.66);border:1px solid rgba(255,255,255,.12);color:#cfe4f6;font-size:7px;font-weight:800;letter-spacing:.1em}
+.appearance-zoom-control{display:grid;grid-template-columns:auto minmax(0,1fr) 44px;align-items:center;gap:10px;font-size:9px;color:var(--muted)}
+.appearance-zoom-control input{width:100%;accent-color:#22e0c7}.appearance-zoom-control b{text-align:right;color:var(--text)}
+.class-room-page .class-room-cover-v6725 img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+@media(max-width:720px){
+  .appearance-slot-preview.is-square{max-width:150px}
+  .appearance-library-card{grid-template-columns:72px minmax(0,1fr)!important;align-items:start!important}
+  .appearance-library-card img{width:72px!important;height:54px!important}
+  .appearance-library-actions{grid-column:1/-1;justify-content:flex-start;padding-left:0}
+  .appearance-crop-stage{max-height:270px}
+}
+
+/* ============================================================
+   v6.7.28 — Final class appearance polish
+   Scope: Hero Room, icon/foto class, Landing preset picker.
+   ============================================================ */
+.appearance-settings-v6728{display:grid;gap:10px;margin-top:12px}
+.class-list-material-icon{font-size:26px;line-height:1;color:var(--tosca)}
+.class-room-page .class-hero-v6725{grid-template-columns:96px minmax(0,620px)!important;gap:20px!important;min-height:154px!important;padding:18px 22px!important}
+.class-room-page .class-room-cover-v6728{width:88px!important;height:88px!important;min-width:88px!important;border-radius:21px!important}
+.class-room-page .class-room-cover-v6728 .class-hero-symbol-v6728{font-size:52px!important;line-height:1!important;color:var(--tosca)!important}
+.class-room-page .class-hero-copy-v6728{padding-left:2px!important}
+.class-room-page .class-hero-v6725 .class-hero-main h2{order:1;margin:0 0 4px!important;font-size:26px!important;line-height:1.1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.class-room-page .class-hero-v6725 .class-primary-meta{order:2;margin:0 0 4px!important;font-size:10px!important;line-height:1.3!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.class-room-page .class-hero-v6725 .class-hero-description{order:3;margin:0!important;max-width:560px!important;font-size:10.8px!important;line-height:1.42!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.class-room-page .class-hero-rule-v6728{order:4;margin:9px 0 7px!important;max-width:560px!important}
+.class-room-page .class-hero-v6725 .class-hero-bottomline{order:5}
+.class-room-page .class-hero-copy-v6728{display:flex!important;flex-direction:column!important;justify-content:center!important}
+
+.class-icon-preset-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+.class-icon-preset{appearance:none;min-height:68px;padding:8px 6px;border-radius:13px;border:1px solid rgba(91,160,240,.13);background:rgba(7,31,66,.46);color:#9EB5CB;display:grid;place-items:center;gap:3px;cursor:pointer;font:inherit;transition:.16s ease}
+.class-icon-preset:hover{border-color:rgba(34,224,199,.24);background:rgba(34,224,199,.06);color:#DDFCF7}
+.class-icon-preset.active{border-color:rgba(34,224,199,.42);background:linear-gradient(145deg,rgba(34,224,199,.16),rgba(25,118,255,.12));color:#AFFFF2;box-shadow:0 0 0 1px rgba(34,224,199,.08) inset}
+.class-icon-preset .material-symbols-rounded{font-size:28px}.class-icon-preset small{font-size:8px;font-weight:800;white-space:nowrap}
+.appearance-icon-upload{margin-top:14px;padding-top:2px}
+
+.landing-preset-section-list{display:grid;gap:10px;margin:10px 0 14px}
+.landing-preset-section{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(260px,1.2fr) minmax(170px,.7fr);align-items:center;gap:12px;padding:10px;border-radius:14px;border:1px solid rgba(91,160,240,.12);background:rgba(6,27,60,.36)}
+.landing-preset-copy{display:grid;gap:3px;min-width:0}.landing-preset-copy strong{font-size:10.5px}.landing-preset-copy small{font-size:8.4px;line-height:1.4;color:var(--muted)}
+.landing-preset-preview{display:block;aspect-ratio:6/1;overflow:hidden;border-radius:10px;border:1px solid rgba(91,160,240,.12);background:#061731}.landing-preset-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.landing-preset-select{margin:0!important;display:grid;gap:5px}.landing-preset-select>span{font-size:8px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.08em}.landing-preset-select .control{min-height:36px!important;padding:7px 9px!important;font-size:9px!important}
+.appearance-builtin-gallery{padding-top:10px;border-top:1px solid rgba(91,160,240,.09)}
+.appearance-builtin-card picture{display:block;width:112px;height:48px}.appearance-builtin-card picture img{width:100%;height:100%;object-fit:cover}
+
+@media(max-width:900px){
+  .class-icon-preset-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .landing-preset-section{grid-template-columns:1fr 1fr}.landing-preset-copy{grid-column:1/-1}.landing-preset-select{align-self:stretch}
+}
+@media(max-width:720px){
+  .class-room-page .class-hero-v6725{grid-template-columns:78px minmax(0,1fr)!important;gap:13px!important;min-height:132px!important;padding:13px 14px!important}
+  .class-room-page .class-room-cover-v6728{width:72px!important;height:72px!important;min-width:72px!important;border-radius:18px!important}
+  .class-room-page .class-room-cover-v6728 .class-hero-symbol-v6728{font-size:42px!important}
+  .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:20px!important;margin-bottom:3px!important}
+  .class-room-page .class-hero-v6725 .class-primary-meta{font-size:8.5px!important;margin-bottom:3px!important}
+  .class-room-page .class-hero-v6725 .class-hero-description{font-size:8.9px!important;display:block!important;white-space:nowrap!important;-webkit-line-clamp:unset!important}
+  .class-room-page .class-hero-rule-v6728{margin:6px 0 5px!important}
+  .class-icon-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .class-icon-preset{min-height:60px}.class-icon-preset .material-symbols-rounded{font-size:25px}.class-icon-preset small{font-size:7.5px}
+  .landing-preset-section{grid-template-columns:1fr;padding:9px}.landing-preset-copy{grid-column:auto}.landing-preset-preview{aspect-ratio:4.5/1}.landing-preset-select{grid-template-columns:auto minmax(0,1fr);align-items:center}.landing-preset-select>span{white-space:nowrap}.landing-preset-select .control{width:100%}
+}
+@media(max-width:430px){
+  .class-room-page .class-hero-v6725{grid-template-columns:68px minmax(0,1fr)!important;gap:11px!important;min-height:122px!important}
+  .class-room-page .class-room-cover-v6728{width:64px!important;height:64px!important;min-width:64px!important;border-radius:16px!important}
+  .class-room-page .class-room-cover-v6728 .class-hero-symbol-v6728{font-size:37px!important}
+  .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:18px!important}
+  .class-room-page .class-hero-v6725 .class-hero-description{font-size:8.3px!important}
+}

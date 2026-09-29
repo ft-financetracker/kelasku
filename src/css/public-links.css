@@ -256,3 +256,39 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 .public-hero-shade-v6725{position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,rgba(3,17,45,.95),rgba(3,21,53,.78) 46%,rgba(3,22,55,.18) 78%,rgba(3,22,55,.04));pointer-events:none}
 .public-hero-custom-v6725 h1,.public-hero-custom-v6725 p,.public-hero-custom-v6725 .public-meta-line{color:#F4FAFF}
 @media(max-width:720px){.public-hero-shade-v6725{background:linear-gradient(90deg,rgba(3,17,45,.97),rgba(3,21,53,.86) 54%,rgba(3,22,55,.35))}}
+
+
+/* v6.7.27 — shared class identity */
+.public-hero-cover{overflow:hidden;padding:0!important}
+.public-hero-cover img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+
+/* ============================================================
+   v6.7.28 — Room/Landing visual parity + selectable section presets
+   ============================================================ */
+.public-hero-v6728{grid-template-columns:82px minmax(0,620px)!important;gap:18px!important;min-height:154px!important;padding:18px 22px!important;align-items:center!important}
+.public-hero-v6728 .public-hero-icon{width:76px!important;height:76px!important;border-radius:19px!important;font-size:43px!important;background:linear-gradient(145deg,rgba(6,77,139,.88),rgba(4,42,92,.85))!important;color:var(--tosca)!important;border:1px solid rgba(34,224,199,.28)!important;box-shadow:0 12px 28px rgba(0,10,35,.22)!important}
+.public-hero-v6728 .public-hero-copy{display:flex!important;flex-direction:column!important;min-width:0!important;gap:0!important}
+.public-hero-v6728 h1{order:1;margin:0 0 4px!important;font-size:26px!important;line-height:1.1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;color:#fff!important}
+.public-hero-v6728 .public-meta-line{order:2;margin:0 0 4px!important;font-size:10px!important;line-height:1.3!important;color:#BFD1E5!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.public-hero-description-v6728{order:3!important;margin:0!important;max-width:560px!important;color:#D7E4F2!important;font-size:10.8px!important;line-height:1.42!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.public-hero-rule-v6728{order:4;height:1px;margin:9px 0 7px;max-width:560px;background:linear-gradient(90deg,rgba(199,224,246,.48),rgba(199,224,246,.18),transparent)}
+.public-hero-pills-v6728{order:5;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.public-class-label-v6728{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#93A8C0}
+.public-role-badge-v6728{display:inline-flex;align-items:center;min-height:21px;padding:3px 7px;border-radius:999px;background:#0A3767;border:1px solid rgba(94,160,236,.24);color:#D5E7FA;font-size:7.7px;font-weight:800}
+.public-role-badge-v6728.leader{background:linear-gradient(135deg,#8AF7DD,#40DDC7);color:#07323A;border-color:transparent}
+.public-hero-v6728 .public-visibility-badge{min-height:21px!important;padding:3px 7px!important;font-size:7.7px!important}
+
+.public-image-head-v6728{overflow:hidden;background-image:none!important}
+.public-image-head-v6728::before{display:none!important}
+.public-image-head-bg-v6728,.public-image-head-bg-v6728 img{position:absolute;inset:0;width:100%;height:100%;display:block}.public-image-head-bg-v6728{z-index:-3}.public-image-head-bg-v6728 img{object-fit:cover;object-position:center}
+.public-image-head-shade-v6728{position:absolute;inset:0;z-index:-2;background:linear-gradient(90deg,rgba(4,18,44,.96) 0%,rgba(5,24,52,.86) 42%,rgba(5,24,52,.36) 70%,rgba(5,24,52,.12) 100%)}
+
+@media(max-width:720px){
+  .public-hero-v6728{grid-template-columns:68px minmax(0,1fr)!important;gap:12px!important;min-height:128px!important;padding:13px 14px!important;border-radius:18px!important}
+  .public-hero-v6728 .public-hero-icon{width:64px!important;height:64px!important;border-radius:16px!important;font-size:36px!important}
+  .public-hero-v6728 h1{font-size:19px!important;margin-bottom:3px!important}
+  .public-hero-v6728 .public-meta-line{font-size:8.6px!important;margin-bottom:3px!important}
+  .public-hero-description-v6728{font-size:8.8px!important}
+  .public-hero-rule-v6728{margin:6px 0 5px}
+  .public-image-head-shade-v6728{background:linear-gradient(90deg,rgba(4,18,44,.97) 0%,rgba(5,24,52,.85) 58%,rgba(5,24,52,.30) 100%)}
+}
