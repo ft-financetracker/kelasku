@@ -1,7 +1,7 @@
 {
-  "name": "KelasKu — Belajar Bersama Lebih Mudah",
-  "short_name": "KelasKu",
-  "description": "Sistem komunikasi dan informasi kelas yang cepat, rapi, dan mobile-friendly.",
+  "name": "KlasKu — Belajar Bersama Lebih Mudah",
+  "short_name": "KlasKu",
+  "description": "Sistem komunikasi dan informasi kelas yang cepat.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
