@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.7.27",
+    "build": "20260929.327",
+    "date": "2026-09-29",
+    "type": "RELEASE",
+    "title": "Unified Class Appearance",
+    "summary": "Hero kelas unified Room + Landing, Card Room square image, crop/reposition upload, album per class, permanent delete."
+  },
+  {
     "version": "6.7.26",
     "build": "20260929.326",
     "date": "2026-09-29",

@@ -1,30 +1,27 @@
-KelasKu v6.7.26 — Appearance Category Patch
-Build 20260929.326 | Schema 17 | FRONTEND-ONLY
+KelasKu v6.7.27 — Frontend Unified Class Appearance
+Build 20260929.327 | Schema 17
 
-Fokus patch:
-1. Settings > Tampilan dipisah menjadi 3 kategori accordion:
-   - Hero Room Class
-   - Landing Page
-   - Album Tampilan
-   Semua default tertutup.
-2. Landing Page menjelaskan asset section bawaan existing vs Hero Utama custom.
-3. Asset landing bawaan disertakan sebagai static frontend asset (BUKAN upload Google Drive):
-   - hero-access.webp (dari hero-info.webp)
-   - hero-links.webp
-   - hero-showcase.webp
-   - campus-landscape-desktop.png
-   - campus-landscape-mobile.png
-4. Backend appearance v6.7.25 tetap dipakai untuk upload custom + album Google Drive.
+BASELINE: frontend v6.7.26 + backend appearance v6.7.25.
 
-Deploy:
-- Timpa file/folder dari ZIP ke GitHub Pages.
-- Commit + Push.
-- Tunggu Pages selesai.
-- Tutup total PWA/tab KelasKu.
-- Buka ulang dan pastikan v6.7.26.
+Fokus release:
+- HERO_DESKTOP + HERO_MOBILE dipakai bersama oleh Room Class dan Landing Page kelas yang sama.
+- CARD_SQUARE untuk Foto Card Room pada Daftar Kelas + pict/icon Hero Room.
+- Crop/reposition client-side saat upload (drag + zoom); hasil final yang diupload sehingga tidak menambah beban runtime.
+- Album tetap per-class.
+- Tombol hapus permanen dari KelasKu dengan confirmation alert.
+- Legacy ROOM/LANDING media tetap kompatibel dan tetap ada di album.
+
+DEPLOY ORDER:
+1) Deploy Apps Script v6.7.27 dahulu.
+2) Timpa file frontend dari ZIP ini ke GitHub Pages.
+3) Tunggu GitHub Pages deploy selesai.
+4) Tutup total tab/PWA lalu buka kembali.
+5) Pastikan v6.7.27 / build 20260929.327.
+6) Test Tampilan: Hero Desktop, Hero Mobile, Card Room, Album, delete.
+7) Setelah semuanya live dan lolos test, jalankan syncKelasKuRelease() SATU KALI.
 
 TIDAK PERLU:
-- update Apps Script
 - migrateKelasKu()
 - setupKelasKu()
-- syncKelasKuRelease()
+
+Schema tetap 17.
