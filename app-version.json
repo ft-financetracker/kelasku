@@ -1,8 +1,8 @@
 {
-  "version": "6.7.25",
-  "build": "20260929.325",
+  "version": "6.7.26",
+  "build": "20260929.326",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_time_wib": "09:55 WIB",
-  "release_note": "Hero Room Class final visual + Settings Tampilan aktif dengan upload desktop/mobile, album media lama, dan sinkron hero Landing Page menggunakan Google Drive tanpa schema baru."
+  "release_time_wib": "10:58 WIB",
+  "release_note": "Settings Tampilan diringkas menjadi kategori accordion default tertutup; Landing Page menampilkan asset section bawaan yang sudah terpasang tanpa upload ulang, sementara hero custom dan album Google Drive tetap dipertahankan."
 }

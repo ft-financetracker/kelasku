@@ -1181,8 +1181,8 @@ function requestsHtml(data) {
 const CLASS_APPEARANCE_META = Object.freeze({
   ROOM_DESKTOP:{label:'Hero Room Class — Desktop',size:'2048 × 384 px',ratio:'5.33 : 1',maxEdge:2048},
   ROOM_MOBILE:{label:'Hero Room Class — Mobile',size:'1440 × 320 px',ratio:'4.50 : 1',maxEdge:1440},
-  LANDING_DESKTOP:{label:'Hero Landing — Desktop',size:'2048 × 384 px',ratio:'5.33 : 1',maxEdge:2048},
-  LANDING_MOBILE:{label:'Hero Landing — Mobile',size:'1440 × 320 px',ratio:'4.50 : 1',maxEdge:1440}
+  LANDING_DESKTOP:{label:'Hero Utama Landing — Desktop',size:'2048 × 384 px',ratio:'5.33 : 1',maxEdge:2048},
+  LANDING_MOBILE:{label:'Hero Utama Landing — Mobile',size:'1440 × 320 px',ratio:'4.50 : 1',maxEdge:1440}
 });
 function classAppearanceUrl(data,slot,fallback=''){
   return data?.appearance?.active?.[slot]?.url || fallback;
@@ -1211,17 +1211,66 @@ function classAppearanceLibraryHtml(data){
     return `<article class="appearance-library-card ${item.active?'is-active':''}"><img src="${esc(item.url)}" alt="${esc(meta.label)}" loading="lazy"><div><strong>${esc(meta.label)}</strong><small>${esc(item.filename||'Gambar kelas')} · ${item.created_at?esc(new Date(item.created_at).toLocaleDateString('id-ID')):''}</small></div><button type="button" class="btn ${item.active?'btn-primary':'btn-secondary'} small-btn" data-appearance-use="${esc(item.media_id)}" data-appearance-slot="${esc(item.slot)}" ${item.active?'disabled':''}>${item.active?'Aktif':'Gunakan'}</button></article>`;
   }).join('')}</div>`;
 }
+let appearanceOpenCategory='';
+const LANDING_BUILTIN_ASSETS=Object.freeze([
+  {key:'access',label:'Informasi / Akses Kelas',src:'assets/public/hero-access.webp?v=6726',size:'1440 × 240 px',state:'AKTIF DI LANDING'},
+  {key:'links',label:'Link Cepat',src:'assets/public/hero-links.webp?v=6726',size:'1440 × 240 px',state:'AKTIF DI LANDING'},
+  {key:'showcase',label:'Kenal KelasKu',src:'assets/public/hero-showcase.webp?v=6726',size:'1440 × 240 px',state:'AKTIF DI LANDING'},
+  {key:'campus-desktop',label:'Kampus / Lapangan — Desktop',src:'assets/public/campus-landscape-desktop.png?v=6726',size:'2048 × 220 px',state:'ASSET BAWAAN'},
+  {key:'campus-mobile',label:'Kampus / Lapangan — Mobile',src:'assets/public/campus-landscape-mobile.png?v=6726',size:'1200 × 300 px',state:'ASSET BAWAAN'}
+]);
+function appearanceCategorySummary(key,data){
+  if(key==='room'){
+    const count=['ROOM_DESKTOP','ROOM_MOBILE'].filter(slot=>data?.appearance?.active?.[slot]).length;
+    return count?`${count}/2 custom`:'Default KelasKu';
+  }
+  if(key==='landing'){
+    const count=['LANDING_DESKTOP','LANDING_MOBILE'].filter(slot=>data?.appearance?.active?.[slot]).length;
+    return count?`${count}/2 hero custom · 3 section bawaan`:'3 section bawaan aktif';
+  }
+  const total=(data?.appearance?.library||[]).filter(x=>x?.media_id&&x?.url).length;
+  return `${total} gambar tersimpan`;
+}
+function appearanceCategory(key,icon,title,copy,body,data){
+  const open=appearanceOpenCategory===key;
+  return `<section class="appearance-category ${open?'is-open':''}" data-appearance-category="${key}">
+    <button type="button" class="appearance-category-head" data-appearance-category-toggle="${key}" aria-expanded="${open?'true':'false'}">
+      <span class="appearance-category-icon material-symbols-rounded">${icon}</span>
+      <span class="appearance-category-copy"><strong>${esc(title)}</strong><small>${esc(copy)}</small></span>
+      <span class="appearance-category-summary">${esc(appearanceCategorySummary(key,data))}</span>
+      <span class="appearance-category-chevron material-symbols-rounded">expand_more</span>
+    </button>
+    <div class="appearance-category-body" ${open?'':'hidden'}>${body}</div>
+  </section>`;
+}
+function landingBuiltinAssetsHtml(){
+  return `<div class="appearance-builtin-block"><div class="appearance-mini-head"><div><strong>Asset landing yang sudah terpasang</strong><small>Tidak masuk Google Drive dan tidak perlu di-upload ulang. Ini adalah asset statis bawaan frontend yang saat ini dipakai/tersedia di Landing Page.</small></div><span class="soft-chip">BUILT-IN</span></div><div class="appearance-builtin-grid">${LANDING_BUILTIN_ASSETS.map(item=>`<article class="appearance-builtin-card"><img src="${esc(item.src)}" alt="${esc(item.label)}" loading="lazy"><div><strong>${esc(item.label)}</strong><small>${esc(item.size)}</small></div><span class="soft-chip">${esc(item.state)}</span></article>`).join('')}</div></div>`;
+}
 function classAppearanceHtml(data){
-  return `<div class="appearance-settings-v6725">
-    <div class="appearance-guide"><span class="material-symbols-rounded">crop_landscape</span><div><strong>Area aman teks berada di sisi kiri.</strong><small>Gunakan gambar dengan fokus visual di kanan agar judul kelas tetap terbaca di desktop dan mobile. Upload otomatis dikompresi sebelum disimpan ke Google Drive.</small></div></div>
-    <div class="appearance-section-title"><div><strong>Hero Room Class</strong><small>Dipakai di dalam Ruang Kelas.</small></div></div>
-    <div class="appearance-slot-grid">${classAppearanceSlotCard('ROOM_DESKTOP',data)}${classAppearanceSlotCard('ROOM_MOBILE',data)}</div>
-    <div class="appearance-section-title"><div><strong>Hero Landing Page</strong><small>Dipakai pada landing publik kelas.</small></div></div>
-    <div class="appearance-slot-grid">${classAppearanceSlotCard('LANDING_DESKTOP',data)}${classAppearanceSlotCard('LANDING_MOBILE',data)}</div>
-    <div class="appearance-section-title appearance-library-title"><div><strong>Album Tampilan</strong><small>Gambar lama tidak dihapus saat kamu mengganti hero. Pilih kembali kapan saja.</small></div></div>
-    ${classAppearanceLibraryHtml(data)}
+  const roomBody=`<div class="appearance-category-note"><span class="material-symbols-rounded">crop_landscape</span><div><strong>Hero di dalam Ruang Kelas</strong><small>Area aman teks berada di sisi kiri. Desktop dan mobile dipisah supaya framing tetap presisi.</small></div></div><div class="appearance-slot-grid">${classAppearanceSlotCard('ROOM_DESKTOP',data)}${classAppearanceSlotCard('ROOM_MOBILE',data)}</div>`;
+  const landingBody=`${landingBuiltinAssetsHtml()}<div class="appearance-mini-head appearance-mini-head-custom"><div><strong>Hero utama Landing Page (opsional)</strong><small>Slot ini hanya untuk mengganti hero utama paling atas. Tiga background section bawaan di atas tetap tersedia dan tidak perlu di-upload.</small></div></div><div class="appearance-slot-grid">${classAppearanceSlotCard('LANDING_DESKTOP',data)}${classAppearanceSlotCard('LANDING_MOBILE',data)}</div>`;
+  const albumBody=`<div class="appearance-category-note"><span class="material-symbols-rounded">photo_library</span><div><strong>Album upload kelas</strong><small>Gambar hasil upload ke Google Drive tetap disimpan saat hero diganti. Asset bawaan frontend tidak dimasukkan ke album ini.</small></div></div>${classAppearanceLibraryHtml(data)}`;
+  return `<div class="appearance-settings-v6726">
+    <div class="appearance-guide appearance-guide-compact"><span class="material-symbols-rounded">palette</span><div><strong>Tampilan dipisah per kategori.</strong><small>Semua kategori default tertutup. Klik kategori yang ingin diatur agar halaman tetap ringkas di desktop maupun mobile.</small></div></div>
+    <div class="appearance-category-list">
+      ${appearanceCategory('room','school','Hero Room Class','Background ruang kelas · Desktop & Mobile',roomBody,data)}
+      ${appearanceCategory('landing','web_asset','Landing Page','Asset bawaan + hero utama opsional',landingBody,data)}
+      ${appearanceCategory('album','photo_library','Album Tampilan','Riwayat gambar hasil upload kelas',albumBody,data)}
+    </div>
   </div>`;
 }
+function setAppearanceCategory(key){
+  appearanceOpenCategory=appearanceOpenCategory===key?'':key;
+  document.querySelectorAll('[data-appearance-category]').forEach(section=>{
+    const active=section.dataset.appearanceCategory===appearanceOpenCategory;
+    section.classList.toggle('is-open',active);
+    const head=section.querySelector('[data-appearance-category-toggle]');
+    const body=section.querySelector('.appearance-category-body');
+    head?.setAttribute('aria-expanded',active?'true':'false');
+    if(body) body.hidden=!active;
+  });
+}
+
 async function refreshAppearancePane(data){
   const slot=document.getElementById('room-content');
   if(!slot)return;
@@ -1229,6 +1278,7 @@ async function refreshAppearancePane(data){
 }
 async function uploadClassAppearance(slot,input,data){
   const file=input?.files?.[0]; if(!file)return;
+  appearanceOpenCategory=slot.indexOf('ROOM_')===0?'room':'landing';
   const meta=CLASS_APPEARANCE_META[slot]; if(!meta)return;
   const status=document.querySelector(`[data-appearance-status="${slot}"]`);
   input.disabled=true;
@@ -1244,6 +1294,7 @@ async function uploadClassAppearance(slot,input,data){
   }catch(err){if(status){status.className='request-status error';status.textContent=err.message;}toast(err.message);}finally{if(document.body.contains(input))input.disabled=false;}
 }
 async function useClassAppearance(mediaId,slot,data){
+  appearanceOpenCategory=mediaId?'album':(slot.indexOf('ROOM_')===0?'room':'landing');
   try{
     const result=await api('setClassAppearanceMedia',{class_id:state.selectedClassId,slot,media_id:mediaId||''});
     if(currentClassData){currentClassData.appearance=result.appearance||currentClassData.appearance;state.classDetails[state.selectedClassId]=currentClassData;}
@@ -1259,6 +1310,7 @@ function applyRoomHeroAppearance(data){
   if(source)source.srcset=mobile;if(img)img.src=desktop;
 }
 function bindClassAppearanceSettings(data){
+  document.querySelectorAll('[data-appearance-category-toggle]').forEach(btn=>btn.addEventListener('click',()=>setAppearanceCategory(btn.dataset.appearanceCategoryToggle)));
   document.querySelectorAll('[data-appearance-file]').forEach(input=>input.addEventListener('change',()=>uploadClassAppearance(input.dataset.appearanceFile,input,data)));
   document.querySelectorAll('[data-appearance-use]').forEach(btn=>btn.addEventListener('click',()=>useClassAppearance(btn.dataset.appearanceUse,btn.dataset.appearanceSlot,data)));
   document.querySelectorAll('[data-appearance-default]').forEach(btn=>btn.addEventListener('click',()=>useClassAppearance('',btn.dataset.appearanceDefault,data)));

@@ -1,5 +1,13 @@
 [
   {
+    "version": "6.7.26",
+    "build": "20260929.326",
+    "date": "2026-09-29",
+    "type": "PATCH",
+    "title": "Appearance Category Accordion + Built-in Landing Assets",
+    "summary": "Settings Tampilan diringkas menjadi kategori accordion default tertutup; Landing Page menampilkan asset section bawaan yang sudah terpasang tanpa upload ulang, sementara hero custom dan album Google Drive tetap dipertahankan."
+  },
+  {
     "version": "6.7.25",
     "build": "20260929.325",
     "date": "2026-09-29",

@@ -159,9 +159,9 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 .public-section-block>.public-image-head{margin:-16px -16px 10px}
 .public-showcase>.public-image-head{margin:-17px -17px 10px}
 .public-image-head::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(4,18,44,.96) 0%,rgba(5,24,52,.86) 42%,rgba(5,24,52,.36) 70%,rgba(5,24,52,.12) 100%)}
-.public-image-head-access{background-image:url('/assets/public/hero-access.webp?v=676')}
-.public-image-head-links{background-image:url('/assets/public/hero-links.webp?v=676')}
-.public-image-head-showcase{background-image:url('/assets/public/hero-showcase.webp?v=676')}
+.public-image-head-access{background-image:url('/assets/public/hero-access.webp?v=6726')}
+.public-image-head-links{background-image:url('/assets/public/hero-links.webp?v=6726')}
+.public-image-head-showcase{background-image:url('/assets/public/hero-showcase.webp?v=6726')}
 .public-image-head-copy{position:relative;z-index:1;display:grid;gap:2px;min-width:0;max-width:min(620px,66%)}
 .public-image-head .public-kicker{font-size:10px!important;letter-spacing:.13em;text-shadow:0 1px 10px rgba(0,0,0,.35)}
 .public-image-head h2{margin:1px 0 0;font-size:clamp(18px,2.4vw,23px);line-height:1.18;letter-spacing:-.025em;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.34)}
