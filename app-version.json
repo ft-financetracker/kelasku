@@ -1,8 +1,8 @@
 {
-  "version": "6.7.23",
-  "build": "20260929.323",
+  "version": "6.7.24",
+  "build": "20260929.324",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "UI precision: class-list collapse restored with visible section headers, Room Ringkasan starts collapsed, Academic/Manage submenu restored to horizontal strip, room hero icon enlarged, and mobile bottom navigation hard-reset for equal icon alignment.",
-  "release_time_wib": "03:47 WIB"
+  "release_note": "Precision patch: academic badges now count only active attendance that still needs the current user, completed attendance clears the signal, Room hero graduation icon is larger with divider on desktop/mobile, Ringkasan folds are clickable on desktop, and future attendance states use compact clock icons.",
+  "release_time_wib": "09:28 WIB"
 }

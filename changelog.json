@@ -1,5 +1,17 @@
 [
   {
+    "version": "6.7.24",
+    "build": "20260929.324",
+    "date": "2026-09-29",
+    "title": "Room Academic Signal Precision",
+    "changes": [
+      "Jadwal and Absensi signals now count only currently open attendance sessions still UNMARKED for the current participant; future sessions are excluded and completed attendance clears the count.",
+      "Room hero graduation visual enlarged and divider enabled on desktop and mobile.",
+      "Ringkasan fold cards remain collapsed by default but can now be opened on desktop.",
+      "Belum dibuka states in Jadwal and Absensi are represented by a compact clock icon instead of a long text pill."
+    ]
+  },
+  {
     "version": "6.7.23",
     "build": "20260929.323",
     "date": "2026-09-29",

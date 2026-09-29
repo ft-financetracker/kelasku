@@ -3137,3 +3137,59 @@ html[data-theme="light"] .bottom-nav.bottom-nav-minimal{background:rgba(250,253,
 html[data-theme="light"] .bottom-material-item{color:#7289A5!important}
 html[data-theme="light"] .bottom-material-item.active{color:#087D74!important}
 html[data-theme="light"] .bottom-material-item.active .bottom-material-hit{background:linear-gradient(145deg,#E9FBF7,#EEF6FF)!important;border-color:#CDEBE5!important;box-shadow:0 6px 16px rgba(70,111,146,.10)!important}
+
+
+/* ============================================================
+   KelasKu v6.7.24 — Action badge + Room hero/fold precision
+   Scope locked: academic signals, room hero, overview fold, closed-state icons.
+   ============================================================ */
+
+/* Hero room: stronger square visual and divider visible on desktop + mobile. */
+.class-room-page .class-room-cover-v6720{
+  width:94px!important;height:94px!important;min-width:94px!important;border-radius:22px!important
+}
+.class-room-page .class-room-cover-v6720 .icon{
+  width:56px!important;height:56px!important;stroke-width:1.8!important
+}
+.class-room-page .class-hero-v6720{
+  grid-template-columns:94px minmax(0,1fr)!important;gap:18px!important;min-height:142px!important
+}
+.class-room-page .class-hero-mobile-rule-v6720{
+  display:block!important;height:1px!important;margin:9px 0 8px!important;
+  background:linear-gradient(90deg,rgba(91,160,240,.24),rgba(91,160,240,.055),transparent)!important
+}
+
+/* Ringkasan: details are collapsed by default in markup but remain clickable on desktop too. */
+.room-overview-v68 .overview-fold-card>summary{
+  pointer-events:auto!important;cursor:pointer!important;user-select:none!important
+}
+.room-overview-v68 .overview-fold-card>summary .overview-fold-chevron{
+  visibility:visible!important;opacity:1!important
+}
+
+/* Closed/upcoming attendance state: clock icon only, with tooltip/aria label. */
+.attendance-state-icon-only{
+  width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;
+  padding:0!important;border-radius:10px!important;display:inline-grid!important;place-items:center!important;
+  gap:0!important;font-size:0!important;line-height:1!important
+}
+.attendance-state-icon-only .material-symbols-rounded{
+  display:block!important;font-size:18px!important;line-height:1!important
+}
+
+@media(max-width:720px){
+  .class-room-page .class-room-cover-v6720{
+    width:78px!important;height:78px!important;min-width:78px!important;border-radius:19px!important
+  }
+  .class-room-page .class-room-cover-v6720 .icon{
+    width:46px!important;height:46px!important
+  }
+  .class-room-page .class-hero-v6720{
+    grid-template-columns:78px minmax(0,1fr)!important;gap:13px!important;min-height:120px!important;padding:14px!important
+  }
+  .class-room-page .class-hero-mobile-rule-v6720{margin:7px 0!important}
+  .attendance-state-icon-only{
+    width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;border-radius:9px!important
+  }
+  .attendance-state-icon-only .material-symbols-rounded{font-size:17px!important}
+}

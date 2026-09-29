@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.23-b323-room-classes-nav-precision';
+const CACHE_NAME = 'kelasku-v6.7.24-b324-room-academic-signal-precision';
 const APP_SHELL = [
   '/',
   '/index.html',
