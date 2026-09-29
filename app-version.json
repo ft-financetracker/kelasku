@@ -1,8 +1,8 @@
 {
-  "version": "6.7.34",
-  "build": "20260929.334",
+  "version": "6.7.35",
+  "build": "20260929.335",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Academic Live Stability: batch pembuatan jadwal+absensi, anti-duplikat request, feedback proses yang jelas, pagination akademik, Landing hanya 7 hari, preview file di aplikasi, dan multi-lampiran pengumpulan tugas.",
-  "release_time_wib": "19:30 WIB"
+  "release_note": "Live Academic UX Fix: fallback gambar kelas, agenda mendatang ringkas, penanda jadwal lewat, presensi inline dari menu Absensi, dan Presensi Saya + pilihan media di Ruang Kelas.",
+  "release_time_wib": "20:15 WIB"
 }

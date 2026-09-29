@@ -11,6 +11,7 @@ let attendanceListPage = 1;
 let academicHubInFlight = null;
 const ATTENDANCE_LIST_PAGE_SIZE = 12;
 const ACADEMIC_PAGE_SIZE = 12;
+const SCHEDULE_PAGE_SIZE = 8;
 let scheduleListPage = 1;
 let taskListPage = 1;
 let materialListPage = 1;
@@ -259,40 +260,90 @@ function attendanceSubject(item) {
   return title.replace(/^absensi\s*[—–:-]?\s*/i,'').replace(/\s*[•·-]\s*sesi\s*\d+.*$/i,'').trim() || 'Absensi Kelas';
 }
 
+function schedulePhase(item, now = Date.now()) {
+  const state = String(item?.schedule_state || 'NORMAL').toUpperCase();
+  if (state === 'CANCELLED') return 'cancelled';
+  const start = dateMs(item?.start_at, 0);
+  const end = dateMs(item?.end_at, 0);
+  if (start > now) return 'upcoming';
+  if (end && end >= now) return 'ongoing';
+  return 'past';
+}
+
 function schedulesHtml(items, tasks = []) {
   if (!items.length && !tasks.length) return emptyAcademic('Belum ada agenda', 'Jadwal dan deadline tugas akan tampil di sini.', 'i-calendar');
   const now = Date.now();
-  const upcomingAll = items.filter(x => dateMs(x.start_at) >= now - 21600000).sort((a,b)=>dateMs(a.start_at)-dateMs(b.start_at));
-  const past = items.filter(x => dateMs(x.start_at) < now - 21600000).sort((a,b)=>dateMs(b.start_at)-dateMs(a.start_at)).slice(0,6);
-  const pg=pageSlice(upcomingAll,scheduleListPage);scheduleListPage=pg.page;
-  const horizon = now + 30 * 86400000;
+  const calendarStart = now - 7 * 86400000;
+  const horizon = now + 23 * 86400000;
+  const upcomingAll = items
+    .filter(x => ['upcoming','ongoing'].includes(schedulePhase(x, now)))
+    .sort((a,b)=>dateMs(a.start_at)-dateMs(b.start_at));
+  const past = items
+    .filter(x => ['past','cancelled'].includes(schedulePhase(x, now)))
+    .sort((a,b)=>dateMs(b.start_at)-dateMs(a.start_at))
+    .slice(0,6);
+  const pg=pageSlice(upcomingAll,scheduleListPage,SCHEDULE_PAGE_SIZE);scheduleListPage=pg.page;
   const calendarItems = [
-    ...items.filter(x => dateMs(x.start_at) >= now - 86400000 && dateMs(x.start_at) <= horizon).map(x => ({kind:'JADWAL',date:x.start_at,title:x.title,class_name:x.class_name,icon:'i-calendar'})),
-    ...tasks.filter(x => x.deadline && dateMs(x.deadline) >= now - 86400000 && dateMs(x.deadline) <= horizon).map(x => ({kind:'DEADLINE',date:x.deadline,title:x.title,class_name:x.class_name,icon:'i-task'}))
+    ...items
+      .filter(x => dateMs(x.start_at) >= calendarStart && dateMs(x.start_at) <= horizon)
+      .map(x => ({kind:'JADWAL',date:x.start_at,end_date:x.end_at,title:x.title,class_name:x.class_name,icon:'i-calendar',schedule_state:x.schedule_state||'NORMAL'})),
+    ...tasks
+      .filter(x => x.deadline && dateMs(x.deadline) >= calendarStart && dateMs(x.deadline) <= horizon)
+      .map(x => ({kind:'DEADLINE',date:x.deadline,title:x.title,class_name:x.class_name,icon:'i-task',schedule_state:'NORMAL'}))
   ].sort((a,b)=>dateMs(a.date)-dateMs(b.date));
-  return `<section class="academic-list-layout">
-    <div class="section-title-row"><div><h2>Kalender Akademik 30 Hari</h2><p>Jadwal dan deadline penting dalam satu alur.</p></div></div>
+  return `<section class="academic-list-layout schedule-hub-v6735">
+    <div class="section-title-row"><div><h2>Kalender Akademik 30 Hari</h2><p>7 hari terakhir + 23 hari ke depan. Agenda yang lewat diberi tanda otomatis.</p></div></div>
     <div class="academic-calendar-strip">${calendarItems.length?calendarItems.slice(0,18).map(calendarMiniCard).join(''):'<div class="search-empty">Tidak ada agenda 30 hari ke depan.</div>'}</div>
-    <div class="section-title-row"><div><h2>Agenda Mendatang</h2><p>${upcomingAll.length} agenda</p></div></div>
-    <div class="academic-card-list">${pg.items.length ? pg.items.map(scheduleCard).join('') : '<div class="search-empty">Belum ada agenda mendatang.</div>'}</div>
+    <div class="section-title-row"><div><h2>Agenda Mendatang</h2><p>${upcomingAll.length} agenda aktif / mendatang</p></div></div>
+    <div class="academic-card-list schedule-agenda-grid">${pg.items.length ? pg.items.map(scheduleCard).join('') : '<div class="search-empty">Belum ada agenda mendatang.</div>'}</div>
     ${academicPager('schedule',pg.page,pg.totalPages,pg.total)}
-    ${past.length ? `<div class="section-title-row"><div><h2>Riwayat Terbaru</h2><p>${past.length} agenda terakhir</p></div></div><div class="academic-card-list is-muted">${past.map(scheduleCard).join('')}</div>` : ''}
+    ${past.length ? `<div class="section-title-row"><div><h2>Riwayat Terbaru</h2><p>${past.length} agenda terakhir</p></div></div><div class="academic-card-list schedule-agenda-grid is-muted">${past.map(scheduleCard).join('')}</div>` : ''}
   </section>`;
 }
-function calendarMiniCard(item){const d=new Date(item.date);const p=safeDateParts(d);return `<article class="calendar-mini-card"><div class="academic-date-tile compact"><strong>${p.day}</strong><span>${p.month}</span></div><div><span>${esc(item.kind)} · ${esc(item.class_name||'KelasKu')}</span><strong>${esc(item.title||'-')}</strong><small>${esc(shortDateTime(item.date))}</small></div>${svg(item.icon)}</article>`;}
+
+function calendarMiniCard(item){
+  const now=Date.now(),d=new Date(item.date),p=safeDateParts(d);
+  const cancelled=String(item.schedule_state||'NORMAL').toUpperCase()==='CANCELLED';
+  const passed=!cancelled && dateMs(item.end_date||item.date,0)<now;
+  const stamp=cancelled?'BATAL':passed?(item.kind==='DEADLINE'?'LEWAT':'SELESAI'):'';
+  return `<article class="calendar-mini-card ${cancelled?'is-cancelled':passed?'is-past':''}">
+    <div class="academic-date-tile compact"><strong>${p.day}</strong><span>${p.month}</span></div>
+    <div><span>${esc(item.kind)} · ${esc(item.class_name||'KelasKu')}</span><strong>${esc(item.title||'-')}</strong><small>${esc(shortDateTime(item.date))}</small></div>
+    ${stamp?`<span class="calendar-state-stamp ${cancelled?'danger':'done'}">${esc(stamp)}</span>`:svg(item.icon)}
+  </article>`;
+}
 
 function scheduleCard(item) {
   const d = new Date(item.start_at);
   const date = safeDateParts(d);
   const state = String(item.schedule_state || 'NORMAL').toUpperCase();
+  const phase = schedulePhase(item);
   const stateBadge = state === 'CANCELLED'
     ? '<span class="schedule-state-badge cancelled">Dibatalkan</span>'
     : state === 'CHANGED'
       ? '<span class="schedule-state-badge changed">Diubah</span>'
       : '';
-  return `<article class="academic-row-card schedule-row-${state.toLowerCase()}">
-    <div class="academic-date-tile"><strong>${date.day}</strong><span>${date.month}</span></div>
-    <div class="academic-row-main"><div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(timeRange(item.start_at,item.end_at))}</span>${stateBadge}${item.recurrence_group_id?'<span class="soft-chip">Berulang</span>':''}</div><h3>${esc(item.title)}</h3><p>${esc(item.description || item.location || 'Tanpa keterangan tambahan.')}</p>${item.location ? `<small>${svg('i-class')} ${esc(item.location)}</small>` : ''}${item.change_note?`<small>${esc(item.change_note)}</small>`:''}</div>
+  const phaseBadge = phase === 'ongoing'
+    ? '<span class="soft-chip schedule-phase ongoing">Berlangsung</span>'
+    : phase === 'past'
+      ? '<span class="soft-chip schedule-phase done">Selesai</span>'
+      : '';
+  const description = String(item.description || '').trim();
+  return `<article class="academic-row-card schedule-agenda-card schedule-row-${state.toLowerCase()} phase-${phase}">
+    <div class="schedule-agenda-top">
+      <div class="academic-date-tile"><strong>${date.day}</strong><span>${date.month}</span></div>
+      <div class="schedule-agenda-copy">
+        <div class="schedule-agenda-titleline"><h3>${esc(item.title || 'Agenda')}</h3>${stateBadge}</div>
+        <p>${esc([item.class_name || 'KelasKu', shortDateTime(item.start_at), item.location || description].filter(Boolean).join(' · '))}</p>
+      </div>
+    </div>
+    <div class="schedule-agenda-pills">
+      <span class="soft-chip"><span class="material-symbols-rounded">schedule</span>${esc(timeRange(item.start_at,item.end_at) || 'Waktu')}</span>
+      ${item.location?`<span class="soft-chip"><span class="material-symbols-rounded">location_on</span>${esc(item.location)}</span>`:''}
+      ${item.recurrence_group_id?'<span class="soft-chip"><span class="material-symbols-rounded">event_repeat</span>Berulang</span>':''}
+      ${phaseBadge}
+      ${item.change_note?`<span class="soft-chip schedule-note-pill">${esc(item.change_note)}</span>`:''}
+    </div>
   </article>`;
 }
 
@@ -478,11 +529,87 @@ function bindAcademicRows() {
   document.getElementById('academic-open-classes')?.addEventListener('click', () => go('classes'));
 }
 
+function attendanceChannelLabel(value){
+  return ({ZOOM:'Zoom',YOUTUBE:'YouTube',OFFLINE:'Offline',OTHER:'Lainnya'})[String(value||'').toUpperCase()] || String(value||'');
+}
+
+function attendanceStatusLabel(value){
+  return ({PRESENT:'Hadir',SICK:'Sakit',PERMIT:'Izin',ABSENT:'Alpa',UNMARKED:'Belum'})[String(value||'UNMARKED').toUpperCase()] || String(value||'-');
+}
+
 function openGlobalAttendance(token=''){
-  const clean=String(token||'').trim(); if(!clean)return;
-  const url=new URL(window.location.href); url.pathname='/absensi'; url.searchParams.set('a',clean); url.searchParams.delete('attendance');
-  try{window.history.pushState({kelaskuRoute:'attendance-link'},'',url.pathname+url.search);}catch{}
-  go('attendance-link',{replace:true});
+  const clean=String(token||'').trim();
+  if(!clean)return;
+  const item=(state.academicHub?.attendance||[]).find(x=>String(x.public_token||'')===clean);
+  if(!item){toast('Sesi presensi tidak ditemukan pada data terbaru. Tekan Refresh lalu coba lagi.');return;}
+  openGlobalAttendanceForm(item);
+}
+
+function openGlobalAttendanceForm(item){
+  const status=String(item.window_status||'OPEN').toUpperCase();
+  const marked=String(item.my_status||'UNMARKED').toUpperCase()!=='UNMARKED';
+  const rawChannels=Array.isArray(item.channels)?item.channels.filter(Boolean):[];
+  const channels=rawChannels.length?rawChannels:['ZOOM','YOUTUBE','OFFLINE'];
+  const choices=[
+    ['PRESENT','Hadir','check_circle'],
+    ...(item.sick_enabled!==false?[['SICK','Sakit','sick']]:[]),
+    ...(item.permit_enabled!==false?[['PERMIT','Izin','assignment']]:[])
+  ];
+  if(marked){
+    showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
+      <div class="attendance-inline-success"><span class="material-symbols-rounded">check_circle</span><div><strong>Presensi sudah tercatat</strong><small>${esc(attendanceStatusLabel(item.my_status))}${item.my_channel?` • ${esc(attendanceChannelLabel(item.my_channel))}`:''}${item.my_punctuality?` • ${esc(String(item.my_punctuality)==='LATE'?'Terlambat':'Tepat waktu')}`:''}</small></div></div>`);
+    return;
+  }
+  if(status!=='OPEN'){
+    showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert">${status==='UPCOMING'?'Presensi belum dibuka.':'Waktu presensi sudah ditutup.'}</div>`);
+    return;
+  }
+  showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2><p class="compact-copy">${esc(attendanceSessionLabel(item))} • ${esc(shortDateTime(item.schedule_start_at||item.start_at))}</p></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
+    <div class="attendance-inline-form">
+      <div class="attendance-form-label">Status kehadiran</div>
+      <div class="attendance-status-choice">${choices.map(([v,l,i])=>`<button type="button" data-global-att-status="${v}" class="attendance-choice ${v==='PRESENT'?'active':''}"><span class="material-symbols-rounded">${i}</span><span>${l}</span></button>`).join('')}</div>
+      <div id="global-attendance-channel-choice" class="attendance-channel-choice">
+        <div class="attendance-form-label">Mengikuti melalui</div>
+        <div class="attendance-channel-row">${channels.map((ch,i)=>`<button type="button" data-global-att-channel="${esc(ch)}" class="attendance-channel ${i===0?'active':''}">${esc(attendanceChannelLabel(ch))}</button>`).join('')}</div>
+      </div>
+      <label class="field attendance-note-field"><span>Catatan <small>(opsional)</small></span><input id="global-attendance-note" class="control" placeholder="Catatan singkat"></label>
+      <div id="global-attendance-status" class="request-status"></div>
+      <button type="button" id="global-attendance-submit" class="btn btn-primary btn-block">Kirim Presensi</button>
+    </div>`);
+  let selectedStatus='PRESENT',selectedChannel=String(channels[0]||'ZOOM');
+  document.querySelectorAll('[data-global-att-status]').forEach(btn=>btn.onclick=()=>{
+    selectedStatus=btn.dataset.globalAttStatus;
+    document.querySelectorAll('[data-global-att-status]').forEach(x=>x.classList.toggle('active',x===btn));
+    document.getElementById('global-attendance-channel-choice')?.classList.toggle('hidden',selectedStatus!=='PRESENT');
+  });
+  document.querySelectorAll('[data-global-att-channel]').forEach(btn=>btn.onclick=()=>{
+    selectedChannel=btn.dataset.globalAttChannel;
+    document.querySelectorAll('[data-global-att-channel]').forEach(x=>x.classList.toggle('active',x===btn));
+  });
+  document.getElementById('global-attendance-submit')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('global-attendance-submit'),statusEl=document.getElementById('global-attendance-status');
+    if(!btn||btn.disabled)return;
+    const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mencatat…</span>';
+    statusEl.className='request-status progress';statusEl.textContent='Mencatat presensi…';
+    try{
+      const result=await api('selfCheckInAttendance',{
+        token:String(item.public_token||''),
+        attendance_status:selectedStatus,
+        attendance_channel:selectedStatus==='PRESENT'?selectedChannel:'',
+        note:document.getElementById('global-attendance-note')?.value||''
+      },{onSlow:()=>statusEl.textContent='Server masih memproses. Jangan klik dua kali.'});
+      item.my_status=result.attendance_status||selectedStatus;
+      item.my_channel=result.attendance_channel||'';
+      item.my_punctuality=result.punctuality||'';
+      closeModal();
+      drawAcademicScreen(state.academicHub);
+      toast(`Presensi tersimpan: ${attendanceStatusLabel(item.my_status)}.`);
+      invalidateAcademicClientCache(item.class_id||'');
+      loadAcademicHub(true).catch(()=>{});
+    }catch(err){
+      statusEl.className='request-status error';statusEl.textContent=err.message;btn.disabled=false;btn.innerHTML=old;
+    }
+  });
 }
 
 function academicAttachmentLinks(items=[]){if(!items.length)return '';return `<div class="task-supporting-list"><strong>Lampiran Pendukung</strong>${items.map(academicAttachmentButton).join('')}</div>`;}

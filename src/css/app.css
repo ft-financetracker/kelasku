@@ -3689,3 +3689,77 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
   .academic-file-preview-overlay{padding:8px}
   .academic-file-preview-card{width:100%;height:90vh;padding:12px;border-radius:18px}
 }
+
+
+/* ============================================================
+   v6.7.35 — Live Academic UX Fix
+   Scope: class cover fallback, compact agenda, inline attendance.
+   ============================================================ */
+
+/* Class room-list image: never show browser broken-image glyph.
+   The Material icon remains as fallback until the cover is confirmed loaded. */
+.classes-page .class-room-icon.has-cover,
+.search-class-row .status-icon.has-cover{position:relative!important;background-color:#061a36!important;background-repeat:no-repeat!important}
+.classes-page .class-room-icon.has-cover.cover-loaded,
+.search-class-row .status-icon.has-cover.cover-loaded{background-size:cover!important;background-position:center!important}
+.classes-page .class-room-icon.has-cover.cover-loaded .class-list-material-icon,
+.search-class-row .status-icon.has-cover.cover-loaded .class-list-material-icon{opacity:0!important}
+.classes-page .class-room-icon.has-cover.cover-failed .class-list-material-icon,
+.search-class-row .status-icon.has-cover.cover-failed .class-list-material-icon{opacity:1!important}
+
+/* Kalender 30 hari: tanda agenda yang sudah lewat / batal tanpa membuat card membesar. */
+.calendar-mini-card.is-past{opacity:.7}
+.calendar-mini-card.is-past>div:nth-child(2)>strong{text-decoration:line-through;text-decoration-thickness:1px;text-decoration-color:rgba(158,185,215,.65)}
+.calendar-mini-card.is-cancelled{opacity:.64;border-color:rgba(251,113,133,.2)}
+.calendar-state-stamp{display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:4px 7px;border-radius:999px;font-size:7px;font-weight:850;letter-spacing:.05em;white-space:nowrap;border:1px solid rgba(34,224,199,.18);background:rgba(34,224,199,.07);color:#77EEDC}
+.calendar-state-stamp.danger{border-color:rgba(251,113,133,.22);background:rgba(251,113,133,.08);color:#FFB9C3}
+
+/* Agenda Mendatang: maksimal dua baris informasi utama + pill di bawah separator. */
+.schedule-agenda-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.schedule-agenda-card{display:grid!important;grid-template-columns:1fr!important;align-items:stretch!important;gap:9px!important;min-height:0!important;padding:11px 12px!important}
+.schedule-agenda-top{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:11px;min-width:0}
+.schedule-agenda-copy{display:grid;gap:4px;min-width:0}
+.schedule-agenda-titleline{display:flex;align-items:center;gap:7px;min-width:0}
+.schedule-agenda-titleline h3{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.schedule-agenda-copy>p{margin:0;color:var(--muted);font-size:9.2px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schedule-agenda-pills{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(91,160,240,.11)}
+.schedule-agenda-pills .soft-chip{display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:4px 7px;font-size:7.8px}
+.schedule-agenda-pills .material-symbols-rounded{font-size:13px}
+.schedule-phase.ongoing{color:#082338;background:linear-gradient(100deg,#72F2B8,#22E0C7);border-color:transparent}
+.schedule-phase.done{color:#9FB5CD;background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.18)}
+.schedule-agenda-card.phase-past{opacity:.78}
+.schedule-agenda-card.phase-cancelled{opacity:.68}
+.schedule-note-pill{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Presensi dari menu Absensi / Ruang Kelas tampil sebagai form modal, bukan route baru. */
+.attendance-inline-form,.attendance-self-panel{display:grid;gap:11px}
+.attendance-inline-form{margin-top:10px}
+.attendance-inline-success{display:flex;align-items:center;gap:11px;padding:13px;border:1px solid rgba(34,224,199,.18);border-radius:14px;background:rgba(34,224,199,.06)}
+.attendance-inline-success>.material-symbols-rounded{font-size:25px;color:var(--tosca)}
+.attendance-inline-success>div{display:grid;gap:3px}.attendance-inline-success strong{font-size:12px}.attendance-inline-success small{font-size:9px;color:var(--muted)}
+.attendance-self-panel{margin:12px 0;padding:13px;border:1px solid rgba(34,224,199,.16);border-radius:15px;background:rgba(8,40,78,.42)}
+.attendance-self-panel.is-done{background:rgba(34,224,199,.045)}
+.attendance-self-panel-head{display:flex;align-items:center;gap:9px}.attendance-self-panel-head>.material-symbols-rounded{font-size:22px;color:var(--tosca)}
+.attendance-self-panel-head>div{display:grid;gap:2px}.attendance-self-panel-head strong{font-size:11px}.attendance-self-panel-head small{font-size:8.8px;color:var(--muted)}
+.attendance-self-result{display:flex;gap:6px;flex-wrap:wrap;padding-top:8px;border-top:1px solid rgba(91,160,240,.1)}
+.room-self-check-form{margin-top:0!important}
+.room-self-check-form .attendance-channel-choice,
+.attendance-inline-form .attendance-channel-choice{display:grid;align-items:start;gap:6px}
+.room-self-check-form .attendance-channel-row,
+.attendance-inline-form .attendance-channel-row{display:flex;gap:6px;flex-wrap:wrap}
+.room-self-check-form .compact-save-btn{justify-self:start;min-width:180px}
+
+@media(max-width:900px){
+  .schedule-agenda-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .schedule-agenda-card{padding:10px!important;gap:8px!important}
+  .schedule-agenda-top{gap:9px}
+  .schedule-agenda-card .academic-date-tile{width:44px;height:48px;border-radius:12px}
+  .schedule-agenda-titleline h3{font-size:11.5px}
+  .schedule-agenda-copy>p{font-size:8.9px}
+  .schedule-agenda-pills{gap:5px;padding-top:7px}
+  .schedule-agenda-pills .soft-chip{min-height:21px;padding:4px 6px;font-size:7.5px}
+  .attendance-self-panel{padding:11px}
+  .room-self-check-form .compact-save-btn{width:100%;min-width:0}
+}

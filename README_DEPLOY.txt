@@ -1,41 +1,46 @@
-KelasKu v6.7.34 — Academic Live Stability
-Build: 20260929.334
-Schema: 17
+KelasKu v6.7.35 — Live Academic UX Fix
+Build: 20260929.335
+Schema: 17 (TIDAK BERUBAH)
 
 FOKUS RELEASE
-- Pembuatan seri jadwal + absensi otomatis dibatch dan diberi request-key anti duplikat.
-- Notice proses jadwal dibuat kontekstual; tidak lagi memakai pesan timeout "pendaftaran".
-- Hasil create akademik langsung dimasukkan ke UI lalu disinkronkan diam-diam.
-- Pagination 12 item: Jadwal, Tugas, Materi, Pengumuman.
-- Landing Page hanya menampilkan jadwal hari ini sampai 7 hari ke depan.
-- Card Materi dipadatkan dan file dibuka melalui preview di KelasKu.
-- Pengumpulan tugas mendukung multi-lampiran sampai 12 file.
-- Preview attachment mendukung image/video dan Google Drive viewer untuk PDF/XLSX/DOCX/PPTX dkk.
-- Batas file dokumen frontend/backend disinkronkan ke sekitar 4 MB.
-- Data lama tetap kompatibel; single image submission lama tetap terbaca.
+- Perbaikan foto/cover kelas yang tampil sebagai broken image: cover hanya dipasang setelah benar-benar berhasil dimuat, jika gagal otomatis kembali ke icon kelas.
+- Kalender Akademik 30 Hari memakai jendela 7 hari terakhir + 23 hari ke depan dan memberi stamp SELESAI / LEWAT / BATAL.
+- Agenda Mendatang dipadatkan: 8 item per halaman, dua baris informasi utama, lalu pill metadata di bawah separator.
+- Presensi dari menu Absensi global dibuka sebagai modal di halaman yang sama, tidak berpindah ke halaman Presensi Kelas.
+- Owner/Koordinator yang juga peserta dapat mengisi Presensi Saya langsung dari Ruang Kelas, termasuk pilihan Zoom / YouTube / Offline.
+- Detail sesi absensi backend sekarang mengirim my_record + can_self_checkin agar tampilan Owner/Koordinator tidak ambigu.
+- Release metadata diperbaiki ke v6.7.35 dan syncKelasKuRelease() juga membersihkan cache App Config.
+- Seluruh mekanisme v6.7.34 (batch jadwal, anti-duplikat, pagination, preview lampiran, multi-lampiran) tetap dipertahankan.
 
-FILE YANG DITIMPA
-- index.html
-- links.html
+FILE FRONTEND YANG BERUBAH
+- index.html (cache-buster 6735)
+- links.html (cache-buster 6735)
 - config.js
 - service-worker.js
 - app-version.json
 - changelog.json
-- src/js/app.js
-- src/js/core/api.js
+- src/js/app.js (cache-buster import)
+- src/js/screens/classes.js
 - src/js/screens/classRoom.js
 - src/js/screens/academic.js
-- src/js/screens/publicLinks.js
+- src/js/screens/publicLinks.js (cache-buster asset)
 - src/css/app.css
 
-URUTAN
-1. Update/deploy Apps Script v6.7.34 lebih dulu.
-2. Timpa file frontend ini ke GitHub Pages.
-3. Commit + push dan tunggu Pages live.
-4. Tutup total tab/PWA KelasKu, lalu buka kembali.
-5. Pastikan versi v6.7.34.
-6. Smoke test jadwal series, absensi auto, tugas, materi, pengumuman, file preview, dan Landing.
-7. Jika semua PASS, jalankan syncKelasKuRelease() satu kali.
+BACKEND / APPS SCRIPT
+- Version/build: 6.7.35 / 20260929.335
+- Schema tetap 17.
+- Tidak perlu migrasi schema.
+- Patch utama: getAttendanceSessionDetail_ + release metadata.
+
+URUTAN DEPLOY YANG AMAN
+1. Update Apps Script v6.7.35 lebih dulu.
+2. Deploy Web App sebagai versi baru.
+3. Timpa frontend v6.7.35 ke GitHub Pages.
+4. Commit + push, tunggu Pages live.
+5. Tutup total tab/PWA KelasKu, lalu buka kembali.
+6. Pastikan versi v6.7.35 / build 20260929.335.
+7. Smoke test: Daftar Kelas → Jadwal → Absensi global → Absensi dalam kelas.
+8. Setelah semua PASS, jalankan syncKelasKuRelease() SATU KALI agar metadata release + notifikasi update dibuat.
 
 JANGAN JALANKAN
 - migrateKelasKu()

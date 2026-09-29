@@ -195,10 +195,40 @@ function syncCreateClassLimit(items = []) {
 
 
 function classIdentityIconMarkup(c){
-  const cover=String(c?.cover_url||'').trim();
-  if(cover)return `<img src="${esc(cover)}" alt="" loading="lazy">`;
   const icon=String(c?.icon_key||'school').trim()||'school';
   return `<span class="material-symbols-rounded class-list-material-icon">${esc(icon)}</span>`;
+}
+
+function classCoverClass(c){
+  return String(c?.cover_url||'').trim() ? ' has-cover' : '';
+}
+
+function classCoverAttrs(c){
+  const cover=String(c?.cover_url||'').trim();
+  return cover ? ` data-class-cover-url="${esc(cover)}"` : '';
+}
+
+function hydrateClassCoverImages(root=document){
+  root.querySelectorAll?.('[data-class-cover-url]').forEach(el=>{
+    if(el.dataset.coverHydrated==='1')return;
+    el.dataset.coverHydrated='1';
+    const url=String(el.dataset.classCoverUrl||'').trim();
+    if(!url)return;
+    const probe=new Image();
+    probe.onload=()=>{
+      if(!document.body.contains(el))return;
+      el.style.backgroundImage=`url("${url.replace(/"/g,'%22')}")`;
+      el.classList.add('cover-loaded');
+      el.classList.remove('cover-failed');
+    };
+    probe.onerror=()=>{
+      if(!document.body.contains(el))return;
+      el.style.backgroundImage='';
+      el.classList.remove('cover-loaded');
+      el.classList.add('cover-failed');
+    };
+    probe.src=url;
+  });
 }
 
 function classListRow(c, mine = false) {
@@ -211,7 +241,7 @@ function classListRow(c, mine = false) {
   const desc = [c.institution || 'KelasKu', c.cohort ? `Angkatan ${c.cohort}` : '', c.class_code || ''].filter(Boolean).join(' · ');
   const rowTarget = isMember ? `data-class-card-open="${esc(c.class_id)}"` : `data-class-card-preview="${esc(c.class_id)}"`;
   return `<article class="class-list-row class-room-card" ${rowTarget} tabindex="0" role="button" aria-label="${isMember?'Buka':'Lihat'} ${esc(c.name || 'kelas')}">
-    <span class="class-symbol small class-room-icon ${c.cover_url?'has-cover':''}">${classIdentityIconMarkup(c)}</span>
+    <span class="class-symbol small class-room-icon${classCoverClass(c)}"${classCoverAttrs(c)}>${classIdentityIconMarkup(c)}</span>
     <div class="class-list-copy class-room-copy"><strong>${esc(c.name)}</strong><small class="class-list-subtitle">${esc(desc)}</small></div>
     <div class="class-list-badge-line class-room-badges">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : ''}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile class-card-kpi" aria-label="${memberCount} anggota"><span class="material-symbols-rounded">group</span>${memberCount}</span>` : ''}</div>
     <div class="class-list-action class-room-action">${action}</div>
@@ -219,6 +249,7 @@ function classListRow(c, mine = false) {
 }
 
 function bindClassRows(root) {
+  hydrateClassCoverImages(root);
   const openClass = id => {
     state.selectedClassId = id;
     sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
@@ -349,12 +380,13 @@ async function runSearch(queryOverride='') {
 }
 
 function bindSearchRows(box,items,query){
+  hydrateClassCoverImages(box);
   box.querySelectorAll('[data-search-class]').forEach(btn => btn.onclick = () => selectSearchClass(items.find(x => String(x.class_id) === String(btn.dataset.searchClass)), query));
 }
 
 function searchCard(c) {
   const meta=[c.class_code||'',c.institution||'',c.cohort?`Angkatan ${c.cohort}`:''].filter(Boolean).join(' · ');
-  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon ${c.cover_url?'has-cover':''}">${classIdentityIconMarkup(c)}</span><span class="search-class-inline"><strong>${esc(c.name)}</strong><small>${esc(meta)}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
+  return `<button type="button" class="search-class-row" data-search-class="${esc(c.class_id)}"><span class="status-icon${classCoverClass(c)}"${classCoverAttrs(c)}>${classIdentityIconMarkup(c)}</span><span class="search-class-inline"><strong>${esc(c.name)}</strong><small>${esc(meta)}</small></span><b>${c.role ? esc(roleLabel(c.role)) : 'Lihat'}</b></button>`;
 }
 
 function selectSearchClass(c, query = '') {

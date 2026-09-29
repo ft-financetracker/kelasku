@@ -1,5 +1,18 @@
 [
   {
+    "version": "6.7.35",
+    "build": "20260929.335",
+    "date": "2026-09-29",
+    "title": "Live Academic UX Fix",
+    "notes": [
+      "Foto/cover kelas tidak lagi menampilkan ikon gambar rusak; otomatis fallback ke ikon kelas bila URL gagal dimuat.",
+      "Kalender Akademik 30 Hari memberi tanda SELESAI/LEWAT/BATAL pada item yang sudah lewat atau dibatalkan.",
+      "Agenda Mendatang diringkas menjadi kartu dua baris dengan metadata dalam pill dan pagination lebih pendek.",
+      "Presensi dari menu Absensi dibuka sebagai form modal tanpa memindahkan user ke halaman lain.",
+      "Owner/Koordinator yang juga peserta dapat mengisi Presensi Saya dan memilih Zoom/YouTube/Offline langsung dari Ruang Kelas."
+    ]
+  },
+  {
     "version": "6.7.34",
     "build": "20260929.334",
     "date": "2026-09-29",
