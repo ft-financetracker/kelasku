@@ -1119,7 +1119,7 @@ KELASKU v6.0 — ACADEMIC WORKFLOW & ANALYTICS
 .review-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}.review-summary-grid>div{padding:10px;border:1px solid rgba(91,160,240,.13);border-radius:13px;background:rgba(7,29,63,.43);display:grid;gap:2px}.review-summary-grid strong{font-size:16px}.review-summary-grid span{font-size:7.2px;color:var(--muted)}.review-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.review-toolbar small{font-size:8px;color:var(--muted)}.task-review-list{display:grid;gap:7px;max-height:min(58vh,560px);overflow:auto;padding-right:2px;scrollbar-width:none}.task-review-list::-webkit-scrollbar{display:none}.task-review-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:9px 10px;border:1px solid rgba(91,160,240,.11);border-radius:13px;background:rgba(7,29,63,.42)}.task-review-main{min-width:0;display:grid;gap:2px}.task-review-main strong{font-size:9px}.task-review-main small{font-size:7.6px;color:var(--muted)}.task-review-score{min-width:62px;text-align:right}.task-review-score strong{font-size:9px;color:var(--tosca)}.task-review-score span{color:var(--muted)}.review-status-pill{width:max-content;padding:2px 6px;border-radius:999px;font-size:6.8px;font-weight:800;letter-spacing:.04em;background:rgba(91,160,240,.08);border:1px solid rgba(91,160,240,.14);color:#9BB9D6}.review-status-pill.review-reviewed{background:rgba(34,224,199,.08);border-color:rgba(34,224,199,.16);color:#88EBDD}.review-status-pill.review-needs_revision{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.17);color:#F3D17B}.submission-preview{margin-bottom:12px;padding:11px 12px;border:1px solid rgba(91,160,240,.11);border-radius:13px;background:rgba(7,29,63,.4)}.submission-preview>div{display:flex;justify-content:space-between;gap:10px}.submission-preview span{font-size:7.5px;color:var(--muted)}.submission-preview strong{font-size:8.5px}.submission-preview p{margin:9px 0;font-size:9px;line-height:1.55;color:#C2D5E7;white-space:pre-wrap}
 html[data-theme="light"] .calendar-mini-card,html[data-theme="light"] .analytics-kpi-grid>div,html[data-theme="light"] .analytics-own-card,html[data-theme="light"] .task-review-row,html[data-theme="light"] .review-summary-grid>div,html[data-theme="light"] .submission-preview,html[data-theme="light"] .task-review-feedback{background:#FFFFFF;color:#102744;border-color:#DCE8F3;box-shadow:0 7px 20px rgba(47,84,122,.035)}html[data-theme="light"] .analytics-table-wrap{border-color:#DCE8F3}html[data-theme="light"] .analytics-table th{background:#EFF6FC;color:#58748F}html[data-theme="light"] .analytics-table td{color:#193652;border-color:#E5EEF7}html[data-theme="light"] .task-review-feedback p,html[data-theme="light"] .submission-preview p{color:#496884}
 @media(max-width:900px){.academic-calendar-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.task-review-row{grid-template-columns:auto minmax(0,1fr) auto}.task-review-row>.btn,.task-review-row>.soft-chip{grid-column:2/-1;justify-self:end}.analytics-table{min-width:620px}}
-@media(max-width:620px){.academic-calendar-strip{grid-template-columns:1fr}.calendar-mini-card{padding:10px}.review-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.task-review-row{grid-template-columns:auto minmax(0,1fr)}.task-review-score{grid-column:2;text-align:left}.task-review-row>.btn,.task-review-row>.soft-chip{grid-column:2;justify-self:start}}
+@media(max-width:620px){.academic-calendar-strip{display:flex;grid-template-columns:none;gap:8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;padding:0 2px 8px;margin-right:-4px;scrollbar-width:none}.academic-calendar-strip::-webkit-scrollbar{display:none}.academic-calendar-strip .calendar-mini-card{flex:0 0 min(82vw,300px);scroll-snap-align:start;padding:10px}.review-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.task-review-row{grid-template-columns:auto minmax(0,1fr)}.task-review-score{grid-column:2;text-align:left}.task-review-row>.btn,.task-review-row>.soft-chip{grid-column:2;justify-self:start}}
 
 /* ============================================================
    KELASKU v6.1 — ROOM CLASS DENSITY + CHAT MEDIA + CLASS LIST
@@ -3692,7 +3692,7 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
 
 
 /* ============================================================
-   v6.7.36 — Live Academic UX Fix
+   v6.7.37 — Live Academic UX Fix
    Scope: class cover fallback, compact agenda, inline attendance.
    ============================================================ */
 
@@ -3753,6 +3753,9 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
   .schedule-agenda-grid{grid-template-columns:1fr}
 }
 @media(max-width:620px){
+  .schedule-hub-v6735 .section-title-row{margin-top:14px;margin-bottom:8px}
+  .schedule-hub-v6735 .section-title-row h2{font-size:14px}
+  .schedule-hub-v6735 .section-title-row p{font-size:9px}
   .schedule-agenda-card{padding:10px!important;gap:8px!important}
   .schedule-agenda-top{gap:9px}
   .schedule-agenda-card .academic-date-tile{width:44px;height:48px;border-radius:12px}

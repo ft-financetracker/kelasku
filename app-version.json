@@ -1,8 +1,8 @@
 {
-  "version": "6.7.36",
-  "build": "20260929.336",
+  "version": "6.7.37",
+  "build": "20260929.337",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Live Academic UX Fix: fallback gambar kelas, agenda mendatang ringkas, penanda jadwal lewat, presensi inline dari menu Absensi, dan Presensi Saya + pilihan media di Ruang Kelas.",
-  "release_time_wib": "20:15 WIB"
+  "release_note": "Pre-Live Notification & Schedule Polish: kalender mobile horizontal, agenda lebih ringkas, notifikasi siklus Jadwal/Absensi, dan delivery notifikasi sistem yang lebih konsisten.",
+  "release_time_wib": "22:05 WIB"
 }

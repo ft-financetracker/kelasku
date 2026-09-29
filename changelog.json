@@ -1,5 +1,19 @@
 [
   {
+    "version": "6.7.37",
+    "build": "20260929.337",
+    "date": "2026-09-29",
+    "title": "Pre-Live Notification & Schedule Polish",
+    "notes": [
+      "Kalender Akademik 30 Hari pada mobile menjadi horizontal scroll agar tidak memanjang vertikal.",
+      "Agenda Mendatang tetap compact: dua baris informasi utama, separator, metadata pill, dan pagination.",
+      "Notifikasi Jadwal memiliki siklus 30 menit sebelum mulai dan saat kelas berlangsung.",
+      "Notifikasi Absensi memiliki siklus sebelum dibuka, saat berlangsung, dan setelah sesi ditutup.",
+      "Polling notifikasi sistem memakai registry ID tersendiri agar notifikasi HP tidak hilang hanya karena item sudah lebih dulu masuk cache aplikasi.",
+      "syncKelasKuRelease() otomatis memastikan trigger lifecycle akademik 5-menit tersedia; schema tetap 17."
+    ]
+  },
+  {
     "version": "6.7.36",
     "build": "20260929.336",
     "date": "2026-09-29",

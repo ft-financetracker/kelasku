@@ -227,11 +227,15 @@ async function toggleNotifications() {
   fetchNotifications(false).catch(err => console.warn('Notification refresh:', err));
 }
 
+const SYSTEM_NOTIFIED_KEY='kelasku_system_notified_ids_v1';
+function readSystemNotifiedIds(){try{return new Set(JSON.parse(localStorage.getItem(SYSTEM_NOTIFIED_KEY)||'[]').map(String));}catch{return new Set();}}
+function rememberSystemNotifiedIds(ids){try{const list=[...ids].slice(-240);localStorage.setItem(SYSTEM_NOTIFIED_KEY,JSON.stringify(list));}catch{}}
+function recentNotification(n,maxAgeMs=12*60*60*1000){const t=new Date(n?.created_at||0).getTime();return Number.isFinite(t)&&t>0&&(Date.now()-t)<=maxAgeMs;}
+
 async function fetchNotifications(showSystem) {
   if (!state.sessionToken) return;
   try {
     const data = await api('getNotifications', { limit: 20 });
-    const oldIds = new Set(state.notifications.map(n => n.notification_id));
     state.notifications = data.items || [];
     localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
     window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
@@ -240,10 +244,13 @@ async function fetchNotifications(showSystem) {
     refreshNotificationSummary(unread.length);
 
     if (showSystem && 'Notification' in window && Notification.permission === 'granted') {
-      const fresh = unread.filter(n => !oldIds.has(n.notification_id));
-      for (const n of fresh.slice(0, 2)) {
+      const notified=readSystemNotifiedIds();
+      const fresh=unread.filter(n=>recentNotification(n)&&!notified.has(String(n.notification_id))).slice(0,3);
+      for (const n of fresh) {
         await showSystemNotification(n.title, n.body, n.deep_link || 'dashboard', n.notification_id);
+        notified.add(String(n.notification_id));
       }
+      if(fresh.length)rememberSystemNotifiedIds(notified);
     }
 
     renderNotificationDrawer();
