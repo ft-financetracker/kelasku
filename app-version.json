@@ -1,8 +1,8 @@
 {
-  "version": "6.7.31",
-  "build": "20260929.331",
+  "version": "6.7.32",
+  "build": "20260929.332",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_time_wib": "17:25 WIB",
-  "release_note": "Consolidated appearance UX: satu upload Hero menghasilkan Desktop+Mobile untuk Room+Landing, pilihan icon/foto memakai draft+save, Landing section mendukung preset/custom, Album grid+paging, state Tampilan tidak reset saat background refresh, startup tidak lagi dipaksa ke Setup, dan frame identitas hero dipulihkan."
+  "release_note": "v6.7.32 \u2014 Hero Room/Landing tanpa icon/frame, Hero Desktop dan Mobile kembali terpisah, Tampilan disederhanakan tanpa menu Icon/Foto, serta perbaikan deteksi update dan polling notifikasi global.",
+  "release_time_wib": "18:20 WIB"
 }

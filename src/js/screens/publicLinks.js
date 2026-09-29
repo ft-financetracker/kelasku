@@ -14,10 +14,10 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=6731',mobile:'assets/public/hero-access.webp?v=6731'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=6731',mobile:'assets/public/hero-links.webp?v=6731'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6731',mobile:'assets/public/hero-showcase.webp?v=6731'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6731',mobile:'assets/public/campus-landscape-mobile.png?v=6731'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6732',mobile:'assets/public/hero-access.webp?v=6732'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6732',mobile:'assets/public/hero-links.webp?v=6732'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6732',mobile:'assets/public/hero-showcase.webp?v=6732'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6732',mobile:'assets/public/campus-landscape-mobile.png?v=6732'}
 });
 
 const PLATFORM = {
@@ -171,15 +171,14 @@ function publicHero(cls, appearance={}, memberData=null) {
     cls.semester || ''
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || 'assets/classroom/hero-room-default-desktop.jpg?v=6731';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6731';
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || 'assets/classroom/hero-room-default-desktop.jpg?v=6732';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6732';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
   const iconKey=String(cls.icon_key||appearance?.icon_key||'school').trim()||'school';
   return `<section class="public-hero public-hero-v6728 ${customHero?'public-hero-custom-v6725':''}">
     ${customHero?`<picture class="public-hero-bg-v6725" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(mobile||desktop)}"><img src="${esc(desktop||mobile)}" alt="" loading="eager" decoding="async"></picture><span class="public-hero-shade-v6725" aria-hidden="true"></span>`:''}
-    ${cls.cover_url?`<span class="public-hero-icon public-hero-cover"><img src="${esc(cls.cover_url)}" alt="" loading="eager"></span>`:`<span class="public-hero-icon material-symbols-rounded">${esc(iconKey)}</span>`}
     <div class="public-hero-copy">
       <h1>${esc(cls.name || 'Kelas')}</h1>
       <div class="public-meta-line">${meta.map((item,index)=>`${index?'<i>•</i>':''}<span>${esc(item)}</span>`).join('')}</div>

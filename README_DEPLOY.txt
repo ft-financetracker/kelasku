@@ -1,24 +1,14 @@
-KelasKu v6.7.31 — Appearance Consolidation
-Build 20260929.331 | Schema 17
+KelasKu v6.7.32 — Hero + Notification Stability
 
-PERUBAHAN UTAMA
-- 1 upload Hero membuat Desktop 2048x384 + Mobile 1440x320 otomatis.
-- Hero yang sama dipakai Room Class + Landing Page per kelas.
-- Icon/foto kelas memakai pilihan draft/radio; simpan sekali.
-- Background section Landing: preset bawaan / album / upload sendiri.
-- Album: grid compact, filter, 12 item per halaman, preview, gunakan, hapus permanen.
-- Menu Tampilan mempertahankan posisi/tab saat data background selesai dimuat.
-- Startup user login langsung ke halaman utama; Setup tidak lagi memblokir awal aplikasi.
-- Frame identitas hero dipulihkan lebih besar, glyph tetap compact.
+Fokus:
+- Hero Room Class dan Landing tanpa icon/frame.
+- Blok teks hero kembali ke kiri dan lebih lega.
+- Hero Desktop dan Mobile kembali dua upload terpisah.
+- Room Class dan Landing memakai slot hero yang sama sesuai perangkat.
+- Menu Icon/Foto Kelas di Tampilan dihapus.
+- Album Tampilan dipertahankan.
+- Polling notifikasi diaktifkan secara global setelah login.
+- Deteksi update diperkuat saat startup, focus, online, dan service-worker update.
 
-CARA PASANG
-1. Backup repo saat ini (v6.7.29).
-2. Timpa file/folder dari ZIP ini ke repo GitHub Pages.
-3. Commit + Push.
-4. Tunggu deploy selesai.
-5. Tutup total PWA/tab lalu buka kembali.
-6. Pastikan versi v6.7.31.
-
-CATATAN
-- v6.7.30 TIDAK perlu dipasang terlebih dahulu.
-- Pasang file Apps Script v6.7.31 lebih dulu sebelum paket aplikasi ini.
+Overwrite file sesuai struktur ZIP ke GitHub Pages.
+Setelah deploy selesai, tutup total PWA/tab lalu buka ulang.

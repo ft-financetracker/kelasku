@@ -9,7 +9,7 @@ import { state, setSession, setIdentity, clearSession } from './core/state.js';
 import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
-import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=6732';
 import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js';
 import { applyPreferences } from './core/preferences.js';
 
@@ -18,11 +18,11 @@ import { renderOnboarding } from './screens/onboarding.js';
 import { renderAuth } from './screens/auth.js';
 import { renderProfile } from './screens/profile.js';
 import { renderSetup } from './screens/setup.js';
-import { renderDashboard } from './screens/dashboard.js';
+import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6732';
 import { renderAccount } from './screens/account.js';
 import { renderSettings } from './screens/settings.js';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6731';
-import { renderClassRoom } from './screens/classRoom.js?v=6731';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6732';
+import { renderClassRoom } from './screens/classRoom.js?v=6732';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
@@ -172,6 +172,7 @@ function routeReadyUser() {
   if (!state.user.profile_complete) return go('profile');
   // App Setup tidak lagi memblokir startup. Pengguna yang sudah login langsung masuk ke halaman utama/startup page.
   scheduleCoreWarmup();
+  startNotificationPolling();
 
   const currentUrl = new URL(window.location.href);
   if (currentUrl.searchParams.get('a') || currentUrl.searchParams.get('attendance')) return go('attendance-link');

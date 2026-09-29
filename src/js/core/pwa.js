@@ -24,10 +24,11 @@ export async function registerServiceWorker() {
     state.swReg.addEventListener('updatefound',()=>{
       const worker=state.swReg?.installing;
       worker?.addEventListener('statechange',()=>{
-        if(worker.state==='installed' && navigator.serviceWorker.controller) checkForAppUpdate({notify:false}).catch(()=>{});
+        if(worker.state==='installed' && navigator.serviceWorker.controller) checkForAppUpdate({notify:true}).catch(()=>{});
       });
     });
     state.swReg.update().catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', () => { window.setTimeout(() => checkForAppUpdate({ notify: true }).catch(() => {}), 350); }, { once: true });
     return state.swReg;
   } catch (err) {
     console.warn('Service Worker:', err);
@@ -186,9 +187,9 @@ export function startUpdateWatcher() {
   window.addEventListener('focus', run);
   document.addEventListener('visibilitychange', run);
   window.addEventListener('online', run);
-  window.setTimeout(run, 1600);
+  window.setTimeout(run, 900);
   if (updateTimer) clearInterval(updateTimer);
-  updateTimer = setInterval(run, 15 * 60 * 1000);
+  updateTimer = setInterval(run, 2 * 60 * 1000);
 }
 
 export async function updateApp() {

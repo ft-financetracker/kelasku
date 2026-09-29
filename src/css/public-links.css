@@ -292,3 +292,25 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
   .public-hero-rule-v6728{margin:6px 0 5px}
   .public-image-head-shade-v6728{background:linear-gradient(90deg,rgba(4,18,44,.97) 0%,rgba(5,24,52,.85) 58%,rgba(5,24,52,.30) 100%)}
 }
+
+
+/* v6.7.32 — Landing hero parity without class icon/frame */
+.public-hero-v6728{grid-template-columns:minmax(0,1fr)!important;gap:0!important;min-height:154px!important;padding:18px 28px!important;align-items:center!important}
+.public-hero-v6728 .public-hero-icon{display:none!important}
+.public-hero-v6728 .public-hero-copy{width:min(58%,640px)!important;max-width:640px!important;justify-self:start!important;align-self:center!important}
+.public-hero-v6728 h1{font-size:27px!important;margin:0 0 5px!important}
+.public-hero-v6728 .public-meta-line{font-size:10px!important;margin:0 0 5px!important}
+.public-hero-description-v6728{max-width:600px!important;font-size:10.8px!important}
+.public-hero-rule-v6728{max-width:600px!important}
+@media(max-width:720px){
+  .public-hero-v6728{grid-template-columns:minmax(0,1fr)!important;min-height:132px!important;padding:14px 16px!important}
+  .public-hero-v6728 .public-hero-copy{width:min(78%,520px)!important;max-width:78%!important}
+  .public-hero-v6728 h1{font-size:21px!important}
+  .public-hero-v6728 .public-meta-line{font-size:8.7px!important}
+  .public-hero-description-v6728{font-size:8.9px!important;max-width:100%!important}
+}
+@media(max-width:430px){
+  .public-hero-v6728{min-height:126px!important;padding:13px 14px!important}
+  .public-hero-v6728 .public-hero-copy{width:82%!important;max-width:82%!important}
+  .public-hero-v6728 h1{font-size:19px!important}
+}

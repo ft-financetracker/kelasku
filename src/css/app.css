@@ -3574,3 +3574,53 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
   .class-icon-radio-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.class-icon-radio small{font-size:6.8px}
   .icon-custom-radio-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 }
+
+
+/* ============================================================
+   v6.7.32 — Final hero cleanup + appearance simplification
+   Scope locked: Room hero, Appearance menu. Album grid unchanged.
+   ============================================================ */
+.class-room-page .class-hero-v6725{
+  grid-template-columns:minmax(0,1fr)!important;
+  min-height:154px!important;
+  padding:18px 28px!important;
+  gap:0!important;
+  align-items:center!important;
+}
+.class-room-page .class-room-cover-v6720.class-room-cover-v6725.class-room-cover-v6728,
+.class-room-page .class-hero-icon.class-room-cover-v6728{display:none!important}
+.class-room-page .class-hero-copy-v6725{
+  width:min(58%,640px)!important;
+  max-width:640px!important;
+  margin:0!important;
+  padding:0!important;
+  justify-self:start!important;
+  align-self:center!important;
+}
+.class-room-page .class-hero-v6725 .class-hero-main h2{font-size:27px!important;margin:0 0 5px!important}
+.class-room-page .class-hero-v6725 .class-primary-meta{font-size:10px!important;margin:0 0 5px!important}
+.class-room-page .class-hero-v6725 .class-hero-description{max-width:600px!important;font-size:10.8px!important}
+.class-room-page .class-hero-rule-v6725{max-width:600px!important}
+
+.hero-slot-grid-v6732{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.hero-slot-card-v6732{position:relative;display:grid;gap:8px;padding:10px;border-radius:14px;border:1px solid rgba(91,160,240,.13);background:rgba(6,27,60,.36)}
+.hero-slot-head-v6732{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.hero-slot-head-v6732>div{display:grid;gap:2px}.hero-slot-head-v6732 strong{font-size:10px}.hero-slot-head-v6732 small{font-size:7.8px;color:var(--muted)}
+.hero-slot-card-v6732>img{width:100%;aspect-ratio:16/3;object-fit:cover;border-radius:10px;border:1px solid rgba(91,160,240,.12);background:#061731}
+.hero-slot-card-v6732:nth-child(2)>img{aspect-ratio:4.5/1}
+.hero-slot-actions-v6732{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.hero-slot-actions-v6732 .btn{min-height:34px!important;padding:7px 10px!important;font-size:8.4px!important}
+.hero-slot-active-v6732{position:static!important}.hero-slot-default-v6732{display:inline-flex;align-items:center;min-height:22px;padding:3px 7px;border-radius:999px;border:1px solid rgba(91,160,240,.15);font-size:7px;font-weight:850;color:#90abc4}
+
+@media(max-width:720px){
+  .class-room-page .class-hero-v6725{grid-template-columns:minmax(0,1fr)!important;min-height:132px!important;padding:14px 16px!important}
+  .class-room-page .class-hero-copy-v6725{width:min(78%,520px)!important;max-width:78%!important}
+  .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:21px!important}
+  .class-room-page .class-hero-v6725 .class-primary-meta{font-size:8.7px!important}
+  .class-room-page .class-hero-v6725 .class-hero-description{font-size:8.9px!important;max-width:100%!important}
+  .hero-slot-grid-v6732{grid-template-columns:1fr}
+  .hero-slot-card-v6732>img{max-height:none}
+}
+@media(max-width:430px){
+  .class-room-page .class-hero-v6725{min-height:126px!important;padding:13px 14px!important}
+  .class-room-page .class-hero-copy-v6725{width:82%!important;max-width:82%!important}
+  .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:19px!important}
+}

@@ -11,6 +11,7 @@ let carouselPhysicalIndex = 1;
 let carouselMoving = false;
 let updateEventHandler = null;
 let notificationEventHandler = null;
+let notificationPollBound = false;
 
 export function renderDashboard() {
   const content = `
@@ -307,11 +308,20 @@ async function markNotification(id) {
   }
 }
 
-function startNotificationPolling() {
-  if (state.notificationTimer) clearInterval(state.notificationTimer);
-  fetchNotifications(false);
+export function startNotificationPolling() {
+  if (!state.sessionToken) return;
+  if (!notificationPollBound) {
+    notificationPollBound = true;
+    const refresh = () => { if (state.sessionToken && navigator.onLine) fetchNotifications(true); };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
+  }
+  // Cache state dipakai sebagai oldIds, sehingga hanya item baru yang memunculkan notifikasi sistem.
+  fetchNotifications(true);
+  if (state.notificationTimer) return;
   state.notificationTimer = setInterval(() => {
-    if (document.visibilityState === 'visible' && navigator.onLine) fetchNotifications(true);
+    if (state.sessionToken && navigator.onLine) fetchNotifications(true);
   }, Number(state.remoteConfig?.notification_poll_ms || C.NOTIFICATION_POLL_MS || 60000));
 }
 
