@@ -3395,3 +3395,45 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
   .class-room-page .class-hero-v6725 .class-hero-main h2{font-size:18px!important}
   .class-room-page .class-hero-v6725 .class-hero-description{font-size:8.3px!important}
 }
+
+
+/* ============================================================
+   v6.7.29 — Hero class frame correction
+   Scope LOCK: frame diperbesar, glyph/icon diperkecil.
+   ============================================================ */
+.class-room-page .class-hero-v6725{grid-template-columns:118px minmax(0,620px)!important;gap:22px!important}
+.class-room-page .class-room-cover-v6728{
+  width:108px!important;
+  height:108px!important;
+  min-width:108px!important;
+  border-radius:24px!important;
+}
+.class-room-page .class-room-cover-v6728 .class-hero-symbol-v6728{
+  font-size:31px!important;
+  line-height:1!important;
+}
+.class-room-page .class-room-cover-v6728 .icon{width:31px!important;height:31px!important}
+
+@media(max-width:720px){
+  .class-room-page .class-hero-v6725{grid-template-columns:92px minmax(0,1fr)!important;gap:14px!important}
+  .class-room-page .class-room-cover-v6728{
+    width:84px!important;
+    height:84px!important;
+    min-width:84px!important;
+    border-radius:20px!important;
+  }
+  .class-room-page .class-room-cover-v6728 .class-hero-symbol-v6728{font-size:26px!important}
+  .class-room-page .class-room-cover-v6728 .icon{width:26px!important;height:26px!important}
+}
+
+@media(max-width:430px){
+  .class-room-page .class-hero-v6725{grid-template-columns:82px minmax(0,1fr)!important;gap:12px!important}
+  .class-room-page .class-room-cover-v6728{
+    width:76px!important;
+    height:76px!important;
+    min-width:76px!important;
+    border-radius:18px!important;
+  }
+  .class-room-page .class-room-cover-v6728 .class-hero-symbol-v6728{font-size:24px!important}
+  .class-room-page .class-room-cover-v6728 .icon{width:24px!important;height:24px!important}
+}

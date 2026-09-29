@@ -1,5 +1,24 @@
 [
   {
+    "version": "6.7.29",
+    "build": "20260929.329",
+    "date": "2026-09-29",
+    "title": "Hero Class Frame Correction",
+    "changes": [
+      "Frame visual kelas diperbesar di desktop/mobile.",
+      "Glyph/icon di dalam frame diperkecil agar tidak mendominasi.",
+      "Tidak mengubah layout/fungsi lain."
+    ]
+  },
+  {
+    "version": "6.7.28",
+    "build": "20260929.328",
+    "date": "2026-09-29",
+    "type": "RELEASE",
+    "title": "Final Class Identity + Landing Presets",
+    "summary": "Hero Room/Landing parity, icon class presets, built-in Landing section presets per class, and preserved media album/crop/delete flow."
+  },
+  {
     "version": "6.7.27",
     "build": "20260929.327",
     "date": "2026-09-29",

@@ -1,8 +1,8 @@
 {
-  "version": "6.7.27",
-  "build": "20260929.327",
+  "version": "6.7.29",
+  "build": "20260929.329",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_time_wib": "11:35 WIB",
-  "release_note": "Final Class Appearance: satu Hero Kelas Desktop/Mobile dipakai bersama Room Class + Landing Page, Foto Card Room persegi untuk daftar kelas, crop/reposition saat upload, album per kelas, dan hapus permanen dengan konfirmasi."
+  "release_time_wib": "15:08 WIB",
+  "release_note": "Hero Class frame correction: memperbesar frame foto/icon tanpa memperbesar glyph; desktop dan mobile tetap compact. Tidak ada perubahan fitur lain."
 }
