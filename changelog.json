@@ -1,15 +1,17 @@
 [
   {
-    "version": "6.7.33",
-    "build": "20260929.333",
+    "version": "6.7.34",
+    "build": "20260929.334",
     "date": "2026-09-29",
-    "title": "Live Landing & Hero Stability",
+    "title": "Academic Live Stability",
     "changes": [
-      "Hero Room memakai cache visual per kelas agar custom background tidak berkedip kembali ke default saat membuka kelas.",
-      "Hero Landing mengingat appearance terakhir dan tidak mendaftarkan PWA aplikasi dari halaman publik.",
-      "Gradient Hero Room/Landing dipendekkan hanya untuk menjaga area teks tanpa menggelapkan visual kanan.",
-      "Tombol Simpan Perubahan pada Tampilan kembali ke normal document flow sehingga tidak menutupi konten.",
-      "Link Landing baru memakai links.html?c=... dan dibuka di tab browser baru dari Room Class."
+      "Pembuatan jadwal berulang + absensi otomatis ditulis batch agar jauh lebih cepat dan tidak terlihat gagal lalu muncul belakangan.",
+      "Create Schedule memakai request key anti-duplikat dan pesan timeout yang kontekstual.",
+      "Jadwal, Tugas, Materi, dan Pengumuman global memakai pagination 12 item per halaman.",
+      "Landing hanya menampilkan jadwal aktif sampai 7 hari ke depan.",
+      "Materi dan lampiran memakai preview di KelasKu sebelum download.",
+      "Pengumpulan tugas mendukung multi-lampiran hingga 12 file dan reviewer dapat preview XLSX/PDF/DOC dari Drive.",
+      "Batas upload dokumen diselaraskan menjadi 4 MB per file."
     ]
   }
 ]

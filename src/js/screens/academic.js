@@ -2,7 +2,7 @@ import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
-import { compressImageFile } from '../core/media.js';
+import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
 
 const HUB_TTL_MS = 45000;
@@ -10,6 +10,11 @@ let activeAcademicScreen = '';
 let attendanceListPage = 1;
 let academicHubInFlight = null;
 const ATTENDANCE_LIST_PAGE_SIZE = 12;
+const ACADEMIC_PAGE_SIZE = 12;
+let scheduleListPage = 1;
+let taskListPage = 1;
+let materialListPage = 1;
+let announcementListPage = 1;
 
 export function renderSchedule() {
   activeAcademicScreen = 'schedule';
@@ -58,10 +63,13 @@ function renderAcademicShell(title, copy, active, icon) {
   loadAcademicHub(false);
 }
 
+function resetAcademicPages(){scheduleListPage=1;taskListPage=1;materialListPage=1;announcementListPage=1;attendanceListPage=1;}
+function pageSlice(items,page,size=ACADEMIC_PAGE_SIZE){const total=Math.max(1,Math.ceil(items.length/size));const safe=Math.min(Math.max(1,page),total);return{page:safe,totalPages:total,total:items.length,items:items.slice((safe-1)*size,safe*size)};}
+function academicPager(kind,page,totalPages,total){if(totalPages<=1)return '';return `<div class="table-pagination academic-pagination"><span>${total} item • Halaman ${page}/${totalPages}</span><div><button type="button" data-academic-page-kind="${kind}" data-academic-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button><button type="button" class="active">${page}</button><button type="button" data-academic-page-kind="${kind}" data-academic-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
 function bindAcademicToolbar() {
-  document.getElementById('academic-search')?.addEventListener('input', () => { attendanceListPage = 1; drawAcademicScreen(state.academicHub); });
+  document.getElementById('academic-search')?.addEventListener('input', () => { resetAcademicPages(); drawAcademicScreen(state.academicHub); });
   document.getElementById('academic-class-filter')?.addEventListener('change', () => {
-    if (activeAcademicScreen === 'attendance') { attendanceListPage = 1; hydrateAttendanceFilter(state.academicHub, true); }
+    resetAcademicPages(); if (activeAcademicScreen === 'attendance') { hydrateAttendanceFilter(state.academicHub, true); }
     drawAcademicScreen(state.academicHub);
   });
   document.getElementById('academic-attendance-filter')?.addEventListener('change', () => { attendanceListPage = 1; drawAcademicScreen(state.academicHub); });
@@ -254,8 +262,9 @@ function attendanceSubject(item) {
 function schedulesHtml(items, tasks = []) {
   if (!items.length && !tasks.length) return emptyAcademic('Belum ada agenda', 'Jadwal dan deadline tugas akan tampil di sini.', 'i-calendar');
   const now = Date.now();
-  const upcoming = items.filter(x => dateMs(x.start_at) >= now - 21600000).slice(0, 80);
-  const past = items.filter(x => dateMs(x.start_at) < now - 21600000).slice(-20).reverse();
+  const upcomingAll = items.filter(x => dateMs(x.start_at) >= now - 21600000).sort((a,b)=>dateMs(a.start_at)-dateMs(b.start_at));
+  const past = items.filter(x => dateMs(x.start_at) < now - 21600000).sort((a,b)=>dateMs(b.start_at)-dateMs(a.start_at)).slice(0,6);
+  const pg=pageSlice(upcomingAll,scheduleListPage);scheduleListPage=pg.page;
   const horizon = now + 30 * 86400000;
   const calendarItems = [
     ...items.filter(x => dateMs(x.start_at) >= now - 86400000 && dateMs(x.start_at) <= horizon).map(x => ({kind:'JADWAL',date:x.start_at,title:x.title,class_name:x.class_name,icon:'i-calendar'})),
@@ -264,8 +273,9 @@ function schedulesHtml(items, tasks = []) {
   return `<section class="academic-list-layout">
     <div class="section-title-row"><div><h2>Kalender Akademik 30 Hari</h2><p>Jadwal dan deadline penting dalam satu alur.</p></div></div>
     <div class="academic-calendar-strip">${calendarItems.length?calendarItems.slice(0,18).map(calendarMiniCard).join(''):'<div class="search-empty">Tidak ada agenda 30 hari ke depan.</div>'}</div>
-    <div class="section-title-row"><div><h2>Agenda Mendatang</h2><p>${upcoming.length} agenda</p></div></div>
-    <div class="academic-card-list">${upcoming.length ? upcoming.map(scheduleCard).join('') : '<div class="search-empty">Belum ada agenda mendatang.</div>'}</div>
+    <div class="section-title-row"><div><h2>Agenda Mendatang</h2><p>${upcomingAll.length} agenda</p></div></div>
+    <div class="academic-card-list">${pg.items.length ? pg.items.map(scheduleCard).join('') : '<div class="search-empty">Belum ada agenda mendatang.</div>'}</div>
+    ${academicPager('schedule',pg.page,pg.totalPages,pg.total)}
     ${past.length ? `<div class="section-title-row"><div><h2>Riwayat Terbaru</h2><p>${past.length} agenda terakhir</p></div></div><div class="academic-card-list is-muted">${past.map(scheduleCard).join('')}</div>` : ''}
   </section>`;
 }
@@ -288,18 +298,17 @@ function scheduleCard(item) {
 
 function tasksHtml(items) {
   if (!items.length) return emptyAcademic('Belum ada tugas', 'Tugas dari seluruh kelas akan tampil di sini.', 'i-task');
-  const open = items.filter(x => !['SUBMITTED','LATE'].includes(String(x.submission_status)) || String(x.submission?.review_status||'') === 'NEEDS_REVISION').sort((a,b)=>dateMs(a.deadline,Infinity)-dateMs(b.deadline,Infinity));
-  const done = items.filter(x => ['SUBMITTED','LATE'].includes(String(x.submission_status)) && String(x.submission?.review_status||'') !== 'NEEDS_REVISION').sort((a,b)=>dateMs(b.deadline,0)-dateMs(a.deadline,0));
+  const openAll = items.filter(x => !['SUBMITTED','LATE'].includes(String(x.submission_status)) || String(x.submission?.review_status||'') === 'NEEDS_REVISION').sort((a,b)=>dateMs(a.deadline,Infinity)-dateMs(b.deadline,Infinity));
+  const doneAll = items.filter(x => ['SUBMITTED','LATE'].includes(String(x.submission_status)) && String(x.submission?.review_status||'') !== 'NEEDS_REVISION').sort((a,b)=>dateMs(b.deadline,0)-dateMs(a.deadline,0));
+  const ordered=[...openAll,...doneAll];const pg=pageSlice(ordered,taskListPage);taskListPage=pg.page;
+  const pageOpen=pg.items.filter(x=>openAll.includes(x)),pageDone=pg.items.filter(x=>doneAll.includes(x));
   return `<section class="academic-list-layout">
-    <div class="academic-summary-strip">
-      <div><strong>${open.length}</strong><span>Belum dikumpulkan</span></div><div><strong>${done.length}</strong><span>Sudah dikumpulkan</span></div><div><strong>${items.length}</strong><span>Total aktif</span></div>
-    </div>
-    <div class="section-title-row"><div><h2>Perlu Dikerjakan</h2><p>Urut deadline terdekat.</p></div></div>
-    <div class="academic-card-list">${open.length ? open.map(taskCard).join('') : '<div class="search-empty">Semua tugas sudah tertangani.</div>'}</div>
-    ${done.length ? `<div class="section-title-row"><div><h2>Sudah Dikumpulkan</h2><p>Riwayat pengumpulan.</p></div></div><div class="academic-card-list is-muted">${done.slice(0,30).map(taskCard).join('')}</div>` : ''}
+    <div class="academic-summary-strip"><div><strong>${openAll.length}</strong><span>Belum dikumpulkan</span></div><div><strong>${doneAll.length}</strong><span>Sudah dikumpulkan</span></div><div><strong>${items.length}</strong><span>Total aktif</span></div></div>
+    ${pageOpen.length?`<div class="section-title-row"><div><h2>Perlu Dikerjakan</h2><p>Urut deadline terdekat.</p></div></div><div class="academic-card-list">${pageOpen.map(taskCard).join('')}</div>`:''}
+    ${pageDone.length?`<div class="section-title-row"><div><h2>Sudah Dikumpulkan</h2><p>Riwayat pengumpulan.</p></div></div><div class="academic-card-list is-muted">${pageDone.map(taskCard).join('')}</div>`:''}
+    ${academicPager('tasks',pg.page,pg.totalPages,pg.total)}
   </section>`;
 }
-
 function taskCard(item) {
   const status = taskStatus(item);
   const sub = item.submission || {};
@@ -314,23 +323,29 @@ function taskCard(item) {
 
 function materialsHtml(items) {
   if (!items.length) return emptyAcademic('Belum ada materi', 'Materi yang dibagikan kelas akan tampil di sini.', 'i-file');
-  return `<div class="academic-material-grid">${items.map(materialCard).join('')}</div>`;
+  const ordered=[...items].sort((a,b)=>dateMs(b.published_at,0)-dateMs(a.published_at,0));const pg=pageSlice(ordered,materialListPage);materialListPage=pg.page;
+  return `<section class="academic-list-layout"><div class="academic-material-grid">${pg.items.map(materialCard).join('')}</div>${academicPager('materials',pg.page,pg.totalPages,pg.total)}</section>`;
 }
 
 function materialCard(item) {
-  return `<article class="academic-material-card panel">
-    <div class="academic-material-icon">${svg(['LINK','DRIVE_LINK'].includes(item.material_type) ? 'i-link' : 'i-file')}</div>
-    <div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDate(item.published_at))}</span>${item.meeting_no?`<span>Pertemuan ${esc(item.meeting_no)}</span>`:''}</div>
+  const attachments=item.attachments||[];const images=attachments.filter(a=>String(a.mime_type||'').startsWith('image/')).length;const files=attachments.length-images;const refs=item.url?1:0;
+  return `<article class="academic-material-card panel academic-material-card-v6734">
+    <div class="academic-material-head"><div class="academic-material-icon">${svg(['LINK','DRIVE_LINK'].includes(item.material_type) ? 'i-link' : 'i-file')}</div><div class="academic-meta-line"><span>${esc(item.class_name || 'KelasKu')}</span><span>${esc(shortDate(item.published_at))}</span></div></div>
     <h3>${esc(item.title)}</h3>${item.topic?`<span class="soft-chip material-topic-chip">${esc(item.topic)}</span>`:''}<p>${esc(item.description || 'Materi kelas.')}</p>
-    ${item.url ? `<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.url)}">${svg('i-link')} ${item.material_type==='DRIVE_LINK'?'Buka File / Drive':'Buka Materi'}</button>` : (item.attachments?.length?`<button type="button" class="btn btn-secondary academic-open-link" data-open-url="${esc(item.attachments[0].download_url||item.attachments[0].url||'')}">${svg('i-file')} ${item.attachments.length} Lampiran</button>`:'<span class="soft-chip">Catatan</span>')}
+    <div class="material-kpi-line">${images?`<span><span class="material-symbols-rounded">image</span>${images} gambar</span>`:''}${files?`<span><span class="material-symbols-rounded">description</span>${files} file</span>`:''}${refs?`<span><span class="material-symbols-rounded">link</span>${refs} link</span>`:''}</div>
+    <button type="button" class="btn btn-secondary academic-open-material" data-open-material="${esc(item.material_id)}">${svg('i-eye')} Buka Materi</button>
   </article>`;
 }
 
+function academicAttachmentButton(a,i){return `<button type="button" class="material-download-row" data-preview-academic-file data-preview-url="${esc(a.preview_url||a.url||'')}" data-download-url="${esc(a.download_url||a.url||'')}" data-mime="${esc(a.mime_type||'')}" data-filename="${esc(a.filename||`Lampiran ${i+1}`)}" data-file-type="${esc(a.type||'FILE')}"><span class="material-symbols-rounded">${a.type==='LINK'?'link':String(a.mime_type||'').startsWith('image/')?'image':String(a.mime_type||'').includes('spreadsheet')?'table_view':String(a.mime_type||'').includes('pdf')?'picture_as_pdf':'description'}</span><span><strong>${esc(a.filename||`Lampiran ${i+1}`)}</strong><small>${a.type==='LINK'?'Buka tautan':'Preview di KelasKu'}</small></span><span class="material-symbols-rounded">visibility</span></button>`;}
+function academicAttachmentList(items=[]){if(!items.length)return'';return `<div class="material-download-section"><strong>Lampiran (${items.length})</strong><div class="material-download-list">${items.map(academicAttachmentButton).join('')}</div></div>`;}
+function openMaterialModal(item){if(!item)return;showModal(`<div class="modal-head"><div><div class="eyebrow">MATERI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(item.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="task-modal-meta"><span>${svg('i-calendar')} ${esc(shortDate(item.published_at))}</span>${item.meeting_no?`<span class="soft-chip">Pertemuan ${esc(item.meeting_no)}</span>`:''}</div><p class="copy compact-copy">${esc(item.description||'Tidak ada deskripsi.')}</p>${item.url?`<button type="button" class="btn btn-secondary btn-block" data-open-url="${esc(item.url)}">${svg('i-link')} Buka Tautan Materi</button>`:''}${academicAttachmentList(item.attachments||[])}`);bindFilePreviewButtons(document.getElementById('phase-modal')||document);document.querySelectorAll('[data-open-url]').forEach(btn=>btn.onclick=()=>openExternal(btn.dataset.openUrl));}
+
 function announcementsHtml(items) {
   if (!items.length) return emptyAcademic('Belum ada pengumuman', 'Pengumuman resmi kelas akan tampil di sini.', 'i-mega');
-  return `<div class="announcement-feed">${items.map(announcementCard).join('')}</div>`;
+  const ordered=[...items].sort((a,b)=>dateMs(b.published_at,0)-dateMs(a.published_at,0));const pg=pageSlice(ordered,announcementListPage);announcementListPage=pg.page;
+  return `<section class="academic-list-layout"><div class="announcement-feed">${pg.items.map(announcementCard).join('')}</div>${academicPager('announcements',pg.page,pg.totalPages,pg.total)}</section>`;
 }
-
 function announcementCard(item) {
   return `<article class="announcement-card priority-${String(item.priority||'normal').toLowerCase()}">
     <div class="announcement-marker">${svg('i-mega')}</div>
@@ -453,6 +468,9 @@ function attendanceStatusMeta(value) {
 function bindAcademicRows() {
   document.querySelectorAll('[data-open-task]').forEach(btn => btn.onclick = () => openTaskModal(btn.dataset.openTask));
   document.querySelectorAll('[data-open-url]').forEach(btn => btn.onclick = () => openExternal(btn.dataset.openUrl));
+  document.querySelectorAll('[data-open-material]').forEach(btn=>btn.onclick=()=>openMaterialModal((state.academicHub?.materials||[]).find(x=>String(x.material_id)===String(btn.dataset.openMaterial))));
+  document.querySelectorAll('[data-academic-page-kind]').forEach(btn=>btn.onclick=()=>{const page=Number(btn.dataset.academicPage)||1;const kind=btn.dataset.academicPageKind;if(kind==='schedule')scheduleListPage=page;if(kind==='tasks')taskListPage=page;if(kind==='materials')materialListPage=page;if(kind==='announcements')announcementListPage=page;drawAcademicScreen(state.academicHub);window.scrollTo({top:0,behavior:'smooth'});});
+  bindFilePreviewButtons(document);
   document.querySelectorAll('[data-academic-attendance-page]').forEach(btn => btn.onclick = () => { attendanceListPage = Number(btn.dataset.academicAttendancePage) || 1; drawAcademicScreen(state.academicHub); });
   document.querySelectorAll('[data-global-attendance-class-toggle]').forEach(btn => btn.onclick = () => { const panel=document.getElementById(btn.getAttribute('aria-controls')); const opening=panel?.hidden!==false; if(panel)panel.hidden=!opening; btn.closest('.attendance-hub-class')?.classList.toggle('open',opening); btn.setAttribute('aria-expanded',String(opening)); });
   document.querySelectorAll('[data-global-attendance-course-toggle]').forEach(btn => btn.onclick = () => { const panel=document.getElementById(btn.getAttribute('aria-controls')); const opening=panel?.hidden!==false; if(panel)panel.hidden=!opening; btn.closest('.attendance-hub-course')?.classList.toggle('open',opening); btn.setAttribute('aria-expanded',String(opening)); });
@@ -467,7 +485,10 @@ function openGlobalAttendance(token=''){
   go('attendance-link',{replace:true});
 }
 
-function academicAttachmentLinks(items=[]){if(!items.length)return '';return `<div class="task-supporting-list"><strong>Lampiran Pendukung</strong>${items.map((a,i)=>`<a href="${esc(a.download_url||a.url||'#')}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-rounded">${a.type==='LINK'?'link':String(a.mime_type||'').startsWith('image/')?'image':'description'}</span><span>${esc(a.filename||`Lampiran ${i+1}`)}</span><span class="material-symbols-rounded">open_in_new</span></a>`).join('')}</div>`;}
+function academicAttachmentLinks(items=[]){if(!items.length)return '';return `<div class="task-supporting-list"><strong>Lampiran Pendukung</strong>${items.map(academicAttachmentButton).join('')}</div>`;}
+function bindFilePreviewButtons(root=document){root.querySelectorAll?.('[data-preview-academic-file]').forEach(btn=>btn.onclick=()=>openAcademicFilePreview({preview_url:btn.dataset.previewUrl,download_url:btn.dataset.downloadUrl,mime_type:btn.dataset.mime,filename:btn.dataset.filename,type:btn.dataset.fileType}));}
+function openAcademicFilePreview(file){if(String(file?.type||'').toUpperCase()==='LINK'){openExternal(file.preview_url||file.download_url);return;}document.getElementById('academic-file-preview-overlay')?.remove();const overlay=document.createElement('div');overlay.id='academic-file-preview-overlay';overlay.className='overlay academic-file-preview-overlay';const mime=String(file?.mime_type||''),url=file?.preview_url||file?.download_url||'',name=file?.filename||'Lampiran';const viewer=mime.startsWith('image/')?`<div class="academic-image-viewer"><img src="${esc(url)}" alt="${esc(name)}"></div>`:mime.startsWith('video/')?`<video class="academic-video-viewer" controls src="${esc(url)}"></video>`:`<iframe class="academic-doc-viewer" src="${esc(url)}" title="${esc(name)}" loading="lazy"></iframe>`;overlay.innerHTML=`<div class="modal glass academic-file-preview-card"><div class="modal-head"><div><div class="eyebrow">PREVIEW LAMPIRAN</div><h2>${esc(name)}</h2></div><button class="icon-btn mini" data-file-preview-close>${svg('i-close')}</button></div>${viewer}<div class="modal-actions"><a class="btn btn-secondary" href="${esc(file.download_url||url)}" target="_blank" rel="noopener noreferrer">${svg('i-download')} Download</a></div></div>`;document.body.appendChild(overlay);overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};overlay.querySelector('[data-file-preview-close]')?.addEventListener('click',()=>overlay.remove());}
+
 
 export function openTaskModal(taskId, sourceItems = null, options = {}) {
   const pool = Array.isArray(sourceItems) ? sourceItems : (state.academicHub?.tasks || []);
@@ -475,6 +496,8 @@ export function openTaskModal(taskId, sourceItems = null, options = {}) {
   if (!item) return;
   const mode = String(item.submission_mode || 'NONE').toUpperCase();
   const sub = item.submission || {};
+  const existing=(sub.attachments||[]).map(a=>({...a,existing:true}));
+  if(sub.submission_image_url&&!existing.some(a=>String(a.file_id)===String(sub.submission_image_file_id)))existing.push({file_id:sub.submission_image_file_id||'',filename:sub.submission_image_name||'Lampiran gambar',mime_type:'image/jpeg',type:'IMAGE',url:sub.submission_image_url,preview_url:sub.submission_image_url,download_url:sub.submission_image_url,existing:true});
   showModal(`
     <div class="modal-head"><div><div class="eyebrow">Tugas • ${esc(item.class_name || 'KelasKu')}</div><h2>${esc(item.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
     <div class="task-modal-meta"><span>${svg('i-calendar')} ${esc(deadlineText(item.deadline))}</span><span class="academic-status-pill status-${taskStatus(item).key.toLowerCase()}">${esc(taskStatus(item).label)}</span></div>
@@ -484,53 +507,36 @@ export function openTaskModal(taskId, sourceItems = null, options = {}) {
       <form id="task-submit-form">
         ${mode !== 'LINK' ? `<div class="field"><label>Jawaban / Catatan</label><textarea name="submission_text" class="control" rows="5" placeholder="Tulis jawaban atau catatan pengumpulan…">${esc(sub.submission_text || '')}</textarea></div>` : ''}
         ${mode !== 'TEXT' ? `<div class="field"><label>Tautan Pengumpulan</label><input name="submission_url" class="control" type="url" placeholder="https://…" value="${esc(sub.submission_url || '')}"></div>` : ''}
-        <div class="field"><label>Lampiran Gambar <span class="field-optional">opsional</span></label><div class="task-image-picker"><input id="task-image-input" type="file" accept="image/*" hidden><button type="button" id="task-image-btn" class="btn btn-secondary">${svg('i-camera')} Pilih Gambar</button><span id="task-image-label">${sub.submission_image_url ? 'Gambar tersimpan' : 'JPG/PNG/WebP • otomatis dikompresi'}</span></div><div id="task-image-preview" class="task-image-preview">${sub.submission_image_url ? `<img src="${esc(sub.submission_image_url)}" alt="Lampiran tugas">` : ''}</div></div>
+        <div class="field"><label>Lampiran <span class="field-optional">maks. 12 file</span></label><input id="task-files-input" type="file" multiple class="control" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"><div class="form-help">Gambar dikompresi otomatis. File dokumen maksimal 4 MB per file. XLSX/PDF/DOC dapat dipreview oleh pengelola.</div><div id="task-files-list" class="attachment-queue"></div></div>
         <div id="task-submit-status" class="request-status"></div>
         <button id="task-submit-btn" class="btn btn-primary btn-block" type="submit">${sub.submission_id ? 'Perbarui Pengumpulan' : 'Kumpulkan Tugas'}</button>
       </form>`}
   `);
-  const form = document.getElementById('task-submit-form');
-  let pendingTaskImage = null;
-  const imageInput = document.getElementById('task-image-input');
-  document.getElementById('task-image-btn')?.addEventListener('click', () => imageInput?.click());
-  imageInput?.addEventListener('change', async e => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const processed = await compressImageFile(file, { maxEdge: 1280, targetBytes: 420000 });
-      pendingTaskImage = processed;
-      const preview = document.getElementById('task-image-preview');
-      const label = document.getElementById('task-image-label');
-      if (preview) preview.innerHTML = `<img src="${esc(processed.dataUrl)}" alt="Preview lampiran">`;
-      if (label) label.textContent = `${processed.name} • ${Math.round(processed.blob.size / 1024)} KB`;
-    } catch (err) { toast(err.message || 'Gambar gagal diproses.'); }
-  });
-  if (form) form.onsubmit = e => submitTask(e, item, { ...options, image: () => pendingTaskImage });
+  bindFilePreviewButtons(document.getElementById('phase-modal')||document);
+  const form = document.getElementById('task-submit-form');if(!form)return;
+  const input=document.getElementById('task-files-input'),listEl=document.getElementById('task-files-list');
+  const queue=[...existing];
+  const renderQueue=()=>{if(!listEl)return;listEl.innerHTML=queue.length?queue.map((f,i)=>`<div class="attachment-queue-row"><span class="material-symbols-rounded">${String(f.mime_type||f.type||'').startsWith('image/')||f.type==='IMAGE'?'image':'attach_file'}</span><span><strong>${esc(f.filename||f.name||`Lampiran ${i+1}`)}</strong><small>${f.existing?'Tersimpan':formatBytes(f.size||0)}</small></span>${f.existing?`<button type="button" class="icon-btn mini" data-preview-academic-file data-preview-url="${esc(f.preview_url||f.url||'')}" data-download-url="${esc(f.download_url||f.url||'')}" data-mime="${esc(f.mime_type||'')}" data-filename="${esc(f.filename||'Lampiran')}" data-file-type="${esc(f.type||'FILE')}"><span class="material-symbols-rounded">visibility</span></button>`:''}<button type="button" class="icon-btn mini" data-remove-task-file="${i}" title="Hapus dari pengumpulan"><span class="material-symbols-rounded">close</span></button></div>`).join(''):'<div class="compact-upload-note">Belum ada lampiran.</div>';listEl.querySelectorAll('[data-remove-task-file]').forEach(btn=>btn.onclick=()=>{queue.splice(Number(btn.dataset.removeTaskFile),1);renderQueue();});bindFilePreviewButtons(listEl);};
+  renderQueue();
+  input?.addEventListener('change',()=>{for(const f of [...(input.files||[])]){if(queue.length>=12)break;queue.push({raw:f,name:f.name,filename:f.name,size:f.size,mime_type:f.type,existing:false});}input.value='';renderQueue();});
+  form.onsubmit=e=>submitTask(e,item,{...options,files:()=>queue});
 }
 
 async function submitTask(event, item, options = {}) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const btn = document.getElementById('task-submit-btn');
-  const status = document.getElementById('task-submit-status');
-  const old = btn.innerHTML;
-  btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span><span>Mengirim…</span>';
-  status.className = 'request-status progress'; status.textContent = 'Menyimpan pengumpulan…';
-  try {
-    await api('submitTask', {
-      task_id:item.task_id,
-      submission_text:form.submission_text?.value || '',
-      submission_url:form.submission_url?.value || '',
-      submission_image_data_url: options.image?.()?.dataUrl || ''
-    });
-    invalidateAcademicClientCache(item.class_id);
-    toast('Tugas berhasil dikumpulkan.');
-    closeModal();
-    if (typeof options.onSuccess === 'function') await options.onSuccess();
-    else await loadAcademicHub(true);
-  } catch (err) {
-    status.className = 'request-status error'; status.textContent = err.message;
-  } finally { btn.disabled = false; btn.innerHTML = old; }
+  event.preventDefault();const form=event.currentTarget,btn=document.getElementById('task-submit-btn'),status=document.getElementById('task-submit-status'),old=btn.innerHTML;if(btn.disabled)return;
+  btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mengirim…</span>';status.className='request-status progress';status.textContent='Menyiapkan lampiran…';
+  try{
+    const queue=options.files?.()||[];const ids=[];const newFiles=queue.filter(x=>!x.existing);const existingIds=queue.filter(x=>x.existing&&x.file_id).map(x=>x.file_id);ids.push(...existingIds);
+    for(let i=0;i<newFiles.length;i++){
+      const f=newFiles[i].raw;status.textContent=`Mengupload ${i+1}/${newFiles.length}: ${f.name}`;let dataUrl='',filename=f.name;
+      if(String(f.type||'').startsWith('image/')){const processed=await compressImageFile(f,{maxEdge:1600,targetBytes:700000});dataUrl=processed.dataUrl;filename=processed.name;}
+      else{if(f.size>4000000)throw new Error(`${f.name} terlalu besar. Maksimal 4 MB per file.`);dataUrl=await fileToDataUrl(f);}
+      const up=await api('uploadTaskSubmissionAttachment',{task_id:item.task_id,filename,data_url:dataUrl},{timeout:45000,timeoutMessage:`Upload ${f.name} membutuhkan waktu lebih lama. Jangan kirim ulang pengumpulan sebelum mengecek koneksi.`});if(up?.file?.file_id)ids.push(up.file.file_id);
+    }
+    status.textContent='Menyimpan pengumpulan…';
+    const result=await api('submitTask',{task_id:item.task_id,submission_text:form.submission_text?.value||'',submission_url:form.submission_url?.value||'',attachment_file_ids:ids},{timeout:45000,timeoutMessage:'Pengumpulan masih diproses. Jangan kirim ulang; buka kembali tugas beberapa saat lagi.'});
+    invalidateAcademicClientCache(item.class_id);if(item.submission)Object.assign(item.submission,result?.submission||{});else item.submission=result?.submission||item.submission;item.submission_status=result?.submission?.status||'SUBMITTED';toast('Tugas berhasil dikumpulkan.');closeModal();if(typeof options.onSuccess==='function')options.onSuccess();else loadAcademicHub(true);
+  }catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}
 }
 
 function taskStatus(item) {

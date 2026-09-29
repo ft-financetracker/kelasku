@@ -108,7 +108,8 @@ export function api(action, payload = {}, options = {}) {
     };
 
     const timer = setTimeout(() => {
-      finish(reject, new Error('Respons server belum kembali. Jika ini pendaftaran, data mungkin sudah tersimpan — coba Masuk dengan username yang sama.'));
+      const message = options.timeoutMessage || 'Server membutuhkan waktu lebih lama dari biasanya. Proses mungkin masih berjalan; jangan kirim ulang sebelum statusnya diperiksa.';
+      finish(reject, new Error(message));
     }, timeoutMs);
 
     window.addEventListener('message', onMessage);

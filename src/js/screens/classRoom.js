@@ -1,6 +1,6 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast, sameData, primaryUrl } from '../core/utils.js';
+import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
@@ -155,8 +155,8 @@ function drawClass(data, preserveTab = true) {
   document.getElementById('class-room-slot').innerHTML = `
     <section class="class-hero class-hero-v51 class-hero-v6720 class-hero-v6725 panel">
       <picture class="class-hero-bg-v6725" aria-hidden="true">
-        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6733'))}">
-        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6733'))}" alt="" loading="eager" decoding="async">
+        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6734'))}">
+        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6734'))}" alt="" loading="eager" decoding="async">
       </picture>
       <div class="class-hero-shade-v6725" aria-hidden="true"></div>
       <div class="class-hero-main class-hero-copy-v6725 class-hero-copy-v6728">
@@ -561,9 +561,9 @@ function tasksRoom(items,p) {
 }
 
 function materialsRoom(items,p) {
-  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Materi Kelas</div><p class="panel-copy">Materi, link, dan beberapa lampiran gambar dalam satu item.</p></div>${p.can_publish?roomCreateButton('create-material','Tambah Materi'):''}</div><div class="academic-compact-list">${items.length?items.map(x=>`<article class="academic-compact-row"><button type="button" class="academic-compact-main" data-material-detail="${esc(x.material_id)}"><span class="academic-type-icon"><span class="material-symbols-rounded">${(x.attachments||[]).length?'collections_bookmark':(x.material_type==='LINK'||x.material_type==='DRIVE_LINK')?'link':'description'}</span></span><span class="academic-compact-copy"><span class="academic-meta-line"><span>${esc(shortDate(x.published_at))}</span>${x.topic?`<span>${esc(x.topic)}</span>`:''}${x.meeting_no?`<span>Pertemuan ${esc(x.meeting_no)}</span>`:''}${(x.attachments||[]).length?`<span class="soft-chip">${(x.attachments||[]).length} lampiran</span>`:''}</span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.description||'Klik untuk membuka materi.',145))}</small></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${p.can_publish?`<div class="academic-row-actions compact-actions">${archiveButton('MATERIAL',x.material_id,'Hapus')}</div>`:''}</article>`).join(''):'<div class="search-empty">Belum ada materi.</div>'}</div></section>`;
+  const cards=items.length?items.map(x=>{const attachments=x.attachments||[];const images=attachments.filter(a=>String(a.mime_type||'').startsWith('image/')).length;const docs=attachments.length-images;return `<article class="room-material-card"><button type="button" class="room-material-main" data-material-detail="${esc(x.material_id)}"><span class="room-material-icon material-symbols-rounded">${attachments.length?'collections_bookmark':(x.material_type==='LINK'||x.material_type==='DRIVE_LINK')?'link':'description'}</span><span class="room-material-copy"><span class="academic-meta-line"><span>${esc(shortDate(x.published_at))}</span>${x.meeting_no?`<span>Pertemuan ${esc(x.meeting_no)}</span>`:''}</span><strong>${esc(x.title)}</strong><small>${esc(excerpt(x.description||'Klik untuk membuka materi.',120))}</small><span class="room-material-kpis">${images?`<i>${images} gambar</i>`:''}${docs?`<i>${docs} file</i>`:''}${x.url?'<i>1 link</i>':''}</span></span><span class="material-symbols-rounded row-chevron">chevron_right</span></button>${p.can_publish?`<div class="academic-row-actions compact-actions">${archiveButton('MATERIAL',x.material_id,'Hapus')}</div>`:''}</article>`;}).join(''):'<div class="search-empty">Belum ada materi.</div>';
+  return `<section class="panel class-academic-panel"><div class="panel-head"><div><div class="panel-title">Materi Kelas</div><p class="panel-copy">Materi ditampilkan ringkas; gambar dan dokumen dibuka sebagai preview di KelasKu.</p></div>${p.can_publish?roomCreateButton('create-material','Tambah Materi'):''}</div><div class="room-material-grid">${cards}</div></section>`;
 }
-
 function roomAttendanceState(item,managerMode=false){
   const status=String(item?.my_status||'UNMARKED').toUpperCase(),windowKey=String(item?.window_status||'').toUpperCase();
   if(managerMode){
@@ -667,14 +667,26 @@ function referenceUrlsFromForm(form){return String(form?.reference_urls?.value||
 function openCreateAnnouncement(){
   showModal(`<div class="modal-head"><div><div class="eyebrow">Pengumuman</div><h2>Buat Pengumuman</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="announcement-create-form"><div class="form-grid"><div class="field"><label>Judul</label><input name="title" class="control" required minlength="3"></div><div class="field"><label>Prioritas</label><select name="priority" class="control"><option value="NORMAL">Normal</option><option value="HIGH">High</option><option value="URGENT">Urgent</option><option value="LOW">Low</option></select></div></div><div class="field"><label>Isi</label><textarea name="body" class="control" rows="4" required></textarea></div><div class="field"><label>Link / Video</label><textarea name="reference_urls" class="control" rows="2" placeholder="Satu link per baris: YouTube, Drive, website, dll"></textarea></div>${attachmentPickerHtml('announcement-files','Foto / Video / PDF / File')} ${formFooter('Publikasikan')}</form>`);
   bindAttachmentPicker('announcement-files');
-  const form=document.getElementById('announcement-create-form');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{const files=getAttachmentQueue('announcement-files');const fileIds=await uploadAcademicFiles(files,'ANNOUNCEMENT',status);const payload=Object.fromEntries(new FormData(form));payload.class_id=state.selectedClassId;payload.attachment_file_ids=fileIds;payload.reference_urls=referenceUrlsFromForm(form);await api('createAnnouncement',payload);closeModal();toast('Pengumuman dipublikasikan.');await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}};
+  const form=document.getElementById('announcement-create-form');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';try{const files=getAttachmentQueue('announcement-files');const fileIds=await uploadAcademicFiles(files,'ANNOUNCEMENT',status);const payload=Object.fromEntries(new FormData(form));payload.class_id=state.selectedClassId;payload.attachment_file_ids=fileIds;payload.reference_urls=referenceUrlsFromForm(form);const result=await api('createAnnouncement',payload,{timeout:30000,timeoutMessage:'Pengumuman masih diproses. Jangan kirim ulang; cek daftar Pengumuman beberapa saat lagi.'});mergeAcademicMutation('announcements',result);closeModal();toast('Pengumuman dipublikasikan.');refreshAcademicSilently();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}};
 }
-function attachmentListHtml(items=[]){if(!items.length)return '';return `<div class="material-download-section"><strong>Lampiran (${items.length})</strong><div class="material-download-list">${items.map((a,i)=>`<a class="material-download-row" href="${esc(a.download_url||a.url||'#')}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-rounded">${a.type==='LINK'?'link':String(a.mime_type||'').startsWith('image/')?'image':'description'}</span><span><strong>${esc(a.filename||`Lampiran ${i+1}`)}</strong><small>${a.type==='LINK'?'Buka tautan':'Buka / download file'}</small></span><span class="material-symbols-rounded">open_in_new</span></a>`).join('')}</div></div>`;}
+function attachmentIconName(a){const mime=String(a?.mime_type||'');if(a?.type==='LINK')return'link';if(mime.startsWith('image/'))return'image';if(mime.startsWith('video/'))return'movie';if(mime.includes('spreadsheet')||mime.includes('excel'))return'table_view';if(mime.includes('pdf'))return'picture_as_pdf';return'description';}
+function attachmentListHtml(items=[]){if(!items.length)return '';return `<div class="material-download-section"><strong>Lampiran (${items.length})</strong><div class="material-download-list">${items.map((a,i)=>`<button type="button" class="material-download-row" data-preview-academic-file data-preview-url="${esc(a.preview_url||a.url||'')}" data-download-url="${esc(a.download_url||a.url||'')}" data-mime="${esc(a.mime_type||'')}" data-filename="${esc(a.filename||`Lampiran ${i+1}`)}" data-file-type="${esc(a.type||'FILE')}"><span class="material-symbols-rounded">${attachmentIconName(a)}</span><span><strong>${esc(a.filename||`Lampiran ${i+1}`)}</strong><small>${a.type==='LINK'?'Buka tautan':'Preview di KelasKu'}</small></span><span class="material-symbols-rounded">visibility</span></button>`).join('')}</div></div>`;}
+function bindAcademicFilePreview(root=document){root.querySelectorAll?.('[data-preview-academic-file]').forEach(btn=>btn.onclick=()=>openAcademicFilePreview({preview_url:btn.dataset.previewUrl,download_url:btn.dataset.downloadUrl,mime_type:btn.dataset.mime,filename:btn.dataset.filename,type:btn.dataset.fileType}));}
+function openAcademicFilePreview(file){
+  if(String(file?.type||'').toUpperCase()==='LINK'){openExternal(file.preview_url||file.download_url);return;}
+  document.getElementById('academic-file-preview-overlay')?.remove();
+  const overlay=document.createElement('div');overlay.id='academic-file-preview-overlay';overlay.className='overlay academic-file-preview-overlay';
+  const mime=String(file?.mime_type||'');const url=file?.preview_url||file?.download_url||'';const name=file?.filename||'Lampiran';
+  const viewer=mime.startsWith('image/')?`<div class="academic-image-viewer"><img src="${esc(url)}" alt="${esc(name)}"></div>`:mime.startsWith('video/')?`<video class="academic-video-viewer" controls src="${esc(url)}"></video>`:`<iframe class="academic-doc-viewer" src="${esc(url)}" title="${esc(name)}" loading="lazy"></iframe>`;
+  overlay.innerHTML=`<div class="modal glass academic-file-preview-card"><div class="modal-head"><div><div class="eyebrow">PREVIEW LAMPIRAN</div><h2>${esc(name)}</h2></div><button class="icon-btn mini" data-file-preview-close>${svg('i-close')}</button></div>${viewer}<div class="modal-actions"><a class="btn btn-secondary" href="${esc(file.download_url||url)}" target="_blank" rel="noopener noreferrer">${svg('i-download')} Download</a></div></div>`;
+  document.body.appendChild(overlay);overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};overlay.querySelector('[data-file-preview-close]')?.addEventListener('click',()=>overlay.remove());
+}
+
 function openAnnouncementDetail(id,data){
   const x=(data.announcements||[]).find(v=>String(v.announcement_id)===String(id));if(!x)return;
   const can=data.permissions?.can_publish;
   showModal(`<div class="modal-head announcement-detail-head"><div><div class="eyebrow">PENGUMUMAN • ${esc(shortDateTime(x.published_at))}</div><div class="modal-title-badge"><h2>${esc(x.title)}</h2><span class="status-badge status-${String(x.priority||'normal').toLowerCase()}">${esc(x.priority||'NORMAL')}</span></div></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>${x.updated_at&&x.updated_at!==x.published_at?'<div class="detail-badge-row"><span class="soft-chip">Diperbarui</span></div>':''}<div class="academic-detail-body">${nl2br(x.body||'')}</div>${attachmentListHtml(x.attachments||[])}${can?`<div class="modal-actions"><button type="button" id="detail-edit-announcement" class="btn btn-secondary"><span class="material-symbols-rounded">edit</span> Edit</button><button type="button" id="detail-delete-announcement" class="btn btn-danger">${svg('i-close')} Hapus</button></div>`:''}`);
-  document.getElementById('detail-edit-announcement')?.addEventListener('click',()=>openEditAnnouncement(id,data));
+  bindAcademicFilePreview(document.getElementById('phase-modal')||document);document.getElementById('detail-edit-announcement')?.addEventListener('click',()=>openEditAnnouncement(id,data));
   document.getElementById('detail-delete-announcement')?.addEventListener('click',async()=>{closeModal();const btn=document.querySelector(`[data-archive-id="${CSS.escape(id)}"]`);await archiveItem('ANNOUNCEMENT',id,btn);});
 }
 function openEditAnnouncement(id,data){
@@ -767,7 +779,7 @@ function openDeleteScheduleSession(id,data){
 
 function openCreateTask(){
   showModal(`<div class="modal-head"><div><div class="eyebrow">Tugas</div><h2>Buat Tugas</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><form id="task-create-form"><div class="form-grid"><div class="field"><label>Judul</label><input name="title" class="control" required minlength="3"></div><div class="field"><label>Deadline</label><input name="deadline" type="datetime-local" class="control"></div></div><div class="field"><label>Instruksi</label><textarea name="description" class="control" rows="3"></textarea></div><div class="form-grid"><div class="field"><label>Mode Pengumpulan</label><select name="submission_mode" class="control"><option value="TEXT_LINK">Teks atau Link</option><option value="TEXT">Teks</option><option value="LINK">Link</option><option value="NONE">Tidak melalui KelasKu</option></select></div><div class="field"><label>Nilai Maksimum</label><input name="max_score" type="number" min="0" max="1000" value="100" class="control"></div></div><div class="field"><label>Link pendukung</label><textarea name="reference_urls" class="control" rows="2" placeholder="Satu link per baris"></textarea></div>${attachmentPickerHtml('task-files','Lampiran tugas (foto / video / PDF / file)')}<label class="setting-card compact-setting"><span class="setting-card-copy"><strong>Izinkan terlambat</strong><small>Status pengumpulan akan ditandai terlambat.</small></span><span class="switch"><input name="allow_late" type="checkbox" checked><span></span></span></label>${formFooter('Terbitkan Tugas')}</form>`);
-  bindAttachmentPicker('task-files');const form=document.getElementById('task-create-form');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;try{const fileIds=await uploadAcademicFiles(getAttachmentQueue('task-files'),'TASK',status);const payload=Object.fromEntries(new FormData(form));payload.class_id=state.selectedClassId;payload.allow_late=form.allow_late.checked;payload.attachment_file_ids=fileIds;payload.reference_urls=referenceUrlsFromForm(form);if(payload.deadline)payload.deadline=new Date(payload.deadline).toISOString();await api('createTask',payload);closeModal();toast('Tugas diterbitkan.');await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}};
+  bindAttachmentPicker('task-files');const form=document.getElementById('task-create-form');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;try{const fileIds=await uploadAcademicFiles(getAttachmentQueue('task-files'),'TASK',status);const payload=Object.fromEntries(new FormData(form));payload.class_id=state.selectedClassId;payload.allow_late=form.allow_late.checked;payload.attachment_file_ids=fileIds;payload.reference_urls=referenceUrlsFromForm(form);if(payload.deadline)payload.deadline=new Date(payload.deadline).toISOString();const result=await api('createTask',payload,{timeout:30000,timeoutMessage:'Tugas masih diproses. Jangan kirim ulang; cek daftar Tugas beberapa saat lagi.'});mergeAcademicMutation('tasks',result);closeModal();toast('Tugas diterbitkan.');refreshAcademicSilently();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}};
 }
 
 function openCreateMaterial(){
@@ -776,12 +788,12 @@ function openCreateMaterial(){
   bindMaterialCreateForm();
 }
 async function bindMaterialCreateForm(){
-  const form=document.getElementById('material-create-form');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status');if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mengupload…</span>';status.className='request-status progress';status.textContent='Menyiapkan lampiran…';try{const files=getAttachmentQueue('material-files'),fileIds=await uploadAcademicFiles(files,'MATERIAL',status);status.textContent='Lampiran selesai. Menyimpan materi…';const payload=Object.fromEntries(new FormData(form));payload.class_id=state.selectedClassId;payload.attachment_file_ids=fileIds;payload.reference_urls=referenceUrlsFromForm(form);await api('createMaterial',payload);closeModal();toast(`Materi tersimpan${fileIds.length?` dengan ${fileIds.length} file`:''}.`);await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML='Terbitkan Materi';}};
+  const form=document.getElementById('material-create-form');form.onsubmit=async e=>{e.preventDefault();const btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status');if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mengupload…</span>';status.className='request-status progress';status.textContent='Menyiapkan lampiran…';try{const files=getAttachmentQueue('material-files'),fileIds=await uploadAcademicFiles(files,'MATERIAL',status);status.textContent='Lampiran selesai. Menyimpan materi…';const payload=Object.fromEntries(new FormData(form));payload.class_id=state.selectedClassId;payload.attachment_file_ids=fileIds;payload.reference_urls=referenceUrlsFromForm(form);const result=await api('createMaterial',payload,{timeout:30000,timeoutMessage:'Materi masih diproses. Jangan kirim ulang; cek daftar Materi beberapa saat lagi.'});mergeAcademicMutation('materials',result);closeModal();toast(`Materi tersimpan${fileIds.length?` dengan ${fileIds.length} file`:''}.`);refreshAcademicSilently();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML='Terbitkan Materi';}};
 }
 function openMaterialDetail(id,data){
   const x=(data.materials||[]).find(v=>String(v.material_id)===String(id));if(!x)return;const attachments=x.attachments||[];
-  showModal(`<div class="modal-head"><div><div class="eyebrow">MATERI • ${esc(shortDate(x.published_at))}</div><h2>${esc(x.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="detail-badge-row">${x.topic?`<span class="soft-chip">${esc(x.topic)}</span>`:''}${x.meeting_no?`<span class="soft-chip">Pertemuan ${esc(x.meeting_no)}</span>`:''}</div>${x.description?`<div class="academic-detail-body">${nl2br(x.description)}</div>`:''}${x.url?`<button type="button" id="material-detail-url" class="btn btn-secondary btn-block">${svg('i-link')} Buka Tautan Materi</button>`:''}${attachments.length?`<div class="material-download-section"><strong>Lampiran (${attachments.length})</strong><div class="material-download-list">${attachments.map((a,i)=>`<a class="material-download-row" href="${esc(a.download_url||a.url||'#')}" target="_blank" rel="noopener noreferrer" download><span class="material-symbols-rounded">${a.type==='LINK'?'link':String(a.mime_type||'').startsWith('image/')?'image':String(a.mime_type||'').startsWith('video/')?'movie':'description'}</span><span><strong>${esc(a.filename||`Lampiran ${i+1}`)}</strong><small>${a.type==='LINK'?'Buka tautan':'Buka / download lampiran'}</small></span><span class="material-symbols-rounded">download</span></a>`).join('')}</div></div>`:''}`);
-  document.getElementById('material-detail-url')?.addEventListener('click',()=>openExternal(x.url));
+  showModal(`<div class="modal-head"><div><div class="eyebrow">MATERI • ${esc(shortDate(x.published_at))}</div><h2>${esc(x.title)}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="detail-badge-row">${x.topic?`<span class="soft-chip">${esc(x.topic)}</span>`:''}${x.meeting_no?`<span class="soft-chip">Pertemuan ${esc(x.meeting_no)}</span>`:''}</div>${x.description?`<div class="academic-detail-body">${nl2br(x.description)}</div>`:''}${x.url?`<button type="button" id="material-detail-url" class="btn btn-secondary btn-block">${svg('i-link')} Buka Tautan Materi</button>`:''}${attachmentListHtml(attachments)}`);
+  document.getElementById('material-detail-url')?.addEventListener('click',()=>openExternal(x.url));bindAcademicFilePreview(document.getElementById('phase-modal')||document);
 }
 
 function openCreateAttendance(){
@@ -794,17 +806,81 @@ function openCreateAttendance(){
 
 function formFooter(label){return `<div id="academic-form-status" class="request-status"></div><button id="academic-form-submit" class="btn btn-primary btn-block" type="submit">${esc(label)}</button>`;}
 function bindCreateForm(action){
-  document.getElementById('academic-create-form').onsubmit=async e=>{
+  const formNode=document.getElementById('academic-create-form');
+  if(!formNode)return;
+  const requestKey=randomId(action==='createSchedule'?'SCH':'ACA',24);
+  formNode.onsubmit=async e=>{
     e.preventDefault(); const form=e.currentTarget,btn=document.getElementById('academic-form-submit'),status=document.getElementById('academic-form-status'),old=btn.innerHTML;
     if(btn.disabled)return;
-    btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan dalam satu proses… Jangan klik dua kali.';
+    btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';
+    status.className='request-status progress';
+    status.textContent=action==='createSchedule'?'Membuat jadwal dan sesi absensi dalam satu proses…':'Menyimpan…';
     const payload=Object.fromEntries(new FormData(form)); payload.class_id=state.selectedClassId;
     if(form.allow_late) payload.allow_late=form.allow_late.checked;
-    if(action==='createSchedule'){payload.attendance_channels=[...form.querySelectorAll('[name="attendance_channel"]:checked')].map(x=>x.value);payload.attendance_lateness_enabled=form.attendance_lateness_enabled?.checked===true;payload.attendance_sick_enabled=form.attendance_sick_enabled?.checked===true;payload.attendance_permit_enabled=form.attendance_permit_enabled?.checked===true;}
-    if(action==='createAttendanceSession'){payload.attendance_channels=[...form.querySelectorAll('[name="attendance_channel"]:checked')].map(x=>x.value);payload.lateness_enabled=form.lateness_enabled?.checked===true;payload.sick_enabled=form.sick_enabled?.checked===true;payload.permit_enabled=form.permit_enabled?.checked===true;payload.self_checkin_enabled=payload.entry_mode!=='MANUAL';}
+    if(action==='createSchedule'){
+      payload.client_request_key=requestKey;
+      payload.attendance_channels=[...form.querySelectorAll('[name="attendance_channel"]:checked')].map(x=>x.value);
+      payload.attendance_lateness_enabled=form.attendance_lateness_enabled?.checked===true;
+      payload.attendance_sick_enabled=form.attendance_sick_enabled?.checked===true;
+      payload.attendance_permit_enabled=form.attendance_permit_enabled?.checked===true;
+    }
+    if(action==='createAttendanceSession'){
+      payload.attendance_channels=[...form.querySelectorAll('[name="attendance_channel"]:checked')].map(x=>x.value);
+      payload.lateness_enabled=form.lateness_enabled?.checked===true;payload.sick_enabled=form.sick_enabled?.checked===true;payload.permit_enabled=form.permit_enabled?.checked===true;payload.self_checkin_enabled=payload.entry_mode!=='MANUAL';
+    }
     ['start_at','end_at','deadline'].forEach(key=>{ if(payload[key]){const parsed=new Date(payload[key]);if(Number.isFinite(parsed.getTime()))payload[key]=parsed.toISOString();} });
-    try{const result=await api(action,payload,{onSlow:()=>status.textContent='Server masih memproses. Tombol tetap dikunci sampai selesai.'});closeModal();toast('Data berhasil disimpan.');await refreshAcademicAfterMutation();if(action==='createSchedule'&&result?.attendance?.public_token)toast('Jadwal + sesi absensi otomatis berhasil dibuat.');}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}
+    try{
+      const result=await api(action,payload,{
+        timeout:action==='createSchedule'?90000:30000,
+        timeoutMessage:action==='createSchedule'?'Jadwal masih diproses server. Jangan klik Simpan lagi; tutup dialog lalu cek menu Jadwal beberapa saat lagi.':'Data masih diproses. Jangan kirim ulang; cek daftar beberapa saat lagi.',
+        onSlow:()=>status.textContent=action==='createSchedule'?'Sedang membuat seluruh jadwal + absensi. Untuk seri banyak, proses dapat memerlukan beberapa detik…':'Server masih memproses…'
+      });
+      if(result?.processing){status.className='request-status progress';status.textContent='Jadwal sedang diproses. Jangan kirim ulang.';setTimeout(()=>{closeModal();refreshAcademicSilently();toast('Jadwal sedang diproses dan akan muncul otomatis.');},800);return;}
+      if(action==='createSchedule'){
+        mergeAcademicMutation('schedule',result);
+        closeModal();
+        toast(`${Number(result?.created_count||1)} jadwal${Number(result?.attendance_created_count||0)?` + ${Number(result.attendance_created_count)} sesi absensi`:''} berhasil dibuat.`);
+        refreshAcademicSilently();
+      } else if(action==='createAttendanceSession') {
+        mergeAcademicMutation('attendance',result);
+        closeModal();toast('Sesi absensi berhasil dibuat.');refreshAcademicSilently();
+      } else {
+        closeModal();toast('Data berhasil disimpan.');refreshAcademicSilently();
+      }
+    }catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}
   };
+}
+
+function mergeAcademicMutation(kind, result, classId = String(state.selectedClassId || '')) {
+  const data = state.classAcademic?.[classId];
+  if (!data || !result) return;
+  const cfg = {
+    schedule:['schedules','schedule_id'], announcements:['announcements','announcement_id'],
+    tasks:['tasks','task_id'], materials:['materials','material_id'], attendance:['attendance_sessions','attendance_id']
+  }[kind];
+  if (!cfg) return;
+  const [key,idKey]=cfg;
+  const incoming = (result.items || (result.item ? [result.item] : [])).filter(Boolean);
+  if (!incoming.length) return;
+  const ids = new Set(incoming.map(x=>String(x[idKey]||'')));
+  data[key] = [...incoming, ...(data[key]||[]).filter(x=>!ids.has(String(x[idKey]||'')))];
+  if (kind === 'schedule' && Array.isArray(result.attendance_items) && result.attendance_items.length) {
+    const attIds = new Set(result.attendance_items.map(x=>String(x.attendance_id||'')));
+    data.attendance_sessions = [...result.attendance_items, ...(data.attendance_sessions||[]).filter(x=>!attIds.has(String(x.attendance_id||'')))];
+  }
+  state.classAcademicAt[classId]=Date.now();
+  try {
+    localStorage.setItem('kelasku_class_academic_cache',JSON.stringify(state.classAcademic));
+    localStorage.setItem('kelasku_class_academic_cache_at',JSON.stringify(state.classAcademicAt));
+  } catch {}
+  if (String(state.selectedClassId)===classId && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab)) drawAcademicTab(activeTab,data);
+  invalidateAcademicClientCache(classId);
+}
+
+function refreshAcademicSilently(classId=String(state.selectedClassId||'')){
+  markClassCacheStale('classAcademicAt','kelasku_class_academic_cache_at',classId);
+  state.classAnalyticsAt[classId]=0;
+  setTimeout(()=>loadClassAcademic(true,true).catch(()=>{}),60);
 }
 
 async function refreshAcademicAfterMutation(){invalidateAcademicClientCache(state.selectedClassId);markClassCacheStale('classAcademicAt','kelasku_class_academic_cache_at',state.selectedClassId);state.classAnalyticsAt[state.selectedClassId]=0;await loadClassAcademic(false,true);}
@@ -1061,7 +1137,13 @@ async function openTaskReview(taskId){
 }
 function taskReviewHtml(data){const s=data.summary||{},task=data.task||{},items=data.items||[];return `<div class="review-summary-grid"><div><strong>${Number(s.submitted||0)}</strong><span>Dikumpulkan</span></div><div><strong>${Number(s.reviewed||0)}</strong><span>Dinilai</span></div><div><strong>${Number(s.needs_revision||0)}</strong><span>Revisi</span></div><div><strong>${Number(s.pending||0)}</strong><span>Menunggu</span></div></div><div class="review-toolbar"><small>Nilai maksimum ${Number(task.max_score||0)}</small><button type="button" class="btn btn-secondary small-btn" id="export-task-review">${svg('i-download')} Export XLSX</button></div><div class="task-review-list">${items.map(item=>{const sub=item.submission;return `<article class="task-review-row"><span class="member-avatar">${avatarMarkup(item)}</span><div class="task-review-main"><strong>${esc(item.full_name||item.username)}</strong><small>@${esc(item.username||'-')} · ${esc(item.submission_status)}</small>${sub?.review_status?`<span class="review-status-pill review-${String(sub.review_status).toLowerCase()}">${esc(sub.review_status)}</span>`:''}</div><div class="task-review-score">${sub&&sub.score!==''?`<strong>${esc(String(sub.score))}/${Number(task.max_score||0)}</strong>`:'<span>—</span>'}</div>${sub?`<button type="button" class="btn btn-secondary small-btn" data-review-submission="${esc(sub.submission_id)}">Review</button>`:'<span class="soft-chip">Belum kirim</span>'}</article>`;}).join('')}</div>`;}
 function bindTaskReview(data){document.querySelectorAll('[data-review-submission]').forEach(btn=>btn.onclick=()=>openSubmissionReview(data,btn.dataset.reviewSubmission));document.getElementById('export-task-review')?.addEventListener('click',()=>{const rows=[['Nama','Username','Status','Review','Nilai','Feedback','Submitted At']];(data.items||[]).forEach(i=>rows.push([i.full_name||'',i.username||'',i.submission_status||'',i.submission?.review_status||'',i.submission?.score??'',i.submission?.feedback||'',i.submission?.submitted_at||'']));downloadXlsx(`kelasku-tugas-${data.task?.task_id||'review'}.xlsx`,[{name:'Review Tugas',rows:rows.map((r,i)=>r.map(v=>i===0?xlsxCell(v,1):v))}]);});}
-function openSubmissionReview(data,submissionId){const item=(data.items||[]).find(x=>String(x.submission?.submission_id)===String(submissionId));if(!item)return;const sub=item.submission||{},max=Number(data.task?.max_score||0);showModal(`<div class="modal-head"><div><div class="eyebrow">REVIEW • ${esc(item.full_name||item.username)}</div><h2>${esc(data.task?.title||'Tugas')}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="submission-preview"><div><span>Status</span><strong>${esc(sub.status||'-')}</strong></div>${sub.submission_text?`<p>${esc(sub.submission_text)}</p>`:''}${sub.submission_image_url?`<button type="button" class="review-submission-image" id="review-open-image"><img src="${esc(sub.submission_image_url)}" alt="Lampiran tugas"><span>${svg('i-eye')} Buka gambar</span></button>`:''}${sub.submission_url?`<button type="button" class="btn btn-secondary small-btn" id="review-open-link">${svg('i-link')} Buka Link</button>`:''}</div><form id="submission-review-form"><div class="form-grid"><div class="field"><label>Nilai (0–${max})</label><input name="score" type="number" min="0" max="${max}" step="0.1" class="control" value="${sub.score!==''&&sub.score!==undefined?esc(String(sub.score)):''}"></div><div class="field"><label>Status Review</label><select name="review_status" class="control"><option value="REVIEWED" ${sub.review_status==='REVIEWED'?'selected':''}>Selesai Dinilai</option><option value="NEEDS_REVISION" ${sub.review_status==='NEEDS_REVISION'?'selected':''}>Perlu Revisi</option></select></div></div><div class="field"><label>Feedback</label><textarea name="feedback" rows="4" class="control" placeholder="Catatan untuk mahasiswa…">${esc(sub.feedback||'')}</textarea></div><div id="submission-review-status" class="request-status"></div><button id="submission-review-submit" class="btn btn-primary btn-block" type="submit">Simpan Review</button></form>`);document.getElementById('review-open-link')?.addEventListener('click',()=>openExternal(sub.submission_url));document.getElementById('review-open-image')?.addEventListener('click',()=>openExternal(sub.submission_image_url));document.getElementById('submission-review-form').onsubmit=e=>saveSubmissionReview(e,data,submissionId);}
+function openSubmissionReview(data,submissionId){
+  const item=(data.items||[]).find(x=>String(x.submission?.submission_id)===String(submissionId));if(!item)return;
+  const sub=item.submission||{},max=Number(data.task?.max_score||0);const attachments=sub.attachments||[];
+  const legacy=sub.submission_image_url&&!attachments.some(a=>String(a.file_id)===String(sub.submission_image_file_id))?[{type:'IMAGE',mime_type:'image/jpeg',filename:sub.submission_image_name||'Lampiran gambar',url:sub.submission_image_url,preview_url:sub.submission_image_url,download_url:sub.submission_image_url}]:[];
+  showModal(`<div class="modal-head"><div><div class="eyebrow">REVIEW • ${esc(item.full_name||item.username)}</div><h2>${esc(data.task?.title||'Tugas')}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="submission-preview"><div><span>Status</span><strong>${esc(sub.status||'-')}</strong></div>${sub.submission_text?`<p>${esc(sub.submission_text)}</p>`:''}${attachmentListHtml([...attachments,...legacy])}${sub.submission_url?`<button type="button" class="btn btn-secondary small-btn" id="review-open-link">${svg('i-link')} Buka Link</button>`:''}</div><form id="submission-review-form"><div class="form-grid"><div class="field"><label>Nilai (0–${max})</label><input name="score" type="number" min="0" max="${max}" step="0.1" class="control" value="${sub.score!==''&&sub.score!==undefined?esc(String(sub.score)):''}"></div><div class="field"><label>Status Review</label><select name="review_status" class="control"><option value="REVIEWED" ${sub.review_status==='REVIEWED'?'selected':''}>Selesai Dinilai</option><option value="NEEDS_REVISION" ${sub.review_status==='NEEDS_REVISION'?'selected':''}>Perlu Revisi</option></select></div></div><div class="field"><label>Feedback</label><textarea name="feedback" rows="4" class="control" placeholder="Catatan untuk mahasiswa…">${esc(sub.feedback||'')}</textarea></div><div id="submission-review-status" class="request-status"></div><button id="submission-review-submit" class="btn btn-primary btn-block" type="submit">Simpan Review</button></form>`);
+  document.getElementById('review-open-link')?.addEventListener('click',()=>openExternal(sub.submission_url));bindAcademicFilePreview(document.getElementById('phase-modal')||document);document.getElementById('submission-review-form').onsubmit=e=>saveSubmissionReview(e,data,submissionId);
+}
 async function saveSubmissionReview(event,data,submissionId){event.preventDefault();const form=event.currentTarget,btn=document.getElementById('submission-review-submit'),status=document.getElementById('submission-review-status'),old=btn.innerHTML;if(btn.disabled)return;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan nilai & feedback…';try{await api('reviewTaskSubmission',{submission_id:submissionId,score:form.score.value,feedback:form.feedback.value,review_status:form.review_status.value});delete state.taskReviewCache[data.task.task_id];toast('Review tugas tersimpan.');closeModal();openTaskReview(data.task.task_id);loadClassAcademic(true);}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
 function downloadCsv(filename,rows){const csv='\uFEFF'+rows.map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
@@ -1203,10 +1285,10 @@ const CLASS_ICON_PRESETS=Object.freeze([
   ['school','Kelas'],['language','Bahasa'],['menu_book','Buku'],['calculate','Ekonomi'],['science','Sains'],['computer','Teknologi'],['groups','Komunitas'],['account_balance','Institusi'],['psychology','Belajar'],['history_edu','Akademik'],['business_center','Bisnis'],['sports_soccer','Olahraga']
 ]);
 const LANDING_PRESET_ASSETS=Object.freeze({
-  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6733',mobile:'assets/public/hero-access.webp?v=6733'},
-  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6733',mobile:'assets/public/hero-links.webp?v=6733'},
-  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6733',mobile:'assets/public/hero-showcase.webp?v=6733'},
-  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6733',mobile:'assets/public/campus-landscape-mobile.png?v=6733'}
+  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6734',mobile:'assets/public/hero-access.webp?v=6734'},
+  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6734',mobile:'assets/public/hero-links.webp?v=6734'},
+  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6734',mobile:'assets/public/hero-showcase.webp?v=6734'},
+  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6734',mobile:'assets/public/campus-landscape-mobile.png?v=6734'}
 });
 const LANDING_SECTION_META=Object.freeze({
   access:{label:'Informasi Kelas',copy:'Header jadwal, presensi, tugas, dan informasi kelas.',slot:'LANDING_ACCESS'},
@@ -1286,8 +1368,8 @@ function classAppearanceUrl(data,slot,fallback=''){
   return saved || fallback;
 }
 function appearanceFallback(slot){
-  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6733';
-  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6733';
+  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6734';
+  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6734';
   return '';
 }
 function currentClassIcon(data){ return String(data?.class?.icon_key || data?.appearance?.icon_key || 'school').trim() || 'school'; }

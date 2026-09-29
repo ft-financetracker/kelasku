@@ -14,10 +14,10 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=6733',mobile:'assets/public/hero-access.webp?v=6733'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=6733',mobile:'assets/public/hero-links.webp?v=6733'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6733',mobile:'assets/public/hero-showcase.webp?v=6733'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6733',mobile:'assets/public/campus-landscape-mobile.png?v=6733'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6734',mobile:'assets/public/hero-access.webp?v=6734'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6734',mobile:'assets/public/hero-links.webp?v=6734'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6734',mobile:'assets/public/hero-showcase.webp?v=6734'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6734',mobile:'assets/public/campus-landscape-mobile.png?v=6734'}
 });
 
 const PLATFORM = {
@@ -53,6 +53,7 @@ function writePublicAppearanceCache(data){
 const fmtDate = value => { try { return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value)); } catch { return value || '-'; } };
 const isFuture = value => value && new Date(value).getTime() >= Date.now();
 const scheduleStillActive = x => { const end=x?.end_at?new Date(x.end_at).getTime():new Date(x?.start_at||0).getTime()+3*60*60*1000; return Number.isFinite(end)&&end>=Date.now(); };
+const scheduleWithinLandingWeek = x => { const start=new Date(x?.start_at||0).getTime(); const now=Date.now(); return Number.isFinite(start) && start <= now + 7*86400000; };
 const taskStillActive = x => !x?.deadline || new Date(x.deadline).getTime() >= Date.now();
 const byDate = key => (a,b) => new Date(a?.[key] || 8640000000000000) - new Date(b?.[key] || 8640000000000000);
 const schedulePhase = x => { const now=Date.now(),start=new Date(x?.start_at||0).getTime(),end=x?.end_at?new Date(x.end_at).getTime():start+3*60*60*1000; if(start<=now&&end>=now)return 'ONGOING'; if(end<now)return 'DONE'; return 'UPCOMING'; };
@@ -187,8 +188,8 @@ function publicHero(cls, appearance={}, memberData=null) {
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
   const remembered=readPublicAppearanceCache();
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6733';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6733';
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6734';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6734';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
@@ -219,8 +220,8 @@ function publicScheduleBlock(schedules=[], activeAttendance=null, {guest=false,c
   const activeScheduleId=String(activeAttendance?.source_schedule_id||'');
   const clean=schedules.filter(x=>!activeScheduleId || String(x.schedule_id)!==activeScheduleId);
   const first=clean.slice(0,4),extra=clean.slice(4);
-  const list=clean.length?`<div class="public-room-list">${renderPublicScheduleRows(first,{guest})}${extra.length?`<div class="public-schedule-extra" hidden>${renderPublicScheduleRows(extra,{guest})}</div>`:''}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">event_busy</span><span>Belum ada jadwal aktif atau mendatang.</span></div>`;
-  const controls=`<div class="public-schedule-controls">${extra.length?`<button type="button" class="public-schedule-toggle" data-public-schedule-expand><span class="material-symbols-rounded">unfold_more</span><span>Lihat semua jadwal</span></button><button type="button" class="public-schedule-toggle" data-public-schedule-collapse hidden><span class="material-symbols-rounded">unfold_less</span><span>Lipat jadwal</span></button>`:''}${guest?'':`<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Buka jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`}</div>`;
+  const list=clean.length?`<div class="public-room-list">${renderPublicScheduleRows(first,{guest})}${extra.length?`<div class="public-schedule-extra" hidden>${renderPublicScheduleRows(extra,{guest})}</div>`:''}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">event_busy</span><span>Belum ada jadwal dalam 7 hari ke depan.</span></div>`;
+  const controls=`<div class="public-schedule-controls">${extra.length?`<button type="button" class="public-schedule-toggle" data-public-schedule-expand><span class="material-symbols-rounded">unfold_more</span><span>Lihat jadwal pekan ini</span></button><button type="button" class="public-schedule-toggle" data-public-schedule-collapse hidden><span class="material-symbols-rounded">unfold_less</span><span>Lipat jadwal</span></button>`:''}${guest?'':`<a class="public-text-link" href="/ruang-kelas" data-open-class-tab="schedule" data-class-id="${esc(classId)}">Buka jadwal lengkap <span class="material-symbols-rounded">arrow_forward</span></a>`}</div>`;
   return `${list}${controls}`;
 }
 
@@ -236,7 +237,7 @@ function imageSectionHead(kind,kicker,title,copy='',extra='') {
 }
 
 function memberAcademicHub(academic={}, classId='') {
-  const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort);
+  const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
   const attendance=(academic.permissions?.is_participant===false?[]:(academic.attendance_sessions||[]))
     .filter(x=>String(x.my_status||'UNMARKED').toUpperCase()==='UNMARKED')
@@ -261,7 +262,7 @@ function academicLoading() {
 }
 
 function guestAcademicHub(loggedIn,academic={}) {
-  const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).sort(scheduleSort);
+  const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
   const activeAttendance=attendance[0];
   const activeBanner=activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> PRESENSI AKTIF</span><strong>${esc(activeAttendance.title||'Presensi Kelas')}</strong><small>Login sebagai anggota kelas untuk mengisi presensi.</small></div><button type="button" data-locked-action="Presensi" class="public-primary-action">Masuk untuk Presensi</button></div>`:'';

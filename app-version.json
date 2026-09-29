@@ -1,8 +1,8 @@
 {
-  "version": "6.7.33",
-  "build": "20260929.333",
+  "version": "6.7.34",
+  "build": "20260929.334",
   "schema": 17,
   "release_date": "2026-09-29",
-  "release_note": "Live polish: Hero Room/Landing memakai cache visual agar tidak kembali ke default saat masuk, gradient dipendekkan agar visual tetap terang, tombol Simpan Tampilan kembali ke alur normal, dan Landing publik tidak lagi mendaftarkan app shell PWA.",
-  "release_time_wib": "19:10 WIB"
+  "release_note": "Academic Live Stability: batch pembuatan jadwal+absensi, anti-duplikat request, feedback proses yang jelas, pagination akademik, Landing hanya 7 hari, preview file di aplikasi, dan multi-lampiran pengumpulan tugas.",
+  "release_time_wib": "19:30 WIB"
 }
