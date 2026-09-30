@@ -1,20 +1,5 @@
 [
   {
-    "version": "6.7.42",
-    "build": "20260930.342",
-    "date": "2026-09-30",
-    "title": "Academic Stability & Landing Flow Recovery",
-    "notes": [
-      "Cache payload akademik besar tidak lagi menjatuhkan getClassAcademic/getAcademicHub; payload besar tetap dikirim tanpa dipaksa masuk CacheService.",
-      "Landing mengenali status member segera setelah getClassDetail selesai dan tidak menunggu getClassAcademic untuk mengubah identitas/role.",
-      "Retry otomatis getClassAcademic dari Landing dihapus agar backend tidak menerima request berat ganda ketika sedang bermasalah.",
-      "Presensi Landing hanya menampilkan sesi OPEN/LATE yang belum diisi; sesi UPCOMING/CLOSED tidak memenuhi tab Presensi Landing.",
-      "Buka Landing dari Ringkasan memakai tab yang sama; deep-link kembali ke tab akademik mempertahankan tujuan walau cache Room Class tersedia.",
-      "Background warmup seluruh data akademik dari Ringkasan dihentikan; data akademik dimuat on-demand.",
-      "Schema tetap 17; data, permission, lifecycle notification, dan histori tidak diubah."
-    ]
-  },
-  {
     "version": "6.7.39",
     "build": "20260930.339",
     "date": "2026-09-30",

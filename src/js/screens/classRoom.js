@@ -94,7 +94,7 @@ export function renderClassRoom() {
   timelineCategory = 'ALL';
   activeTab = sessionStorage.getItem('kelasku_class_tab') || 'overview';
   sessionStorage.removeItem('kelasku_class_tab');
-  if (cached) drawClass(cached, true);
+  if (cached) drawClass(cached, false);
   loadClassDetail(Boolean(cached));
 }
 
@@ -155,8 +155,8 @@ function drawClass(data, preserveTab = true) {
   document.getElementById('class-room-slot').innerHTML = `
     <section class="class-hero class-hero-v51 class-hero-v6720 class-hero-v6725 panel">
       <picture class="class-hero-bg-v6725" aria-hidden="true">
-        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6742'))}">
-        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6742'))}" alt="" loading="eager" decoding="async">
+        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6739'))}">
+        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6739'))}" alt="" loading="eager" decoding="async">
       </picture>
       <div class="class-hero-shade-v6725" aria-hidden="true"></div>
       <div class="class-hero-main class-hero-copy-v6725 class-hero-copy-v6728">
@@ -192,7 +192,7 @@ function drawClass(data, preserveTab = true) {
   document.querySelectorAll('[data-copy]').forEach(btn => btn.onclick = () => copyText(btn.dataset.copy));
   bindRoomNavigation(data);
   switchTab(desiredTab, data);
-  // v6.7.42: Academic Hub tidak di-warmup dari Ringkasan; muat on-demand saat menu akademik dibuka.
+  scheduleClassWarmup(state.selectedClassId);
 }
 
 function roomMainButton(key,icon,label,count=0){
@@ -413,7 +413,7 @@ function overviewHtml(data) {
     ${p.can_manage_class?`<div class="panel wide-panel overview-manager-panel overview-setting-card"><div><div class="panel-title">Kelola Kelas</div><p class="panel-copy">Pengaturan dan pengelolaan anggota.</p></div><div class="page-actions"><button id="quick-settings" class="btn btn-primary">${svg('i-gear')} Pengaturan</button><button id="quick-members" class="btn btn-secondary">${svg('i-users')} Anggota</button></div></div>`:''}
 
     <div class="overview-link-strip" aria-label="Link kelas">
-      <button type="button" class="overview-link-action" id="overview-open-class-link" title="${esc(classUrl)}"><span class="material-symbols-rounded">arrow_forward</span><span><small>Link Kelas</small><strong>Buka Landing</strong></span></button>
+      <button type="button" class="overview-link-action" id="overview-open-class-link" title="${esc(classUrl)}"><span class="material-symbols-rounded">open_in_new</span><span><small>Link Kelas</small><strong>Buka Landing</strong></span></button>
       <button type="button" class="overview-link-copy" id="overview-copy-class-link" title="Salin link kelas">${svg('i-copy')}</button>
       <button type="button" class="overview-link-action" id="overview-copy-join-link" title="${esc(joinUrl)}"><span class="material-symbols-rounded">link</span><span><small>Link Bergabung</small><strong>Salin Link</strong></span></button>
     </div>
@@ -1350,10 +1350,10 @@ const CLASS_ICON_PRESETS=Object.freeze([
   ['school','Kelas'],['language','Bahasa'],['menu_book','Buku'],['calculate','Ekonomi'],['science','Sains'],['computer','Teknologi'],['groups','Komunitas'],['account_balance','Institusi'],['psychology','Belajar'],['history_edu','Akademik'],['business_center','Bisnis'],['sports_soccer','Olahraga']
 ]);
 const LANDING_PRESET_ASSETS=Object.freeze({
-  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6742',mobile:'assets/public/hero-access.webp?v=6742'},
-  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6742',mobile:'assets/public/hero-links.webp?v=6742'},
-  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6742',mobile:'assets/public/hero-showcase.webp?v=6742'},
-  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6742',mobile:'assets/public/campus-landscape-mobile.png?v=6742'}
+  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6739',mobile:'assets/public/hero-access.webp?v=6739'},
+  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6739',mobile:'assets/public/hero-links.webp?v=6739'},
+  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6739',mobile:'assets/public/hero-showcase.webp?v=6739'},
+  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6739',mobile:'assets/public/campus-landscape-mobile.png?v=6739'}
 });
 const LANDING_SECTION_META=Object.freeze({
   access:{label:'Informasi Kelas',copy:'Header jadwal, presensi, tugas, dan informasi kelas.',slot:'LANDING_ACCESS'},
@@ -1433,8 +1433,8 @@ function classAppearanceUrl(data,slot,fallback=''){
   return saved || fallback;
 }
 function appearanceFallback(slot){
-  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6742';
-  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6742';
+  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6739';
+  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6739';
   return '';
 }
 function currentClassIcon(data){ return String(data?.class?.icon_key || data?.appearance?.icon_key || 'school').trim() || 'school'; }
@@ -1667,7 +1667,7 @@ function bindTab(tab,data) {
     document.getElementById('overview-copy-class-code')?.addEventListener('click',()=>copyText(data.class?.class_code||''));
     document.getElementById('overview-copy-join-code')?.addEventListener('click',()=>copyText(data.class?.join_code||''));
     document.getElementById('overview-copy-class-link')?.addEventListener('click',()=>copyText(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
-    document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.location.assign(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||'')));
+    document.getElementById('overview-open-class-link')?.addEventListener('click',()=>window.open(publicClassLinksUrl(data.class?.class_code||'',data.class?.public_slug||''),'_blank','noopener,noreferrer'));
     document.getElementById('overview-copy-join-link')?.addEventListener('click',()=>copyText(joinClassUrl(data.class?.class_code||'',data.class?.public_slug||'')));
     document.getElementById('class-exit-action')?.addEventListener('click',()=>handleClassExit(data));
   }

@@ -1,8 +1,8 @@
 {
-  "version": "6.7.42",
-  "build": "20260930.342",
+  "version": "6.7.39",
+  "build": "20260930.339",
   "schema": 17,
   "release_date": "2026-09-30",
-  "release_note": "Perbaikan stabilitas akademik: payload besar tidak lagi menjatuhkan API; Landing mengenali member lebih cepat tanpa retry ganda; presensi Landing hanya sesi aktif; tab tujuan dipertahankan; Buka Landing tetap di tab yang sama.",
-  "release_time_wib": "10:10 WIB"
+  "release_note": "Landing Link Cepat mempertahankan 2 kategori per baris; submenu kini terbuka full-width sebagai row-list compact tanpa kolom kanan kosong atau card tinggi.",
+  "release_time_wib": "08:35 WIB"
 }

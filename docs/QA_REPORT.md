@@ -40,11 +40,3 @@ Notification Center dan browser notification berjalan ketika aplikasi/PWA aktif.
 ## v6.7.39
 - Landing Link Cepat: 2 kolom desktop/mobile, fixed-height category card, title max 2 lines.
 - Static delivery/cache metadata synchronized.
-
-
-## v6.7.42
-- Root cause Landing: hasil `getClassDetail` dapat sukses sementara `getClassAcademic` gagal/timeout; render lama tetap masuk mode member tetapi memakai object akademik kosong.
-- Fix: public academic preview dipertahankan sebagai fallback dan request member academic dicoba ulang satu kali.
-- Direct attendance check-in tidak dijalankan dari payload fallback publik.
-- Frontend JS syntax, JSON, version/cache-buster, dan Service Worker diverifikasi sebelum packaging.
-- Schema tetap 17.
