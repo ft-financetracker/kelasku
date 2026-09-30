@@ -1,5 +1,17 @@
 [
   {
+    "version": "6.7.38",
+    "build": "20260930.338",
+    "date": "2026-09-30",
+    "title": "Landing Link Cepat 2-Kolom",
+    "notes": [
+      "Kategori Link Cepat di Landing Page ditampilkan 2 card per baris pada desktop dan mobile.",
+      "Lebar kategori tetap seimbang 50:50; card tidak meninggi saat judul lebih panjang.",
+      "Judul kategori dibatasi maksimum 2 baris dan teks sekunder memakai ellipsis bila ruang sempit.",
+      "Desain, accordion, badge jumlah link, isi link, dan permission existing tidak diubah."
+    ]
+  },
+  {
     "version": "6.7.37",
     "build": "20260929.337",
     "date": "2026-09-29",

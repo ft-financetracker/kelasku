@@ -328,3 +328,72 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
   .public-hero-v6728 .public-hero-copy{width:72%!important;max-width:72%!important}
 }
 @media(max-width:430px){.public-hero-shade-v6725{width:86%!important}.public-hero-v6728 .public-hero-copy{width:76%!important;max-width:76%!important}}
+
+
+/* ============================================================
+   v6.7.38 — Landing Link Cepat: 2 kategori per baris
+   Layout-only: desain card, behavior accordion, dan tinggi card dipertahankan.
+   ============================================================ */
+.public-link-period-panel:not([hidden]){
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  align-items:start!important;
+}
+.public-link-period-panel>.public-link-group{
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  border-top:0!important;
+}
+.public-link-period-panel .public-group-hero{
+  width:100%!important;
+  height:62px!important;
+  min-height:62px!important;
+  max-height:62px!important;
+  overflow:hidden!important;
+}
+.public-link-period-panel .public-group-title{
+  min-width:0!important;
+  overflow:hidden!important;
+  align-content:center!important;
+}
+.public-link-period-panel .public-group-title .public-kicker{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  line-height:1.1!important;
+  max-height:2.2em!important;
+}
+.public-link-period-panel .public-group-title strong{
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.public-link-period-panel .public-group-count{
+  flex:0 0 auto!important;
+  white-space:nowrap!important;
+}
+@media(max-width:640px){
+  .public-link-period-panel:not([hidden]){gap:6px!important;}
+  .public-link-period-panel .public-group-hero{
+    height:56px!important;
+    min-height:56px!important;
+    max-height:56px!important;
+    padding:7px 8px!important;
+    gap:6px!important;
+  }
+  .public-link-period-panel .public-group-art{width:32px!important;height:32px!important;}
+  .public-link-period-panel .public-group-title .public-kicker{font-size:.68rem!important;letter-spacing:.06em!important;}
+  .public-link-period-panel .public-group-title strong{font-size:.66rem!important;}
+  .public-link-period-panel .public-group-count{padding:3px 5px!important;font-size:.60rem!important;letter-spacing:.04em!important;}
+}
+@media(max-width:390px){
+  .public-link-period-panel:not([hidden]){gap:5px!important;}
+  .public-link-period-panel .public-group-hero{grid-template-columns:30px minmax(0,1fr) auto!important;padding:6px!important;gap:5px!important;}
+  .public-link-period-panel .public-group-art{width:30px!important;height:30px!important;}
+  .public-link-period-panel .public-group-art .material-symbols-rounded{font-size:17px!important;}
+  .public-link-period-panel .public-group-count{font-size:.56rem!important;padding:3px 4px!important;}
+}

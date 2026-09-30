@@ -1,8 +1,8 @@
 {
-  "version": "6.7.37",
-  "build": "20260929.337",
+  "version": "6.7.38",
+  "build": "20260930.338",
   "schema": 17,
-  "release_date": "2026-09-29",
-  "release_note": "Pre-Live Notification & Schedule Polish: kalender mobile horizontal, agenda lebih ringkas, notifikasi siklus Jadwal/Absensi, dan delivery notifikasi sistem yang lebih konsisten.",
-  "release_time_wib": "22:05 WIB"
+  "release_date": "2026-09-30",
+  "release_note": "Landing Link Cepat kini memakai 2 card kategori per baris dengan lebar 50:50, tinggi card tetap, dan judul maksimum 2 baris tanpa mengubah behavior existing.",
+  "release_time_wib": "08:05 WIB"
 }

@@ -155,8 +155,8 @@ function drawClass(data, preserveTab = true) {
   document.getElementById('class-room-slot').innerHTML = `
     <section class="class-hero class-hero-v51 class-hero-v6720 class-hero-v6725 panel">
       <picture class="class-hero-bg-v6725" aria-hidden="true">
-        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6737'))}">
-        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6737'))}" alt="" loading="eager" decoding="async">
+        <source media="(max-width:720px)" srcset="${esc(classAppearanceUrl(data,'HERO_MOBILE','assets/classroom/hero-room-default-mobile.jpg?v=6738'))}">
+        <img src="${esc(classAppearanceUrl(data,'HERO_DESKTOP','assets/classroom/hero-room-default-desktop.jpg?v=6738'))}" alt="" loading="eager" decoding="async">
       </picture>
       <div class="class-hero-shade-v6725" aria-hidden="true"></div>
       <div class="class-hero-main class-hero-copy-v6725 class-hero-copy-v6728">
@@ -1350,10 +1350,10 @@ const CLASS_ICON_PRESETS=Object.freeze([
   ['school','Kelas'],['language','Bahasa'],['menu_book','Buku'],['calculate','Ekonomi'],['science','Sains'],['computer','Teknologi'],['groups','Komunitas'],['account_balance','Institusi'],['psychology','Belajar'],['history_edu','Akademik'],['business_center','Bisnis'],['sports_soccer','Olahraga']
 ]);
 const LANDING_PRESET_ASSETS=Object.freeze({
-  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6737',mobile:'assets/public/hero-access.webp?v=6737'},
-  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6737',mobile:'assets/public/hero-links.webp?v=6737'},
-  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6737',mobile:'assets/public/hero-showcase.webp?v=6737'},
-  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6737',mobile:'assets/public/campus-landscape-mobile.png?v=6737'}
+  ACCESS:{label:'Informasi / Akses Kelas',desktop:'assets/public/hero-access.webp?v=6738',mobile:'assets/public/hero-access.webp?v=6738'},
+  LINKS:{label:'Link Cepat',desktop:'assets/public/hero-links.webp?v=6738',mobile:'assets/public/hero-links.webp?v=6738'},
+  SHOWCASE:{label:'Kenal KelasKu',desktop:'assets/public/hero-showcase.webp?v=6738',mobile:'assets/public/hero-showcase.webp?v=6738'},
+  CAMPUS:{label:'Kampus / Lapangan',desktop:'assets/public/campus-landscape-desktop.png?v=6738',mobile:'assets/public/campus-landscape-mobile.png?v=6738'}
 });
 const LANDING_SECTION_META=Object.freeze({
   access:{label:'Informasi Kelas',copy:'Header jadwal, presensi, tugas, dan informasi kelas.',slot:'LANDING_ACCESS'},
@@ -1433,8 +1433,8 @@ function classAppearanceUrl(data,slot,fallback=''){
   return saved || fallback;
 }
 function appearanceFallback(slot){
-  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6737';
-  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6737';
+  if(slot==='HERO_DESKTOP')return 'assets/classroom/hero-room-default-desktop.jpg?v=6738';
+  if(slot==='HERO_MOBILE')return 'assets/classroom/hero-room-default-mobile.jpg?v=6738';
   return '';
 }
 function currentClassIcon(data){ return String(data?.class?.icon_key || data?.appearance?.icon_key || 'school').trim() || 'school'; }
