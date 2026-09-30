@@ -6,7 +6,7 @@ import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
 import { invalidateAcademicClientCache, openTaskModal } from './academic.js';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
-import { downloadXlsx, xlsxCell } from '../core/xlsx.js';
+import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
 let activeTab = 'overview';
 let timelineCategory = 'ALL';
@@ -31,6 +31,9 @@ const classDetailInFlight = new Map();
 const classAcademicInFlight = new Map();
 const classTimelineInFlight = new Map();
 const classAnalyticsInFlight = new Map();
+const classAnalyticsSummaryCache = new Map();
+const classAnalyticsSummaryAt = new Map();
+const classAnalyticsSummaryInFlight = new Map();
 let classWarmTimer = null;
 const classWarmAt = new Map();
 
@@ -67,7 +70,6 @@ function scheduleClassWarmup(classId) {
     await loadClassAcademic(true).catch(()=>{});
     if (String(state.selectedClassId) !== String(classId)) return;
     setTimeout(() => loadClassTimeline(true).catch(()=>{}), 220);
-    setTimeout(() => loadClassAnalytics(true).catch(()=>{}), 520);
   };
   if ('requestIdleCallback' in window) {
     window.requestIdleCallback(() => warm(), { timeout: 900 });
@@ -337,10 +339,11 @@ function switchTab(tab, data) {
   }
 
   if (tab === 'analytics') {
-    const cached = state.classAnalytics[state.selectedClassId];
-    if (cached) drawClassAnalytics(cached);
-    else slot.innerHTML = fastRoomLoader('Menyiapkan Analitik…');
-    loadClassAnalytics(Boolean(cached));
+    const classId=String(state.selectedClassId||'');
+    const cached=classAnalyticsSummaryCache.get(classId)||null;
+    if(cached) drawClassAnalyticsSummary(cached);
+    else slot.innerHTML = fastRoomLoader('Menyiapkan ringkasan Analitik…');
+    loadClassAnalyticsSummary(Boolean(cached));
     return;
   }
 
@@ -1041,6 +1044,78 @@ function attendanceRecordRow(r){const done=String(r.attendance_status||'UNMARKED
 async function saveAttendance(event,attendanceId){event.preventDefault();const btn=document.getElementById('attendance-save-btn'),status=document.getElementById('attendance-save-status'),old=btn.innerHTML;if(btn.disabled)return;const original=attendanceModalState?.data?.records||[];const draft=attendanceModalState?.draft||{};const records=original.map(row=>({user_id:row.user_id,attendance_status:draft[String(row.user_id)]?.attendance_status||row.attendance_status||'UNMARKED',note:draft[String(row.user_id)]?.note||''}));btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent=`Menyimpan ${records.length} anggota dalam satu request… Jangan klik dua kali.`;try{await api('saveAttendanceRecords',{attendance_id:attendanceId,records},{onSlow:()=>status.textContent='Masih menyimpan. Tombol tetap dikunci.'});toast('Absensi tersimpan.');attendanceModalState=null;closeModal();await refreshAcademicAfterMutation();}catch(err){status.className='request-status error';status.textContent=err.message;}finally{btn.disabled=false;btn.innerHTML=old;}}
 
 
+
+async function loadClassAnalyticsSummary(background=false,force=false){
+  const classId=String(state.selectedClassId||'');
+  const cached=classAnalyticsSummaryCache.get(classId)||null;
+  if(!force&&cached&&Date.now()-Number(classAnalyticsSummaryAt.get(classId)||0)<45000)return cached;
+  if(classAnalyticsSummaryInFlight.has(classId))return classAnalyticsSummaryInFlight.get(classId);
+  const request=(async()=>{
+    try{
+      const data=await api('getAttendanceAnalyticsSummary',{class_id:classId});
+      classAnalyticsSummaryCache.set(classId,data);
+      classAnalyticsSummaryAt.set(classId,Date.now());
+      if(String(state.selectedClassId)===classId&&activeTab==='analytics'&&!background)drawClassAnalyticsSummary(data);
+      if(String(state.selectedClassId)===classId&&activeTab==='analytics'&&background)drawClassAnalyticsSummary(data);
+      return data;
+    }catch(err){
+      if(!background&&!cached&&activeTab==='analytics'&&String(state.selectedClassId)===classId){
+        document.getElementById('room-content').innerHTML=`<div class="panel error-panel"><strong>Ringkasan Analitik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+      }
+      return cached||null;
+    }finally{classAnalyticsSummaryInFlight.delete(classId);}
+  })();
+  classAnalyticsSummaryInFlight.set(classId,request);
+  return request;
+}
+function analyticsRate_(counter={}){
+  const d=Number(counter.PRESENT||0)+Number(counter.SICK||0)+Number(counter.PERMIT||0)+Number(counter.ABSENT||0);
+  return d?Math.round((Number(counter.PRESENT||0)/d)*1000)/10:0;
+}
+function drawClassAnalyticsSummary(data){
+  const slot=document.getElementById('room-content');if(!slot)return;
+  const own=data.own||{},aggregate=data.aggregate||null;
+  const ownRate=Number(own.attendance_rate??analyticsRate_(own));
+  const classRate=aggregate?Number(aggregate.attendance_rate??analyticsRate_(aggregate)):null;
+  const primary=aggregate||own;
+  const statusItems=[
+    ['check_circle','Hadir',Number(primary.PRESENT||0),'present'],
+    ['healing','Sakit',Number(primary.SICK||0),'sick'],
+    ['event_available','Izin',Number(primary.PERMIT||0),'permit'],
+    ['cancel','Alpa',Number(primary.ABSENT||0),'absent'],
+    ['pending','Belum',Number(primary.UNMARKED||0),'unmarked']
+  ];
+  slot.innerHTML=`<section class="analytics-quick-shell">
+    <div class="analytics-quick-hero">
+      <div class="analytics-quick-copy">
+        <span class="analytics-quick-eyebrow">ANALITIK KELAS</span>
+        <h2>Ringkasan cepat</h2>
+        <p>Informasi inti dimuat lebih ringan. Detail lengkap hanya diambil saat dibutuhkan.</p>
+      </div>
+      <button type="button" id="open-analytics-detail" class="btn btn-primary analytics-detail-cta"><span class="material-symbols-rounded">insights</span> Buka Analitik Lengkap</button>
+    </div>
+    <div class="analytics-quick-kpis">
+      <article><span class="material-symbols-rounded">event_note</span><div><small>Total Sesi</small><strong>${Number(data.session_count||0)}</strong><em>jadwal presensi aktif</em></div></article>
+      <article><span class="material-symbols-rounded">groups</span><div><small>Peserta</small><strong>${Number(data.participant_count||0)}</strong><em>anggota peserta kelas</em></div></article>
+      <article><span class="material-symbols-rounded">how_to_reg</span><div><small>Kehadiran Saya</small><strong>${ownRate}%</strong><em>${Number(own.PRESENT||0)} hadir dari ${Number(own.total||0)} record</em></div></article>
+      <article><span class="material-symbols-rounded">monitoring</span><div><small>${aggregate?'Presensi Kelas':'Record Saya'}</small><strong>${aggregate?`${classRate}%`:Number(own.total||0)}</strong><em>${aggregate?'berdasarkan status yang sudah ditandai':'total record presensi'}</em></div></article>
+    </div>
+    <div class="analytics-quick-status-card">
+      <div class="analytics-quick-status-head"><div><strong>${aggregate?'Status Presensi Kelas':'Status Presensi Saya'}</strong><span>${aggregate?'Ringkasan seluruh peserta tanpa memuat detail 1 per 1.':'Ringkasan presensi akun Anda.'}</span></div><span class="analytics-quick-scope">${aggregate?'KELAS':'SAYA'}</span></div>
+      <div class="analytics-quick-status-grid">${statusItems.map(([icon,label,value,key])=>`<div class="analytics-status-item analytics-status-${key}"><span class="material-symbols-rounded">${icon}</span><div><small>${label}</small><strong>${value}</strong></div></div>`).join('')}</div>
+    </div>
+    <div class="analytics-quick-note"><span class="material-symbols-rounded">bolt</span><div><strong>Mode ringan aktif</strong><p>Daftar anggota, kegiatan, detail record, ranking, dan Export XLSX tidak dimuat di halaman ini. Semua tersedia di Analitik Lengkap.</p></div></div>
+  </section>`;
+  document.getElementById('open-analytics-detail')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('open-analytics-detail');
+    if(btn){btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Memuat detail…</span>';}
+    const cached=state.classAnalytics[String(state.selectedClassId||'')];
+    if(cached){drawClassAnalytics(cached);loadClassAnalytics(true).catch(()=>{});return;}
+    slot.innerHTML=fastRoomLoader('Memuat Analitik Lengkap…');
+    await loadClassAnalytics(false,true);
+  });
+}
+
 async function loadClassAnalytics(background=false,force=false){
   const classId=String(state.selectedClassId||'');
   const cached=state.classAnalytics[classId];
@@ -1083,12 +1158,13 @@ function drawClassAnalytics(data){
   else if(analyticsView==='members')body=`<div class="section-title-row"><div><h2>Ringkasan Anggota</h2><p>${members.length} anggota · Hadir ${Number(ag.PRESENT||0)} · Sakit ${Number(ag.SICK||0)} · Izin ${Number(ag.PERMIT||0)} · Alpa ${Number(ag.ABSENT||0)}</p></div></div><div class="analytics-table-wrap"><table class="analytics-table analytics-member-table"><thead><tr><th>No.</th><th>Anggota</th><th>Hadir</th><th>Sakit</th><th>Izin</th><th>Alpa</th><th>Belum</th><th>Total</th><th>% Presensi</th></tr></thead><tbody>${memberRows||'<tr><td colspan="9" class="table-empty">Belum ada anggota.</td></tr>'}</tbody></table></div>${memberPaginationHtml(analyticsMemberPage,memberTotalPages,members.length)}`;
   else if(analyticsView==='activities')body=`<div class="section-title-row"><div><h2>Rekap Kegiatan / Mata Kuliah</h2><p>${activitySummary.length} kegiatan. Klik 1 row mata pelajaran untuk melihat rekap peserta sesuai urutan Anggota Kelas.</p></div></div>${activitySummaryHtml(activitySummary,allRecords,activities,members)}`;
   else body=`<div class="analytics-activity-toolbar"><div><strong>Detail Record Presensi</strong><small>${data.can_manage?'Seluruh anggota sesuai filter kegiatan/sesi.':'Akun member hanya melihat data sendiri.'}</small></div><select id="analytics-activity-filter" class="control compact-control"><option value="ALL">Semua kegiatan / sesi</option>${activities.map(a=>`<option value="${esc(a.attendance_id)}" ${analyticsFilter===String(a.attendance_id)?'selected':''}>${esc(a.activity_name||a.session_title||'Absensi')}${a.session_no?` • Sesi ${String(a.session_no).padStart(2,'0')}`:''} • ${esc(shortDate(a.start_at))}</option>`).join('')}</select></div><div class="analytics-table-wrap"><table class="analytics-table analytics-activity-table"><thead><tr><th>No.</th>${data.can_manage?'<th>Anggota</th>':''}<th>Kegiatan / Sesi</th><th>Status</th><th>Catatan</th></tr></thead><tbody>${activityRows}</tbody></table></div>${paginationHtml(analyticsPage,totalPages,filtered.length)}`;
-  slot.innerHTML=`<section class="panel class-analytics-panel"><div class="panel-head"><div><div class="panel-title">Analitik Akademik</div><p class="panel-copy">Tampilan dipisah per bagian agar tidak ramai. Export menghasilkan workbook XLSX multi-sheet.</p></div><button type="button" id="export-attendance-xlsx" class="btn btn-secondary">${svg('i-download')} Export XLSX</button></div><div class="analytics-kpi-grid"><div><span>Sesi</span><strong>${Number(data.session_count||0)}</strong></div><div><span>Kehadiran Saya</span><strong>${Number(own.attendance_rate||0)}%</strong></div><div><span>Hadir</span><strong>${Number(own.PRESENT||0)}</strong></div><div><span>Alpa</span><strong>${Number(own.ABSENT||0)}</strong></div></div><nav class="analytics-view-tabs">${views.map(([key,icon,label])=>`<button type="button" class="analytics-view-tab ${analyticsView===key?'active':''}" data-analytics-view="${key}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="analytics-view-body">${body}</div></section>`;
+  slot.innerHTML=`<section class="panel class-analytics-panel analytics-detail-panel"><div class="analytics-detail-head"><button type="button" id="back-analytics-summary" class="btn btn-secondary analytics-back-btn"><span class="material-symbols-rounded">arrow_back</span> Ringkasan</button><div class="analytics-detail-title"><span>ANALITIK LENGKAP</span><strong>Analitik Akademik</strong><small>Data detail dimuat hanya pada halaman ini agar Ruang Kelas tetap ringan.</small></div><button type="button" id="export-attendance-xlsx" class="btn btn-secondary">${svg('i-download')} Export XLSX</button></div><div class="analytics-kpi-grid"><div><span>Sesi</span><strong>${Number(data.session_count||0)}</strong></div><div><span>Kehadiran Saya</span><strong>${Number(own.attendance_rate||0)}%</strong></div><div><span>Hadir</span><strong>${Number(own.PRESENT||0)}</strong></div><div><span>Alpa</span><strong>${Number(own.ABSENT||0)}</strong></div></div><nav class="analytics-view-tabs">${views.map(([key,icon,label])=>`<button type="button" class="analytics-view-tab ${analyticsView===key?'active':''}" data-analytics-view="${key}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="analytics-view-body">${body}</div></section>`;
   document.querySelectorAll('[data-analytics-view]').forEach(btn=>btn.onclick=()=>{analyticsView=btn.dataset.analyticsView||'overview';drawClassAnalytics(data);});
   document.getElementById('analytics-activity-filter')?.addEventListener('change',e=>{analyticsFilter=e.target.value;analyticsPage=1;drawClassAnalytics(data);});
   document.querySelectorAll('[data-analytics-page]').forEach(btn=>btn.onclick=()=>{analyticsPage=Number(btn.dataset.analyticsPage)||1;drawClassAnalytics(data);});
   document.querySelectorAll('[data-analytics-member-page]').forEach(btn=>btn.onclick=()=>{analyticsMemberPage=Number(btn.dataset.analyticsMemberPage)||1;drawClassAnalytics(data);});
   document.querySelectorAll('[data-activity-summary-row]').forEach(row=>row.onclick=()=>{const key=row.dataset.activitySummaryRow||'';analyticsActivityExpanded=analyticsActivityExpanded===key?'':key;drawClassAnalytics(data);});
+  document.getElementById('back-analytics-summary')?.addEventListener('click',()=>{const id=String(state.selectedClassId||'');const summary=classAnalyticsSummaryCache.get(id);if(summary)drawClassAnalyticsSummary(summary);else{document.getElementById('room-content').innerHTML=fastRoomLoader('Menyiapkan ringkasan Analitik…');loadClassAnalyticsSummary(false,true);}});
   document.getElementById('export-attendance-xlsx')?.addEventListener('click',()=>exportAttendanceXlsx(data));
 }
 function paginationHtml(page,totalPages,total){if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} record</span></div>`;const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-analytics-page="${i}" class="${i===page?'active':''}">${i}</button>`);return `<div class="table-pagination"><span>${total} record • Halaman ${page}/${totalPages}</span><div><button type="button" data-analytics-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-analytics-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
@@ -1147,12 +1223,12 @@ function analyticsSheetRows(title,records,members){
     [`${sessions.length} sesi rencana • ${memberSummary.length} mahasiswa • ${progressed.length} record berjalan • Presensi ${rate}%`],
     ['Kode: H-Z=Hadir Zoom | H-YT=Hadir YouTube | H-O=Hadir Offline | H=Hadir | S=Sakit | I=Izin | A=Alpa | -=Belum'],
     [],
-    [xlsxCell('Mata Kuliah / Kegiatan',5),xlsxCell('Nama',5),xlsxCell('Username',5),...sessions.map((x,i)=>xlsxCell(`${x.session_no?`S${String(x.session_no).padStart(2,'0')}`:`S${String(i+1).padStart(2,'0')}`} • ${shortDate(x.start_at)}`,5)),xlsxCell('Total',5),xlsxCell('Hadir',5),xlsxCell('Sakit',5),xlsxCell('Izin',5),xlsxCell('Alpa',5),xlsxCell('Belum',5),xlsxCell('Zoom',5),xlsxCell('YouTube',5),xlsxCell('Tepat',5),xlsxCell('Terlambat',5),xlsxCell('% Presensi',5)]
+    [xlsxCell('Mata Kuliah / Kegiatan',5),xlsxCell('Nama',5),xlsxCell('Username',5),...sessions.map((x,i)=>xlsxCell(`${x.session_no?`S${String(x.session_no).padStart(2,'0')}`:`S${String(i+1).padStart(2,'0')}`} • ${shortDate(x.start_at)}`,6)),xlsxCell('Total',5),xlsxCell('Hadir',5),xlsxCell('Sakit',5),xlsxCell('Izin',5),xlsxCell('Alpa',5),xlsxCell('Belum',5),xlsxCell('Zoom',5),xlsxCell('YouTube',5),xlsxCell('Tepat',5),xlsxCell('Terlambat',5),xlsxCell('% Presensi',5)]
   ];
   memberSummary.forEach(m=>{
     const mine=records.filter(r=>String(r.user_id||'')===String(m.user_id||''));
     const cells=sessions.map(sess=>{const rec=mine.find(r=>String(r.attendance_id||'')===String(sess.attendance_id||''));return rec?statusCode(rec):'-';});
-    rows.push([title,m.full_name||'',m.username||'',...cells,m.total||0,m.PRESENT||0,m.SICK||0,m.PERMIT||0,m.ABSENT||0,m.UNMARKED||0,m.ZOOM||0,m.YOUTUBE||0,m.ON_TIME||0,m.LATE||0,(m.attendance_rate||0)+'%']);
+    rows.push([title,m.full_name||'',m.username||'',...cells.map(v=>xlsxCell(v,7)),m.total||0,m.PRESENT||0,m.SICK||0,m.PERMIT||0,m.ABSENT||0,m.UNMARKED||0,m.ZOOM||0,m.YOUTUBE||0,m.ON_TIME||0,m.LATE||0,(m.attendance_rate||0)+'%']);
   });
   rows.push([], [xlsxCell('RINGKASAN STATUS',4)], [xlsxCell('Hadir',1),xlsxCell('Sakit',1),xlsxCell('Izin',1),xlsxCell('Alpa',1),xlsxCell('Belum',1),xlsxCell('% Presensi',1)], [present,sick,permit,absent,unmarked,rate+'%']);
   return rows;
@@ -1185,7 +1261,8 @@ function exportAttendanceXlsx(data){
   const sheets=[{name:'ANALISIS',rows:overview},{name:'ALL',rows:allRows}];
   summaries.forEach((summary,index)=>{
     const activityRecords=records.filter(r=>canonicalAttendanceActivityName(r).toLowerCase()===String(summary.name).trim().toLowerCase());
-    sheets.push({name:`${String(index+1).padStart(2,'0')}-${summary.name}`,rows:analyticsSheetRows(summary.name,activityRecords,scopeMembers)});
+    const sessionCount=buildSessionSummary(activityRecords).length;
+    sheets.push({name:`${String(index+1).padStart(2,'0')}-${summary.name}`,rows:analyticsSheetRows(summary.name,activityRecords,scopeMembers),columnWidths:[22,28,18,...Array(sessionCount).fill(4.5),...Array(11).fill(10)],rowHeights:{5:92}});
   });
   downloadXlsx(`KelasKu-Presensi-${state.selectedClassId}.xlsx`,sheets);
 }

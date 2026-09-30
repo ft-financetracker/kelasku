@@ -26,22 +26,27 @@ function normalizeCell(value){
   if(value&&typeof value==='object'&&!Array.isArray(value)&&Object.prototype.hasOwnProperty.call(value,'v'))return value;
   return {v:value,style:0};
 }
-function worksheetXml(rows=[]){
+function worksheetXml(rows=[],options={}){
   const widths=[];
   rows.forEach(row=>(row||[]).forEach((raw,i)=>{const {v}=normalizeCell(raw);const len=Math.min(42,Math.max(8,String(v??'').length+2));widths[i]=Math.max(widths[i]||8,len);}));
+  const customWidths=Array.isArray(options.columnWidths)?options.columnWidths:[];
+  customWidths.forEach((w,i)=>{if(Number(w)>0)widths[i]=Number(w);});
   const cols=widths.length?`<cols>${widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`:'';
-  const sheetRows=rows.map((row,ri)=>`<row r="${ri+1}">${(row||[]).map((raw,ci)=>{const c=normalizeCell(raw);return cellXml(c.v,ri+1,ci,c.style||0);}).join('')}</row>`).join('');
+  const rowHeights=options.rowHeights||{};
+  const sheetRows=rows.map((row,ri)=>{const rn=ri+1,ht=Number(rowHeights[rn]||0),attr=ht>0?` ht="${ht}" customHeight="1"`:'';return `<row r="${rn}"${attr}>${(row||[]).map((raw,ci)=>{const c=normalizeCell(raw);return cellXml(c.v,rn,ci,c.style||0);}).join('')}</row>`;}).join('');
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${cols}<sheetData>${sheetRows}</sheetData></worksheet>`;
 }
 function stylesXml(){
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="5">
+  <fonts count="7">
     <font><sz val="11"/><name val="Calibri"/></font>
     <font><b/><sz val="11"/><name val="Calibri"/></font>
     <font><b/><sz val="13"/><name val="Calibri"/></font>
     <font><b/><color rgb="FFFFFFFF"/><sz val="14"/><name val="Calibri"/></font>
     <font><b/><color rgb="FF0B132B"/><sz val="11"/><name val="Calibri"/></font>
+    <font><b/><color rgb="FFFFFFFF"/><sz val="9"/><name val="Lexend"/></font>
+    <font><sz val="10"/><name val="Lexend"/></font>
   </fonts>
   <fills count="6">
     <fill><patternFill patternType="none"/></fill>
@@ -53,13 +58,15 @@ function stylesXml(){
   </fills>
   <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="6">
+  <cellXfs count="8">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
     <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
     <xf numFmtId="0" fontId="3" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
     <xf numFmtId="0" fontId="3" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
     <xf numFmtId="0" fontId="4" fillId="5" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+    <xf numFmtId="0" fontId="5" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment textRotation="90" horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
@@ -96,7 +103,7 @@ function safeSheetName(name,index,used){
 
 export function downloadXlsx(filename,sheets=[]){
   const used=new Set();
-  const normalized=(sheets.length?sheets:[{name:'Sheet1',rows:[]}]).map((sheet,i)=>({name:safeSheetName(sheet.name,i,used),rows:sheet.rows||[]}));
+  const normalized=(sheets.length?sheets:[{name:'Sheet1',rows:[]}]).map((sheet,i)=>({name:safeSheetName(sheet.name,i,used),rows:sheet.rows||[],columnWidths:sheet.columnWidths||[],rowHeights:sheet.rowHeights||{}}));
   const workbookSheets=normalized.map((s,i)=>`<sheet name="${xmlEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('');
   const rels=normalized.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('');
   const styleRid=normalized.length+1;
@@ -106,7 +113,7 @@ export function downloadXlsx(filename,sheets=[]){
     {name:'xl/workbook.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${workbookSheets}</sheets></workbook>`},
     {name:'xl/_rels/workbook.xml.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}<Relationship Id="rId${styleRid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
     {name:'xl/styles.xml',data:stylesXml()},
-    ...normalized.map((sheet,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:worksheetXml(sheet.rows)}))
+    ...normalized.map((sheet,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:worksheetXml(sheet.rows,{columnWidths:sheet.columnWidths,rowHeights:sheet.rowHeights})}))
   ];
   const bytes=zipStore(files);const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename.endsWith('.xlsx')?filename:`${filename}.xlsx`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
