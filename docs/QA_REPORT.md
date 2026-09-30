@@ -37,6 +37,6 @@ Lingkungan ini tidak dapat melakukan deployment langsung ke akun Google pengguna
 Notification Center dan browser notification berjalan ketika aplikasi/PWA aktif. Push yang dapat masuk ketika PWA ditutup total memerlukan push provider tambahan dan belum dinyatakan sebagai fitur aktif pada package ini.
 
 
-## v6.7.38
+## v6.7.39
 - Landing Link Cepat: 2 kolom desktop/mobile, fixed-height category card, title max 2 lines.
 - Static delivery/cache metadata synchronized.

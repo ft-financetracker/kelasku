@@ -1,14 +1,14 @@
 [
   {
-    "version": "6.7.38",
-    "build": "20260930.338",
+    "version": "6.7.39",
+    "build": "20260930.339",
     "date": "2026-09-30",
-    "title": "Landing Link Cepat 2-Kolom",
+    "title": "Landing Link Cepat — Submenu Row List",
     "notes": [
-      "Kategori Link Cepat di Landing Page ditampilkan 2 card per baris pada desktop dan mobile.",
-      "Lebar kategori tetap seimbang 50:50; card tidak meninggi saat judul lebih panjang.",
-      "Judul kategori dibatasi maksimum 2 baris dan teks sekunder memakai ellipsis bila ruang sempit.",
-      "Desain, accordion, badge jumlah link, isi link, dan permission existing tidak diubah."
+      "Kategori Link Cepat tetap 2 card per baris dengan tinggi dan desain existing dipertahankan.",
+      "Saat kategori dibuka, submenu memakai lebar penuh satu row di bawah pasangan card sehingga tidak ada kolom kanan kosong.",
+      "Setiap link submenu dipadatkan menjadi row-list satu baris dengan judul, deskripsi singkat, status private bila ada, dan arrow.",
+      "Tidak mengubah isi link, permission, data kelas, atau engine Landing lainnya."
     ]
   },
   {

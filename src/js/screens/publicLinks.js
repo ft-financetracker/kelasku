@@ -14,10 +14,10 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=6738',mobile:'assets/public/hero-access.webp?v=6738'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=6738',mobile:'assets/public/hero-links.webp?v=6738'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6738',mobile:'assets/public/hero-showcase.webp?v=6738'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6738',mobile:'assets/public/campus-landscape-mobile.png?v=6738'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6739',mobile:'assets/public/hero-access.webp?v=6739'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6739',mobile:'assets/public/hero-links.webp?v=6739'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6739',mobile:'assets/public/hero-showcase.webp?v=6739'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6739',mobile:'assets/public/campus-landscape-mobile.png?v=6739'}
 });
 
 const PLATFORM = {
@@ -188,8 +188,8 @@ function publicHero(cls, appearance={}, memberData=null) {
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
   const remembered=readPublicAppearanceCache();
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6738';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6738';
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6739';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6739';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
@@ -292,7 +292,7 @@ function showcase() {
 function syncPublicReleaseFooter(){
   const version=document.getElementById('public-footer-version');
   const updated=document.getElementById('public-footer-updated');
-  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.38'}`;
+  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.39'}`;
   if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'28 Sep 2026, 11:13 WIB';
 }
 
