@@ -3772,3 +3772,240 @@ html[data-theme="light"] .appearance-category,html[data-theme="light"] .appearan
 html[data-theme="light"] .analytics-quick-kpis article,html[data-theme="light"] .analytics-quick-status-card,html[data-theme="light"] .analytics-quick-note{background:#fff;border-color:#DCE8F3;box-shadow:0 8px 24px rgba(47,84,122,.035)}html[data-theme="light"] .analytics-status-item{background:#F7FAFD;border-color:#E5EEF7}html[data-theme="light"] .analytics-quick-note{background:#F7FBFF}
 @media(max-width:900px){.analytics-quick-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-quick-status-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.analytics-quick-hero{align-items:stretch;flex-direction:column;padding:17px}.analytics-detail-cta{width:100%}.analytics-quick-kpis{gap:7px}.analytics-quick-kpis article{min-height:82px;padding:11px;grid-template-columns:1fr}.analytics-quick-kpis article>.material-symbols-rounded{width:32px;height:32px;font-size:18px}.analytics-quick-kpis strong{font-size:19px}.analytics-quick-status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analytics-detail-head{grid-template-columns:1fr auto}.analytics-detail-title{grid-column:1/-1;grid-row:1}.analytics-back-btn{grid-column:1;grid-row:2;justify-self:start}.analytics-detail-head>#export-attendance-xlsx{grid-column:2;grid-row:2}}
+
+/* ============================================================
+   R4 — Attendance modal visual polish (frontend-only)
+   Scope locked: Room Class attendance modal + attendance row affordance.
+   ============================================================ */
+.attendance-session-modal-v4{
+  width:min(760px,calc(100vw - 28px))!important;
+  max-height:min(88vh,820px)!important;
+  overflow:auto!important;
+  padding:18px!important;
+  border-radius:20px!important;
+}
+.attendance-session-modal-v4 .attendance-modal-head{
+  align-items:flex-start!important;
+  gap:14px!important;
+  margin-bottom:10px!important;
+  padding-bottom:12px!important;
+  border-bottom:1px solid rgba(91,160,240,.12)!important;
+}
+.attendance-session-modal-v4 .attendance-modal-head .eyebrow{
+  font-size:8px!important;
+  line-height:1!important;
+  letter-spacing:.16em!important;
+  font-weight:800!important;
+}
+.attendance-session-modal-v4 .attendance-modal-head h2{
+  margin:5px 0 0!important;
+  font-size:clamp(17px,2vw,21px)!important;
+  line-height:1.22!important;
+  letter-spacing:-.025em!important;
+  font-weight:700!important;
+}
+.attendance-session-modal-v4 .attendance-session-meta{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:0 0 9px!important;
+}
+.attendance-session-modal-v4 .attendance-session-meta>span{
+  min-height:56px!important;
+  padding:9px 10px!important;
+  border-radius:11px!important;
+  background:rgba(7,31,66,.34)!important;
+}
+.attendance-session-modal-v4 .attendance-session-meta small{
+  font-size:7.5px!important;
+  letter-spacing:.08em!important;
+  font-weight:700!important;
+}
+.attendance-session-modal-v4 .attendance-session-meta strong{
+  font-size:10px!important;
+  line-height:1.35!important;
+  font-weight:650!important;
+}
+.attendance-session-modal-v4 .attendance-session-actions{
+  gap:6px!important;
+  margin:0 0 10px!important;
+}
+.attendance-session-modal-v4 .compact-session-btn{
+  min-height:29px!important;
+  padding:5px 8px!important;
+  border-radius:9px!important;
+  font-size:8.8px!important;
+  font-weight:650!important;
+}
+.attendance-session-modal-v4 .compact-session-btn .material-symbols-rounded{font-size:14px!important}
+.attendance-session-modal-v4 .attendance-modal-summary{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+  margin:0 0 10px!important;
+}
+.attendance-session-modal-v4 .attendance-modal-summary>div{
+  min-height:58px!important;
+  padding:9px 10px!important;
+  border-radius:11px!important;
+  background:rgba(7,31,66,.34)!important;
+}
+.attendance-session-modal-v4 .attendance-modal-summary strong{
+  font-size:17px!important;
+  line-height:1!important;
+  letter-spacing:-.03em!important;
+}
+.attendance-session-modal-v4 .attendance-modal-summary span{
+  margin-top:4px!important;
+  font-size:8px!important;
+  line-height:1.2!important;
+}
+.attendance-session-modal-v4 .attendance-self-panel{
+  margin:0 0 10px!important;
+  padding:12px!important;
+  gap:10px!important;
+  border-radius:14px!important;
+  background:rgba(8,40,78,.30)!important;
+}
+.attendance-session-modal-v4 .attendance-self-panel-head{
+  gap:8px!important;
+  padding-bottom:9px!important;
+  border-bottom:1px solid rgba(91,160,240,.09)!important;
+}
+.attendance-session-modal-v4 .attendance-self-panel-head>.material-symbols-rounded{
+  font-size:18px!important;
+}
+.attendance-session-modal-v4 .attendance-self-panel-head strong{
+  font-size:10px!important;
+  line-height:1.2!important;
+}
+.attendance-session-modal-v4 .attendance-self-panel-head small{
+  font-size:7.6px!important;
+  line-height:1.4!important;
+}
+.attendance-session-modal-v4 .room-self-check-form{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:10px 12px!important;
+  align-items:start!important;
+}
+.attendance-session-modal-v4 .attendance-form-label,
+.attendance-session-modal-v4 .attendance-note-field>span{
+  font-size:8.5px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  color:#C7D8EA!important;
+}
+.attendance-session-modal-v4 .attendance-status-choice{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:6px!important;
+}
+.attendance-session-modal-v4 .attendance-choice{
+  min-height:31px!important;
+  padding:5px 9px!important;
+  border-radius:9px!important;
+  font-size:9px!important;
+  font-weight:650!important;
+  gap:5px!important;
+}
+.attendance-session-modal-v4 .attendance-choice .material-symbols-rounded{font-size:15px!important}
+.attendance-session-modal-v4 .attendance-channel-choice{
+  gap:6px!important;
+}
+.attendance-session-modal-v4 .attendance-channel-row{
+  gap:6px!important;
+}
+.attendance-session-modal-v4 .attendance-channel{
+  min-height:31px!important;
+  padding:5px 10px!important;
+  border-radius:9px!important;
+  font-size:9px!important;
+  font-weight:650!important;
+}
+.attendance-session-modal-v4 .attendance-note-field{
+  grid-column:1/-1!important;
+  gap:6px!important;
+}
+.attendance-session-modal-v4 .attendance-note-field .control{
+  min-height:36px!important;
+  padding:7px 10px!important;
+  border-radius:10px!important;
+  font-size:9px!important;
+}
+.attendance-session-modal-v4 #room-self-status{
+  grid-column:1/-1!important;
+  margin:0!important;
+}
+.attendance-session-modal-v4 #room-self-submit{
+  grid-column:1/-1!important;
+  justify-self:end!important;
+  width:auto!important;
+  min-width:166px!important;
+  min-height:34px!important;
+  padding:7px 12px!important;
+  border-radius:10px!important;
+  font-size:9px!important;
+  font-weight:750!important;
+}
+.attendance-session-modal-v4 .attendance-link-box.compact{
+  margin:0 0 10px!important;
+  padding:8px 10px!important;
+  border-radius:10px!important;
+}
+.attendance-session-modal-v4 .attendance-link-box.compact small{font-size:7px!important}
+.attendance-session-modal-v4 .attendance-link-box.compact strong{font-size:8px!important}
+.attendance-session-modal-v4 .attendance-record-head strong{font-size:10px!important}
+.attendance-session-modal-v4 .attendance-record-head small{font-size:7.7px!important;line-height:1.4!important}
+.attendance-session-modal-v4 .attendance-record-row{
+  min-height:54px!important;
+  padding:7px 8px!important;
+  gap:7px!important;
+}
+.attendance-session-modal-v4 .attendance-member-copy strong{font-size:9.5px!important}
+.attendance-session-modal-v4 .attendance-member-copy span{font-size:7.5px!important}
+.attendance-session-modal-v4 .attendance-fill-chip{font-size:7px!important}
+.attendance-session-modal-v4 .compact-control{min-height:30px!important;font-size:8px!important;padding:5px 7px!important}
+.attendance-session-modal-v4 #attendance-save-btn{min-height:34px!important;font-size:9px!important}
+
+/* Click affordance: rows that open Attendance must visibly react. */
+.attendance-room-v673 .attendance-session-row.is-open .schedule-session-main,
+.attendance-room-v673 .attendance-session-row [data-attendance-id]{
+  cursor:pointer!important;
+  transition:background .16s ease,border-color .16s ease,transform .16s ease,box-shadow .16s ease!important;
+}
+@media (hover:hover){
+  .attendance-room-v673 .attendance-session-row.is-open .schedule-session-main:hover,
+  .attendance-room-v673 .attendance-session-row [data-attendance-id]:hover{
+    background:rgba(24,77,120,.32)!important;
+    box-shadow:inset 3px 0 0 rgba(34,224,199,.70)!important;
+  }
+}
+.attendance-room-v673 .attendance-session-row.is-open .schedule-session-main:active,
+.attendance-room-v673 .attendance-session-row [data-attendance-id]:active{
+  transform:scale(.995)!important;
+}
+
+@media(max-width:620px){
+  .attendance-session-modal-v4{
+    width:min(96vw,620px)!important;
+    max-height:91vh!important;
+    padding:14px!important;
+    border-radius:17px!important;
+  }
+  .attendance-session-modal-v4 .attendance-modal-head h2{font-size:16px!important}
+  .attendance-session-modal-v4 .attendance-session-meta{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .attendance-session-modal-v4 .attendance-session-meta>span{min-height:52px!important;padding:8px!important}
+  .attendance-session-modal-v4 .attendance-session-meta small{font-size:6.8px!important}
+  .attendance-session-modal-v4 .attendance-session-meta strong{font-size:8.7px!important}
+  .attendance-session-modal-v4 .attendance-modal-summary{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important}
+  .attendance-session-modal-v4 .attendance-modal-summary>div{min-height:52px!important;padding:8px!important}
+  .attendance-session-modal-v4 .attendance-modal-summary strong{font-size:15px!important}
+  .attendance-session-modal-v4 .attendance-modal-summary span{font-size:7px!important}
+  .attendance-session-modal-v4 .room-self-check-form{grid-template-columns:1fr!important;gap:9px!important}
+  .attendance-session-modal-v4 .attendance-note-field,
+  .attendance-session-modal-v4 #room-self-status,
+  .attendance-session-modal-v4 #room-self-submit{grid-column:1!important}
+  .attendance-session-modal-v4 #room-self-submit{justify-self:stretch!important;width:100%!important}
+  .attendance-session-modal-v4 .attendance-session-actions{display:flex!important;grid-template-columns:none!important;gap:5px!important}
+  .attendance-session-modal-v4 .attendance-session-actions .btn-danger{grid-column:auto!important}
+}
