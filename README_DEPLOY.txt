@@ -1,23 +1,28 @@
-KelasKu v6.7.40 — Landing Academic Resilience
-Build: 20260930.340
+KelasKu v6.7.42 — Academic Stability & Landing Flow Recovery
+Build: 20260930.342
 Schema: 17
 
+Baseline live sebelum patch:
+- v6.7.40.
+
 Scope:
-- Baseline aktual: v6.7.39.
-- Memperbaiki Landing Page ketika getClassAcademic anggota gagal/timeout sementara.
-- Jadwal publik 7 hari tidak lagi ditimpa menjadi empty state.
-- Presensi fallback tetap aman: direct check-in hanya aktif setelah payload anggota lengkap tersedia.
-- Retry getClassAcademic dilakukan satu kali dengan timeout 20 detik.
-- Tidak mengubah data, schema, role/permission, Jadwal Room Class, Absensi Room Class, atau lifecycle notification.
+- Root fix backend: getClassAcademic/getAcademicHub tidak gagal hanya karena CacheService menolak payload besar.
+- Hapus retry otomatis Landing yang pada v6.7.40 menggandakan request getClassAcademic.
+- Status member Landing dirender segera setelah getClassDetail selesai.
+- Presensi Landing = hanya sesi OPEN/LATE yang belum diisi.
+- Buka Landing dari Ringkasan = same tab.
+- Deep-link Landing -> Ruang Kelas mempertahankan tab tujuan walau cache kelas tersedia.
+- Hentikan warmup seluruh Academic Hub ketika user hanya membuka Ringkasan.
+- Tidak mengubah schema, data existing, role/permission, atau lifecycle notification.
 
 Deploy:
-1. Backup v6.7.39.
-2. Update Apps Script v6.7.40 (metadata release saja) dan deploy New Version.
-3. Timpa isi ZIP GITHUB_READY ke root repo.
-4. Tunggu GitHub Pages live.
-5. Tutup total PWA/tab KelasKu lalu buka kembali.
-6. Pastikan v6.7.40 / build 20260930.340.
-7. Jalankan syncKelasKuRelease() satu kali setelah backend deploy.
-8. Smoke test Landing: 5 jadwal pekan ini harus muncul; tab Presensi tidak boleh kosong karena kegagalan fetch anggota.
-
-JANGAN jalankan migrateKelasKu() atau setupKelasKu().
+1. Backup v6.7.40.
+2. Apps Script: replace 00_Config.gs, 01_Setup.gs, 18_Academic.gs.
+3. Save -> Manage Deployments -> New Version -> Deploy.
+4. Jalankan syncKelasKuRelease() satu kali.
+5. JANGAN jalankan setupKelasKu() atau migrateKelasKu().
+6. Timpa isi GITHUB_READY ke root repo lalu commit/push.
+7. Tunggu GitHub Pages live.
+8. Tutup total tab/PWA lama lalu buka kembali.
+9. Verifikasi v6.7.42 / build 20260930.342.
+10. Smoke test: Ringkasan, Buka Landing, role member, Jadwal 7 hari, Presensi aktif, quick attendance, Room Class -> Absensi, dan 98_ERROR_LOG.

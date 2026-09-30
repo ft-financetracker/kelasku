@@ -42,7 +42,7 @@ Notification Center dan browser notification berjalan ketika aplikasi/PWA aktif.
 - Static delivery/cache metadata synchronized.
 
 
-## v6.7.40
+## v6.7.42
 - Root cause Landing: hasil `getClassDetail` dapat sukses sementara `getClassAcademic` gagal/timeout; render lama tetap masuk mode member tetapi memakai object akademik kosong.
 - Fix: public academic preview dipertahankan sebagai fallback dan request member academic dicoba ulang satu kali.
 - Direct attendance check-in tidak dijalankan dari payload fallback publik.

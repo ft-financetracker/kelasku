@@ -14,10 +14,10 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=6740',mobile:'assets/public/hero-access.webp?v=6740'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=6740',mobile:'assets/public/hero-links.webp?v=6740'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6740',mobile:'assets/public/hero-showcase.webp?v=6740'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6740',mobile:'assets/public/campus-landscape-mobile.png?v=6740'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6742',mobile:'assets/public/hero-access.webp?v=6742'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6742',mobile:'assets/public/hero-links.webp?v=6742'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6742',mobile:'assets/public/hero-showcase.webp?v=6742'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6742',mobile:'assets/public/campus-landscape-mobile.png?v=6742'}
 });
 
 const PLATFORM = {
@@ -33,7 +33,7 @@ const PLATFORM = {
 const ORDERED = ['WHATSAPP','ZOOM','GOOGLE_MEET','GOOGLE_DRIVE','YOUTUBE','TELEGRAM','WEBSITE','OTHER'];
 const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const classCode = rawCode;
-const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v6740_${classCode.toLowerCase()}` : '';
+const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v6742_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
 const PUBLIC_APPEARANCE_CACHE_KEY = classCode ? `kelasku_public_appearance_v6733_${classCode.toLowerCase()}` : '';
 function readPublicAppearanceCache(){
@@ -188,8 +188,8 @@ function publicHero(cls, appearance={}, memberData=null) {
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
   const remembered=readPublicAppearanceCache();
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6740';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6740';
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6742';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6742';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
@@ -241,7 +241,8 @@ function memberAcademicHub(academic={}, classId='') {
   const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
   const attendance=(academic.permissions?.is_participant===false?[]:(academic.attendance_sessions||[]))
     .filter(x=>String(x.my_status||'UNMARKED').toUpperCase()==='UNMARKED')
-    .sort((a,b)=>{const rank={LATE:0,OPEN:1,UPCOMING:2,CLOSED:3},ak=publicAttendanceState(a).key,bk=publicAttendanceState(b).key,ar=rank[ak]??9,br=rank[bk]??9;if(ar!==br)return ar-br;const ad=new Date(a.open_at||a.start_at||0).getTime()||0,bd=new Date(b.open_at||b.start_at||0).getTime()||0;return ak==='CLOSED'?bd-ad:ad-bd;})
+    .filter(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key))
+    .sort((a,b)=>{const rank={LATE:0,OPEN:1},ak=publicAttendanceState(a).key,bk=publicAttendanceState(b).key,ar=rank[ak]??9,br=rank[bk]??9;if(ar!==br)return ar-br;const ad=new Date(a.open_at||a.start_at||0).getTime()||0,bd=new Date(b.open_at||b.start_at||0).getTime()||0;return ad-bd;})
     .slice(0,4);
   const announcements=(academic.announcements||[]).slice(0,4);
   const activeAttendance=attendance.find(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key));
@@ -252,7 +253,7 @@ function memberAcademicHub(academic={}, classId='') {
     tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<button type="button" data-public-open-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
-  const counts={schedule:allSchedules.length,attendance:attendance.filter(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key)).length,tasks:tasks.length,announcements:announcements.length};
+  const counts={schedule:allSchedules.length,attendance:attendance.length,tasks:tasks.length,announcements:announcements.length};
   const tabs = [['schedule','calendar_month','Jadwal'],['attendance','done_all','Presensi'],['tasks','checklist','Tugas'],['announcements','campaign','Informasi']];
   return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas','Lihat jadwal terdekat, presensi yang perlu diisi, tugas, dan informasi kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span>${counts[key]?`<b class="public-tab-signal">${counts[key]>9?'9+':counts[key]}</b>`:''}</button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
@@ -275,11 +276,11 @@ function publicAcademicAsMemberFallback(academic={}) {
 function memberAcademicFallbackHub(academic={}, classId='') {
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(taskStillActive).sort(byDate('deadline')).slice(0,4);
-  const attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()!=='CLOSED').slice(0,4);
+  const attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>['OPEN','LATE'].includes(String(x.window_status||'').toUpperCase())).slice(0,4);
   const announcements=(academic.announcements||[]).slice(0,4);
   const panels={
     schedule:publicScheduleBlock(allSchedules,null,{guest:false,classId}),
-    attendance:attendance.length?`<div class="public-attendance-list">${attendance.map(x=>`<article class="public-attendance-row state-${String(x.window_status||'upcoming').toLowerCase()}"><div class="public-attendance-main"><span class="public-attendance-icon material-symbols-rounded">${String(x.window_status||'').toUpperCase()==='OPEN'?'how_to_reg':'lock_clock'}</span><div><span class="public-attendance-kicker">${String(x.window_status||'').toUpperCase()==='OPEN'?'PERLU PRESENSI':'BELUM DIBUKA'}</span><strong>${esc(x.title||'Presensi Kelas')}</strong><small>${esc(publicAttendanceWindowText(x))}</small></div></div><a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-primary-action">Buka Absensi</a></article>`).join('')}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">task_alt</span><span>Tidak ada presensi yang perlu kamu isi.</span></div>`,
+    attendance:attendance.length?`<div class="public-attendance-list">${attendance.map(x=>`<article class="public-attendance-row state-${String(x.window_status||'open').toLowerCase()}"><div class="public-attendance-main"><span class="public-attendance-icon material-symbols-rounded">sync</span><div><span class="public-attendance-kicker">PRESENSI AKTIF</span><strong>${esc(x.title||'Presensi Kelas')}</strong><small>${esc(publicAttendanceWindowText(x))}</small></div></div><span class="soft-chip">Menyiapkan akses…</span></article>`).join('')}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">task_alt</span><span>Tidak ada presensi aktif saat ini.</span></div>`,
     tasks:roomList(tasks,'Tidak ada tugas aktif.',x=>`<button type="button" data-public-open-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title||'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements:roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title||'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
@@ -319,7 +320,7 @@ function showcase() {
 function syncPublicReleaseFooter(){
   const version=document.getElementById('public-footer-version');
   const updated=document.getElementById('public-footer-updated');
-  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.40'}`;
+  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.42'}`;
   if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'28 Sep 2026, 11:13 WIB';
 }
 
@@ -629,25 +630,25 @@ async function init() {
     if(!cached || !samePublicData(cached,data))render(data,null,null,{membershipLoading:mayHaveMemberData});
     if(!mayHaveMemberData)return;
 
-    // Member detail + academic are independent: fetch in parallel instead of serially.
-    const [detailResult,academicResult]=await Promise.allSettled([
-      api('getClassDetail',{class_id:data.class.class_id},{timeout:14000}),
-      api('getClassAcademic',{class_id:data.class.class_id},{timeout:14000})
-    ]);
-    const memberData=detailResult.status==='fulfilled'?detailResult.value:null;
-    const academic=academicResult.status==='fulfilled'?academicResult.value:null;
-    render(data,memberData,academic,{membershipLoading:false});
-
-    // v6.7.40: bila request akademik anggota gagal/timeout, jangan mengosongkan Landing.
-    // Public academic preview tetap ditampilkan sebagai fallback, lalu lakukan satu retry ringan.
-    if(memberData && !academic){
-      console.warn('Landing member academic fallback:',academicResult.reason||'getClassAcademic gagal');
-      try{
-        const retryAcademic=await api('getClassAcademic',{class_id:data.class.class_id},{timeout:20000});
-        if(retryAcademic)render(data,memberData,retryAcademic,{membershipLoading:false});
-      }catch(err){
-        console.warn('Landing member academic retry:',err);
-      }
+    // v6.7.42: status member tidak boleh menunggu payload akademik yang lebih berat.
+    // Kedua request dimulai bersamaan, tetapi getClassDetail dirender lebih dulu.
+    const detailPromise=api('getClassDetail',{class_id:data.class.class_id},{timeout:10000});
+    const academicPromise=api('getClassAcademic',{class_id:data.class.class_id},{timeout:20000});
+    let memberData=null;
+    try{
+      memberData=await detailPromise;
+      if(memberData)render(data,memberData,null,{membershipLoading:false});
+    }catch(err){
+      console.warn('Landing membership check:',err);
+      render(data,null,null,{membershipLoading:false});
+      return;
+    }
+    try{
+      const academic=await academicPromise;
+      if(academic)render(data,memberData,academic,{membershipLoading:false});
+    }catch(err){
+      // Satu request saja. Jangan retry otomatis karena hanya menambah beban backend.
+      console.warn('Landing member academic fallback:',err);
     }
   } catch (err) {
     if(!cached)renderError(err.message);

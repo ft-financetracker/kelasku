@@ -1,0 +1,20 @@
+KelasKu v6.7.42 — Static QA
+Build: 20260930.342
+Schema: 17
+
+Target regression:
+- v6.7.40 Landing retry ganda getClassAcademic
+- member Landing terlambat terbaca
+- presensi Landing menampilkan sesi nonaktif
+- Buka Landing membuka tab baru
+- deep-link ke Absensi jatuh ke Ringkasan saat cache tersedia
+- getClassAcademic gagal: Argumen terlalu besar: value
+
+Expected:
+- satu request getClassAcademic pada Landing
+- member identity tidak menunggu academic payload
+- Landing Presensi hanya OPEN/LATE + UNMARKED
+- Landing dibuka same tab
+- kelasku_class_tab dihormati saat cached class detail tersedia
+- CacheService oversized payload tidak menjatuhkan API
+- schema 17 tetap

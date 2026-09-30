@@ -1,5 +1,5 @@
-KelasKu v6.7.40 — Landing Academic Resilience
-Build: 20260930.340
+KelasKu v6.7.42 — Landing Academic Resilience
+Build: 20260930.342
 Schema: 17
 
 Patch fokus:

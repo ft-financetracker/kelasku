@@ -1,8 +1,8 @@
 {
-  "version": "6.7.40",
-  "build": "20260930.340",
+  "version": "6.7.42",
+  "build": "20260930.342",
   "schema": 17,
   "release_date": "2026-09-30",
-  "release_note": "Landing Jadwal/Presensi diperbaiki: data publik tetap menjadi fallback saat sinkronisasi akademik anggota gagal/timeout, lalu getClassAcademic dicoba ulang sekali tanpa mengosongkan Landing.",
-  "release_time_wib": "10:20 WIB"
+  "release_note": "Perbaikan stabilitas akademik: payload besar tidak lagi menjatuhkan API; Landing mengenali member lebih cepat tanpa retry ganda; presensi Landing hanya sesi aktif; tab tujuan dipertahankan; Buka Landing tetap di tab yang sama.",
+  "release_time_wib": "10:10 WIB"
 }
