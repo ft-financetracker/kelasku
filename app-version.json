@@ -1,8 +1,8 @@
 {
-  "version": "6.7.39",
-  "build": "20260930.339",
+  "version": "6.7.40",
+  "build": "20260930.340",
   "schema": 17,
   "release_date": "2026-09-30",
-  "release_note": "Landing Link Cepat mempertahankan 2 kategori per baris; submenu kini terbuka full-width sebagai row-list compact tanpa kolom kanan kosong atau card tinggi.",
-  "release_time_wib": "08:35 WIB"
+  "release_note": "Landing Jadwal/Presensi diperbaiki: data publik tetap menjadi fallback saat sinkronisasi akademik anggota gagal/timeout, lalu getClassAcademic dicoba ulang sekali tanpa mengosongkan Landing.",
+  "release_time_wib": "10:20 WIB"
 }

@@ -1,5 +1,18 @@
 [
   {
+    "version": "6.7.40",
+    "build": "20260930.340",
+    "date": "2026-09-30",
+    "title": "Landing Academic Resilience — Jadwal & Presensi",
+    "notes": [
+      "Landing tidak lagi berubah menjadi kosong ketika getClassAcademic anggota gagal atau timeout sementara.",
+      "Jadwal publik 7 hari tetap ditampilkan sebagai fallback sehingga data yang sudah tersedia tidak hilang dari layar.",
+      "Jika membership terdeteksi tetapi academic detail gagal, Landing menampilkan fallback aman dan mencoba ulang getClassAcademic satu kali.",
+      "Fallback presensi mengarahkan anggota ke Ruang Kelas/Absensi; direct check-in tetap hanya memakai payload anggota lengkap.",
+      "Tidak ada perubahan schema, permission, engine Jadwal, engine Absensi, atau notifikasi lifecycle."
+    ]
+  },
+  {
     "version": "6.7.39",
     "build": "20260930.339",
     "date": "2026-09-30",

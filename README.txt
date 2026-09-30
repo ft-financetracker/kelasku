@@ -1,11 +1,12 @@
-KelasKu v6.7.29 — HERO FRAME CORRECTION
+KelasKu v6.7.40 — Landing Academic Resilience
+Build: 20260930.340
+Schema: 17
 
-SCOPE LOCK:
-- Hanya memperbesar FRAME hero class.
-- Icon/glyph di dalam frame justru diperkecil.
-- Tidak mengubah fitur/engine lain.
+Patch fokus:
+- Landing tidak lagi kosong ketika getClassAcademic member gagal/timeout sementara.
+- Jadwal ±7 hari tetap memakai public academic preview sebagai fallback aman.
+- Presensi fallback diarahkan ke Ruang Kelas; direct check-in hanya memakai payload member lengkap.
+- getClassAcademic diretry satu kali sebelum fallback dibiarkan aktif.
+- Tidak mengubah schema, permission, data existing, engine Jadwal/Absensi, atau notifikasi lifecycle.
 
-Target ukuran:
-Desktop frame 108x108, glyph 31px.
-Tablet/mobile frame 84x84, glyph 26px.
-HP kecil frame 76x76, glyph 24px.
+Lihat README_DEPLOY.txt untuk urutan deploy.

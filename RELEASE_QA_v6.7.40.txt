@@ -1,0 +1,40 @@
+KelasKu v6.7.40 — Release QA
+Build: 20260930.340
+Schema: 17
+
+PATCH ROOT CAUSE
+- Public Landing memuat getPublicClassLinks lebih dulu.
+- Untuk user login/member, source lama lalu menunggu getClassDetail + getClassAcademic.
+- Jika getClassDetail sukses tetapi getClassAcademic gagal/timeout, render tetap masuk mode member namun academic={}.
+- Akibatnya jadwal/presensi yang sebenarnya ada berubah menjadi empty state di Landing.
+
+FIX
+- Public academic preview langsung tetap ditampilkan saat sinkronisasi member berlangsung.
+- Jika member detail tersedia tetapi member academic gagal, Landing memakai fallback publik yang aman, bukan object kosong.
+- getClassAcademic diretry satu kali (20 detik).
+- Setelah retry sukses, Landing otomatis dirender ulang memakai data member lengkap.
+- Direct check-in presensi tidak dijalankan dari payload fallback publik; fallback mengarahkan ke Ruang Kelas/Absensi.
+- Cache key public landing dinaikkan ke v6740.
+
+LOCK / TIDAK DISENTUH
+- Schema 17
+- Role/permission
+- Jadwal Room Class
+- Absensi Room Class
+- Lifecycle notification
+- Link Cepat v6.7.39
+- Database existing
+
+STATIC QA
+- JavaScript syntax: PASS
+- JSON: PASS
+- CSS brace count: PASS
+- Runtime version/cache-buster v6.7.40 / 6740: PASS
+- Service Worker cache: kelasku-v6.7.40-b340-landing-academic-fallback
+
+SMOKE TEST SETELAH DEPLOY
+1. Buka Landing kelas yang pada Room Jadwal menunjukkan 5 jadwal pekan ini.
+2. Pastikan tab Jadwal Landing menunjukkan badge 5 dan daftar jadwal, bukan empty state.
+3. Cek tab Presensi; sesi relevan harus muncul. Jika member academic sedang retry, CTA fallback membuka Ruang Kelas/Absensi.
+4. Reload/hard refresh dan cek kembali.
+5. Pastikan notifikasi HP tetap bekerja dan tidak duplicate.
