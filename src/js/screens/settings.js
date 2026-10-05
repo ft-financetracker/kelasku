@@ -203,11 +203,11 @@ function bindSettings() {
   });
 
   document.getElementById('reset-appearance').onclick = () => {
-    form.theme.value = 'SYSTEM';
+    form.theme.value = 'DARK';
     form.font.value = 'POPPINS';
     form.text_size.value = 'NORMAL';
     form.density.value = 'COMFORTABLE';
-    const effective = previewPreferences({ theme:'SYSTEM', font:'POPPINS', text_size:'NORMAL', density:'COMFORTABLE' });
+    const effective = previewPreferences({ theme:'DARK', font:'POPPINS', text_size:'NORMAL', density:'COMFORTABLE' });
     document.getElementById('theme-preview-title').textContent = `Preview ${effective === 'LIGHT' ? 'Light' : 'Dark'} aktif`;
     setDirty('Tampilan di-reset sebagai preview. Klik Simpan Semua.');
   };

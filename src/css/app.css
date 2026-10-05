@@ -3859,3 +3859,19 @@ html[data-theme="light"] .analytics-quick-kpis article,html[data-theme="light"] 
 }
 @media(max-width:380px){.attendance-session-modal-v5 .attendance-status-choice{grid-template-columns:1fr!important}.attendance-session-modal-v5 .attendance-choice{justify-content:flex-start!important;padding-left:9px!important}}
 
+
+/* ============================================================
+   R5.1 — Mobile render stability
+   ============================================================ */
+@media(max-width:900px){
+  html,body{background-color:#06142F!important}
+  body{
+    background-image:linear-gradient(180deg,#06142F 0%,#082451 52%,#06142F 100%)!important;
+    background-attachment:scroll!important;
+  }
+  body::before{content:none!important;display:none!important;background:none!important}
+  .glass,.sidebar,.bottom-nav,.bottom-nav.bottom-nav-minimal,.overlay,.app-dialog-backdrop,.update-progress-overlay,.appearance-savebar{
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  }
+  .main,.dashboard,.app-root{filter:none!important}
+}
