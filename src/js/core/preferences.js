@@ -12,7 +12,7 @@ export function applyPreferences(settings = state.settings, options = {}) {
   }
 
   const root = document.documentElement;
-  const theme = String(settings.theme || 'SYSTEM').toUpperCase();
+  const theme = String(settings.theme || 'DARK').toUpperCase();
   const systemLight = window.matchMedia('(prefers-color-scheme: light)').matches;
   const effectiveTheme = theme === 'SYSTEM' ? (systemLight ? 'LIGHT' : 'DARK') : theme;
 
@@ -32,7 +32,7 @@ export function applyPreferences(settings = state.settings, options = {}) {
 
 export function previewPreferences(partial = {}) {
   const base = state.settings || {
-    theme: 'SYSTEM', font: 'POPPINS', text_size: 'NORMAL', density: 'COMFORTABLE'
+    theme: 'DARK', font: 'POPPINS', text_size: 'NORMAL', density: 'COMFORTABLE'
   };
   return applyPreferences({ ...base, ...partial }, { persist: false });
 }

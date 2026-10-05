@@ -502,3 +502,9 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
 @media(max-width:560px){.public-room-tab{grid-template-columns:auto minmax(0,max-content) auto!important;column-gap:3px!important;min-height:36px!important;padding:4px 2px!important;font-size:8.5px!important}.public-room-tab>.material-symbols-rounded{font-size:13px!important}.public-room-tab .public-tab-signal{min-width:14px!important;height:14px!important;font-size:6.8px!important;padding:0 3px!important}.public-detail-overlay{padding:8px!important}.public-detail-card.public-attendance-card{width:calc(100vw - 16px)!important;max-height:86dvh!important;padding:11px!important}.public-attendance-card .public-detail-head h3{font-size:14px!important}.public-attendance-statuses{gap:5px!important}.public-attendance-choice{font-size:8.2px!important;padding-left:5px!important;padding-right:22px!important}}
 @media(max-width:360px){.public-room-tab{font-size:7.8px!important}.public-room-tab>.material-symbols-rounded{font-size:12px!important}.public-room-tab .public-tab-signal{min-width:13px!important;height:13px!important}.public-attendance-statuses{grid-template-columns:1fr!important}.public-attendance-choice{justify-content:flex-start!important;padding-left:9px!important}}
 
+
+/* R5.1 — authenticated-state feedback without exposing member-only data */
+.public-primary-action.public-access-state:disabled{
+  opacity:1;cursor:default;color:#BFD2E5;background:#0A315C;
+  border:1px solid rgba(91,160,240,.22);box-shadow:none;
+}
