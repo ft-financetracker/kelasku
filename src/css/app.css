@@ -4012,3 +4012,18 @@ html[data-theme="light"] .calendar-mini-card.is-overdue{
   border-color:#FDA4AF;
 }
 
+
+/* ============================================================
+   R5.2 CLEANING C2 — Link Group Reorder
+   Scope: top-level Link Cepat groups only. No backend/schema change.
+   ============================================================ */
+.class-link-tab-bar{display:grid;grid-template-columns:38px minmax(0,1fr);align-items:stretch}
+.class-link-tab-drag-handle{appearance:none;border:0;border-right:1px solid rgba(91,160,240,.09);background:transparent;color:#6f91b3;display:grid;place-items:center;width:38px;min-height:48px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.class-link-tab-drag-handle:active{cursor:grabbing}
+.class-link-tab-drag-handle .material-symbols-rounded{font-size:20px}
+.class-link-tab-head{min-width:0}
+.class-link-tab-card.open .class-link-tab-head .link-tab-chevron{transform:rotate(180deg)}
+.class-link-tab-card.is-tab-dragging{opacity:.72;outline:1px solid rgba(34,224,199,.48);background:#0a315e!important;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.class-link-tab-card.is-tab-dragging .class-link-tab-drag-handle{color:var(--tosca)}
+html[data-theme="light"] .class-link-tab-drag-handle{border-right-color:#DCE8F3;color:#66839f}
+@media(max-width:700px){.class-link-tab-bar{grid-template-columns:36px minmax(0,1fr)}.class-link-tab-drag-handle{width:36px;min-height:46px}.class-link-tab-drag-handle .material-symbols-rounded{font-size:19px}}
