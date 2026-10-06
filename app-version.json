@@ -1,8 +1,8 @@
 {
-  "version": "6.7.39",
-  "build": "20260930.339",
+  "version": "6.8.0",
+  "build": "20261006.680",
   "schema": 17,
-  "release_date": "2026-09-30",
-  "release_note": "Landing Link Cepat mempertahankan 2 kategori per baris; submenu kini terbuka full-width sebagai row-list compact tanpa kolom kanan kosong atau card tinggi.",
-  "release_time_wib": "08:35 WIB"
+  "release_date": "2026-10-06",
+  "release_note": "v6.8.0 — Appearance & Media Manager: background Landing per kelas, Link Cepat dengan Group opsional dan platform lengkap/custom, Carousel Promo Super Admin, background aplikasi ringan, serta metadata release tersinkron.",
+  "release_time_wib": "09:36 WIB"
 }
