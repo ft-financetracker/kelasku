@@ -40,6 +40,7 @@ const LANDING_MEMBER_CONTEXT_TTL_MS = 20 * 60 * 1000;
 let memberContextInFlight = null;
 let memberContextInFlightKey = '';
 const PUBLIC_APPEARANCE_CACHE_KEY = classCode ? `kelasku_public_appearance_v6733_${classCode.toLowerCase()}` : '';
+function publicLinksRevisionKey(classId=''){return `kelasku_public_links_revision_${String(classId||'').replace(/[^A-Za-z0-9_-]/g,'')}`;}
 function readPublicAppearanceCache(){
   if(!PUBLIC_APPEARANCE_CACHE_KEY)return {};
   try{return JSON.parse(localStorage.getItem(PUBLIC_APPEARANCE_CACHE_KEY)||'{}')||{};}catch{return {};}
@@ -73,12 +74,23 @@ window.addEventListener('appinstalled', () => {
   updateInstallButton();
 });
 
+window.addEventListener('storage', event => {
+  const classId=String(currentPublicClassId||currentPublicData?.class?.class_id||'');
+  if(!classId || event.key!==publicLinksRevisionKey(classId))return;
+  try{localStorage.removeItem(PUBLIC_CACHE_KEY);}catch{}
+  clearLandingMemberContext({class:{class_id:classId}});
+  location.reload();
+});
+
 
 function readPublicCache(){
   if(!PUBLIC_CACHE_KEY)return null;
   try{
     const cached=JSON.parse(localStorage.getItem(PUBLIC_CACHE_KEY)||'null');
     if(!cached?.data || !cached?.at || Date.now()-Number(cached.at)>PUBLIC_CACHE_MS)return null;
+    const classId=String(cached.data?.class?.class_id||'');
+    const revision=classId?Number(localStorage.getItem(publicLinksRevisionKey(classId))||0):0;
+    if(revision>Number(cached.at))return null;
     return cached.data;
   }catch{return null;}
 }
@@ -95,6 +107,9 @@ function readPublicCacheEntry(){
   try{
     const cached=JSON.parse(localStorage.getItem(PUBLIC_CACHE_KEY)||'null');
     if(!cached?.data || !cached?.at || Date.now()-Number(cached.at)>PUBLIC_CACHE_MS)return null;
+    const classId=String(cached.data?.class?.class_id||'');
+    const revision=classId?Number(localStorage.getItem(publicLinksRevisionKey(classId))||0):0;
+    if(revision>Number(cached.at))return null;
     return {data:cached.data,at:Number(cached.at)};
   }catch{return null;}
 }
@@ -118,6 +133,8 @@ function readLandingMemberContext(data={}){
   try{
     const cached=JSON.parse(sessionStorage.getItem(key)||'null');
     if(!cached?.data || !cached?.at)return null;
+    const revision=Number(localStorage.getItem(publicLinksRevisionKey(classId))||0);
+    if(revision>Number(cached.at)){sessionStorage.removeItem(key);return null;}
     if(Date.now()-Number(cached.at)>LANDING_MEMBER_CONTEXT_TTL_MS)return null;
     if(String(cached.signature||'')!==landingAcademicSignature(data))return null;
     return cached.data;

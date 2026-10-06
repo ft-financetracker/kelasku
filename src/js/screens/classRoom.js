@@ -1980,6 +1980,37 @@ function bindClassLinksManagerEvents(){
   document.querySelectorAll('[data-add-link-section]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();openClassLinkEditor(null,{section:btn.dataset.addLinkSection||'Umum',platform:btn.dataset.addLinkPlatform||'OTHER'});});
   document.querySelectorAll('[data-link-category]').forEach(category=>applyClassLinkPagination(category));bindClassLinkDrag();
 }
+function publicLinksRevisionKey(classId=''){return `kelasku_public_links_revision_${String(classId||'').replace(/[^A-Za-z0-9_-]/g,'')}`;}
+function invalidatePublicLinksClientCaches(data={}){
+  const classId=String(data?.class?.class_id||state.selectedClassId||'');
+  if(!classId)return;
+  const refs=[
+    String(data?.class?.public_slug||'').trim().toLowerCase(),
+    String(data?.class?.class_code||'').replace(/^KLS-/i,'').trim().toLowerCase()
+  ].filter(Boolean);
+  try{
+    refs.forEach(ref=>localStorage.removeItem(`kelasku_public_links_cache_v676_${ref}`));
+    const remove=[];
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!key.startsWith('kelasku_public_links_cache_v676_'))continue;
+      try{
+        const cached=JSON.parse(localStorage.getItem(key)||'null');
+        if(String(cached?.data?.class?.class_id||'')===classId)remove.push(key);
+      }catch{}
+    }
+    remove.forEach(key=>localStorage.removeItem(key));
+    localStorage.setItem(publicLinksRevisionKey(classId),String(Date.now()));
+  }catch{}
+  try{
+    const userId=String(state.user?.user_id||state.user?.kelasku_id||state.user?.username||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,80);
+    if(userId){
+      const key=`kelasku_landing_member_ctx_r52_${userId}_${classId.replace(/[^A-Za-z0-9_-]/g,'')}`;
+      sessionStorage.removeItem(key);
+      sessionStorage.removeItem(`${key}_attempt`);
+    }
+  }catch{}
+}
 function publicClassLinksUrl(classCode,slug=''){const clean=String(slug||'').trim().toLowerCase();const ref=clean||String(classCode||'').replace(/^KLS-/i,'');return primaryUrl('/links.html',{c:ref}).toString();}
 function joinClassUrl(classCode,slug=''){const ref=String(slug||'').trim().toLowerCase()||String(classCode||'').replace(/^KLS-/i,'');return primaryUrl('/join',{c:ref}).toString();}
 function bindClassLinksSettings(data){
@@ -1995,7 +2026,7 @@ async function saveClassLinks(data){
   const links=[...document.querySelectorAll('[data-class-link-row]')].map(row=>({link_id:row.dataset.linkId||'',section_label:row.querySelector('.link-section')?.value.trim()||'',platform:row.querySelector('.link-platform')?.value||'OTHER',label:row.querySelector('.link-label')?.value.trim()||'',url:row.querySelector('.link-url')?.value.trim()||'',description:row.querySelector('.link-description')?.value.trim()||'',visibility:row.querySelector('.link-visibility')?.value||'PUBLIC'})).filter(item=>item.label||item.url);
   if(links.length>CLASS_LINK_LIMIT){status.className='request-status error';status.textContent=`Maksimal ${CLASS_LINK_LIMIT} link per kelas.`;return;}const sectionCount=new Set(links.map(item=>String(item.section_label||'Umum').trim().toLowerCase())).size;if(sectionCount>CLASS_LINK_TAB_LIMIT){status.className='request-status error';status.textContent=`Maksimal ${CLASS_LINK_TAB_LIMIT} tab/kelompok.`;return;}const invalid=links.find(item=>!item.label||!/^https?:\/\//i.test(item.url));if(invalid){status.className='request-status error';status.textContent='Setiap link wajib punya nama dan URL http/https yang valid.';return;}
   const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan link kelas…';
-  try{const result=await api('saveClassLinks',{class_id:state.selectedClassId,public_links_enabled:document.getElementById('public-links-enabled')?.checked===true,links},{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});if(currentClassData){currentClassData.class_links=result.items||[];currentClassData.settings.public_links_enabled=result.public_links_enabled;state.classDetails[state.selectedClassId]=currentClassData;}status.className='request-status ok';status.textContent='Link kelas tersimpan ✓';toast('Link kelas tersimpan.');}
+  try{const result=await api('saveClassLinks',{class_id:state.selectedClassId,public_links_enabled:document.getElementById('public-links-enabled')?.checked===true,links},{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});if(currentClassData){currentClassData.class_links=result.items||[];currentClassData.settings.public_links_enabled=result.public_links_enabled;persistClassCache('classDetails','classDetailsAt','kelasku_class_details_cache','kelasku_class_details_cache_at',state.selectedClassId,currentClassData);}invalidatePublicLinksClientCaches(currentClassData||data);status.className='request-status ok';status.textContent='Link kelas tersimpan ✓';toast('Link kelas tersimpan. Landing diperbarui.');}
   catch(err){status.className='request-status error';status.textContent=err.message;}
   finally{btn.disabled=false;btn.innerHTML=old;}
 }
