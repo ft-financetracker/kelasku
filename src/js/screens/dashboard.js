@@ -136,8 +136,6 @@ function drawDashboard(d) {
     if (route === 'notifications') toggleNotifications();
     else go(route);
   });
-  slot.querySelectorAll('[data-carousel-external]').forEach(btn=>btn.onclick=()=>{const url=btn.dataset.carouselExternal;if(/^https?:\/\//i.test(url)||url.startsWith('/'))location.assign(url);});
-  slot.querySelectorAll('[data-carousel-class]').forEach(btn=>btn.onclick=()=>{state.selectedClassId=btn.dataset.carouselClass;sessionStorage.setItem('kelasku_selected_class',state.selectedClassId);go('class');});
   slot.querySelectorAll('[data-dashboard-class]').forEach(btn => {
     btn.onclick = () => {
       state.selectedClassId = btn.dataset.dashboardClass;
@@ -148,23 +146,24 @@ function drawDashboard(d) {
   bindCarousel();
 }
 
-function dashboardDefaultSlides(d){
-  const nextSchedule=(d.schedules||[])[0],nextTask=(d.tasks||[])[0],classCount=Number(d.summary?.active_classes||0);
-  return [{eyebrow:'KELAS SAYA',title:`${classCount} kelas dalam satu ruang belajar`,copy:classCount?'Jadwal, tugas, review, materi, absensi, dan analitik terhubung ke kelasmu.':'Buat atau gabung kelas untuk mulai membangun ruang belajar.',action:'Buka Kelas',route:'classes',image:'kelas'},{eyebrow:'AGENDA HARI INI',title:nextSchedule?nextSchedule.title:'Jadwalmu sedang longgar',copy:nextSchedule?`${nextSchedule.class_name||'KelasKu'} • ${nextSchedule.time||''}${nextSchedule.location?' • '+nextSchedule.location:''}`:'Agenda perkuliahan hari ini akan muncul otomatis di sini.',action:'Lihat Jadwal',route:'schedule',image:'agenda'},{eyebrow:'TUGAS TERDEKAT',title:nextTask?nextTask.title:'Tidak ada tugas yang mendesak',copy:nextTask?`${nextTask.class_name||'KelasKu'} • ${deadlineLabel(nextTask.deadline)}`:'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.',action:'Buka Tugas',route:'tasks',image:'tugas'}];
-}
-function dashboardCustomSlides(d){
-  const now=Date.now(),classes=d.classes||[];return (d.carousel?.items||[]).filter(x=>x&&x.active!==false&&(!x.start_at||new Date(x.start_at).getTime()<=now)&&(!x.end_at||new Date(x.end_at).getTime()>=now)).map(x=>{let route='',external='',classId='';const type=String(x.target_type||'NONE').toUpperCase(),v=String(x.target_value||'');if(type==='DASHBOARD')route='dashboard';if(type==='CLASSES')route='classes';if(type==='SCHEDULE')route='schedule';if(type==='TASKS')route='tasks';if(type==='MATERIALS')route='materials';if(type==='ANNOUNCEMENTS')route='announcements';if(type==='ATTENDANCE')route='attendance';if(type==='NOTIFICATIONS')route='notifications';if(type==='PROFILE')route='account';if(type==='CLASS'){route='class';classId=v;}if(type==='LANDING'){const cls=classes.find(c=>String(c.class_id)===v);external=cls?`${location.origin}/${String(cls.public_slug||cls.code||'').replace(/^KLS-/i,'').toLowerCase()}`:'';}if(type==='EXTERNAL')external=v;return {eyebrow:x.eyebrow||'INFO KELASKU',title:x.title||'Informasi',copy:x.copy||'',action:x.button_text||'',route,external,classId,imageUrl:x.image_url||'',image:'promo'};});
-}
 function carouselHtml(d) {
-  const custom=dashboardCustomSlides(d),defaults=d.carousel?.include_defaults===false?[]:dashboardDefaultSlides(d),slides=[...custom,...defaults];if(!slides.length)return'';
-  const physical=slides.length>1?[slides[slides.length-1],...slides,slides[0]]:slides;
-  return `<section class="dashboard-carousel" id="dashboard-carousel" aria-label="Informasi utama"><div class="dashboard-carousel-track" id="dashboard-carousel-track">${physical.map((x,i)=>carouselSlide(x,i)).join('')}</div><div class="dashboard-carousel-dots">${slides.map((_,i)=>`<button type="button" class="carousel-dot ${i===0?'active':''}" data-carousel-dot="${i}" aria-label="Banner ${i+1}"></button>`).join('')}</div></section>`;
+  const nextSchedule = (d.schedules || [])[0];
+  const nextTask = (d.tasks || [])[0];
+  const classCount = Number(d.summary?.active_classes || 0);
+  const slides = [
+    { eyebrow:'KELAS SAYA', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', image:'kelas' },
+    { eyebrow:'AGENDA HARI INI', title:nextSchedule ? nextSchedule.title : 'Jadwalmu sedang longgar', copy:nextSchedule ? `${nextSchedule.class_name || 'KelasKu'} • ${nextSchedule.time || ''}${nextSchedule.location ? ' • '+nextSchedule.location : ''}` : 'Agenda perkuliahan hari ini akan muncul otomatis di sini.', action:'Lihat Jadwal', route:'schedule', image:'agenda' },
+    { eyebrow:'TUGAS TERDEKAT', title:nextTask ? nextTask.title : 'Tidak ada tugas yang mendesak', copy:nextTask ? `${nextTask.class_name || 'KelasKu'} • ${deadlineLabel(nextTask.deadline)}` : 'Ketika tugas dibuat oleh kelas, deadline akan terpantau di sini.', action:'Buka Tugas', route:'tasks', image:'tugas' }
+  ];
+  const physical=[slides[slides.length-1],...slides,slides[0]];
+  return `<section class="dashboard-carousel" id="dashboard-carousel" aria-label="Informasi utama">
+    <div class="dashboard-carousel-track" id="dashboard-carousel-track">${physical.map((x,i)=>carouselSlide(x,i)).join('')}</div>
+    <div class="dashboard-carousel-dots">${slides.map((_,i)=>`<button type="button" class="carousel-dot ${i===0?'active':''}" data-carousel-dot="${i}" aria-label="Banner ${i+1}"></button>`).join('')}</div>
+  </section>`;
 }
 
-function carouselSlidefunction carouselSlide(x,index){
-  const bg=x.imageUrl?` style="background-image:linear-gradient(90deg,rgba(5,15,35,.9),rgba(5,15,35,.55),rgba(5,15,35,.18)),url('${esc(x.imageUrl)}');background-size:cover;background-position:center"`:'';
-  const action=x.action?`<button type="button" class="carousel-action" ${x.external?`data-carousel-external="${esc(x.external)}"`:x.classId?`data-carousel-class="${esc(x.classId)}"`:x.route?`data-dashboard-route="${esc(x.route)}"`:''}>${esc(x.action)} ${svg('i-arrow')}</button>`:'';
-  return `<article class="dashboard-carousel-slide carousel-image-${esc(x.image||'promo')}" data-carousel-index="${index}"${bg}><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p>${action}</div></article>`;
+function carouselSlide(x, index) {
+  return `<article class="dashboard-carousel-slide carousel-image-${esc(x.image)}" data-carousel-index="${index}"><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p><button type="button" class="carousel-action" data-dashboard-route="${esc(x.route)}">${esc(x.action)} ${svg('i-arrow')}</button></div></article>`;
 }
 
 function bindCarousel() {

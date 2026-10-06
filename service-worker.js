@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.8.0-b680-appearance-media';
+const CACHE_NAME = 'kelasku-v6.7.39-b339-launch-stability-r52';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -66,7 +66,7 @@ const APP_SHELL = [
 const APP_ROUTE_PATHS = new Set([
   '/', '/login', '/lengkapi-profil', '/setup', '/dashboard', '/profil', '/pengaturan', '/tentang',
   '/kelas', '/join', '/ruang-kelas', '/jadwal', '/tugas', '/materi', '/pengumuman', '/absensi', '/pesan',
-  '/notifikasi', '/admin', '/admin/pengguna', '/admin/kelas', '/admin/sistem', '/admin/tampilan', '/admin/audit'
+  '/notifikasi', '/admin', '/admin/pengguna', '/admin/kelas', '/admin/sistem', '/admin/audit'
 ]);
 
 self.addEventListener('install', event => {

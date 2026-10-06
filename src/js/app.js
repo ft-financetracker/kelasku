@@ -9,21 +9,21 @@ import { state, setSession, setIdentity, clearSession } from './core/state.js';
 import { api } from './core/api.js';
 import { C, sleep, semverCmp } from './core/utils.js';
 import { readBool, writeJson } from './core/storage.js';
-import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=680';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=6739';
 import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js';
-import { applyPreferences } from './core/preferences.js?v=680';
+import { applyPreferences } from './core/preferences.js?v=6739r51';
 
 import { renderSplash } from './screens/splash.js';
 import { renderOnboarding } from './screens/onboarding.js';
 import { renderAuth } from './screens/auth.js';
 import { renderProfile } from './screens/profile.js';
 import { renderSetup } from './screens/setup.js';
-import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=680';
+import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6739';
 import { renderAccount } from './screens/account.js';
-import { renderSettings } from './screens/settings.js?v=680';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=680';
-import { renderClassRoom } from './screens/classRoom.js?v=680';
-import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminMedia, renderAdminAudit } from './screens/admin.js';
+import { renderSettings } from './screens/settings.js?v=6739r51';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6739';
+import { renderClassRoom } from './screens/classRoom.js?v=6739r51';
+import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
 import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js';
 import { renderAppInfo } from './screens/appInfo.js';
 import { renderAttendanceLanding } from './screens/attendanceLanding.js';
@@ -64,12 +64,10 @@ registerRoute('admin', adminGuard(renderAdmin));
 registerRoute('admin-users', adminGuard(renderAdminUsers));
 registerRoute('admin-classes', adminGuard(renderAdminClasses));
 registerRoute('admin-system', adminGuard(renderAdminSystem));
-registerRoute('admin-media', adminGuard(renderAdminMedia));
 registerRoute('admin-audit', adminGuard(renderAdminAudit));
 
 // Terapkan cache preference seawal mungkin agar tema/font tidak berkedip.
 if (state.settings) applyPreferences(state.settings);
-applyGlobalAppearance(state.remoteConfig||{});
 
 initInstallCapture();
 registerServiceWorker();
@@ -204,19 +202,9 @@ function routeReadyUser() {
   return go('dashboard');
 }
 
-function applyGlobalAppearance(config=state.remoteConfig||{}) {
-  const root=document.documentElement;
-  const preset=String(config?.app_background_preset||'DEFAULT').toUpperCase();
-  root.dataset.appBgPreset=preset;
-  const url=String(config?.app_background_url||'').trim();
-  if(url && preset==='CUSTOM') root.style.setProperty('--kk-app-bg-image',`url("${url.replace(/"/g,'%22')}")`);
-  else root.style.removeProperty('--kk-app-bg-image');
-}
-
 function applyRemoteConfig(config) {
   if (!config) return;
   state.remoteConfig = config;
-  applyGlobalAppearance(config);
   writeJson('kelasku_app_config_cache', config);
   const scale = Math.max(90, Math.min(125, Number(config.ui_text_scale || 100))) / 100;
   document.documentElement.style.setProperty('--kk-admin-text-scale', String(scale));
