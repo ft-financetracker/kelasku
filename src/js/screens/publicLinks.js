@@ -341,7 +341,7 @@ function linkPeriodUi(items=[]) {
   return {nav,panels};
 }
 
-function publicRoleLabelfunction publicRoleLabel(role='') {
+function publicRoleLabel(role='') {
   const key=String(role||'').toUpperCase();
   return ({OWNER:'Owner',COORDINATOR:'Koordinator',MODERATOR:'Moderator',TEACHER:'Pengajar',OBSERVER:'Pengamat',MEMBER:'Member'})[key]||'';
 }

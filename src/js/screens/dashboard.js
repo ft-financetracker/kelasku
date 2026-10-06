@@ -161,7 +161,7 @@ function carouselHtml(d) {
   return `<section class="dashboard-carousel" id="dashboard-carousel" aria-label="Informasi utama"><div class="dashboard-carousel-track" id="dashboard-carousel-track">${physical.map((x,i)=>carouselSlide(x,i)).join('')}</div><div class="dashboard-carousel-dots">${slides.map((_,i)=>`<button type="button" class="carousel-dot ${i===0?'active':''}" data-carousel-dot="${i}" aria-label="Banner ${i+1}"></button>`).join('')}</div></section>`;
 }
 
-function carouselSlidefunction carouselSlide(x,index){
+function carouselSlide(x,index){
   const bg=x.imageUrl?` style="background-image:linear-gradient(90deg,rgba(5,15,35,.9),rgba(5,15,35,.55),rgba(5,15,35,.18)),url('${esc(x.imageUrl)}');background-size:cover;background-position:center"`:'';
   const action=x.action?`<button type="button" class="carousel-action" ${x.external?`data-carousel-external="${esc(x.external)}"`:x.classId?`data-carousel-class="${esc(x.classId)}"`:x.route?`data-dashboard-route="${esc(x.route)}"`:''}>${esc(x.action)} ${svg('i-arrow')}</button>`:'';
   return `<article class="dashboard-carousel-slide carousel-image-${esc(x.image||'promo')}" data-carousel-index="${index}"${bg}><div class="carousel-copy"><span class="carousel-eyebrow">${esc(x.eyebrow)}</span><h2>${esc(x.title)}</h2><p>${esc(x.copy)}</p>${action}</div></article>`;
@@ -169,9 +169,10 @@ function carouselSlidefunction carouselSlide(x,index){
 
 function bindCarousel() {
   const track=document.getElementById('dashboard-carousel-track'); if(!track)return;
-  const dots=[...document.querySelectorAll('[data-carousel-dot]')]; const realTotal=3;
-  carouselIndex=0; carouselPhysicalIndex=1; carouselMoving=false;
-  track.style.transition='none'; track.style.transform='translateX(-100%)'; requestAnimationFrame(()=>{track.style.transition='transform .42s cubic-bezier(.22,.75,.2,1)';});
+  const dots=[...document.querySelectorAll('[data-carousel-dot]')]; const realTotal=dots.length;
+  carouselIndex=0; carouselMoving=false;
+  if(realTotal<=1){carouselPhysicalIndex=0;track.style.transition='none';track.style.transform='translateX(0)';dots.forEach((d,i)=>d.classList.toggle('active',i===0));if(carouselTimer){clearInterval(carouselTimer);carouselTimer=null;}return;}
+  carouselPhysicalIndex=1;track.style.transition='none'; track.style.transform='translateX(-100%)'; requestAnimationFrame(()=>{track.style.transition='transform .42s cubic-bezier(.22,.75,.2,1)';});
   const updateDots=()=>dots.forEach((d,i)=>d.classList.toggle('active',i===carouselIndex));
   const moveToPhysical=(physical,animate=true)=>{ if(carouselMoving&&animate)return; carouselMoving=animate; carouselPhysicalIndex=physical; track.style.transition=animate?'transform .42s cubic-bezier(.22,.75,.2,1)':'none'; track.style.transform=`translateX(-${physical*100}%)`; if(!animate){void track.offsetWidth;track.style.transition='transform .42s cubic-bezier(.22,.75,.2,1)';carouselMoving=false;} };
   const moveLogical=index=>{carouselIndex=(index+realTotal)%realTotal;updateDots();if(index>=realTotal){moveToPhysical(realTotal+1,true);}else if(index<0){moveToPhysical(0,true);}else{moveToPhysical(carouselIndex+1,true);}};
