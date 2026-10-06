@@ -569,7 +569,41 @@ function showPublicAcademicDetail(type,id){
   closePublicDetail();const overlay=document.createElement('div');overlay.id='public-detail-overlay';overlay.className='public-detail-overlay';overlay.innerHTML=`<div class="public-detail-card"><div class="public-detail-head"><div><span class="public-kicker">DETAIL KELAS</span><h3>${esc(title)}</h3><small>${esc(meta)}</small></div><button type="button" data-public-detail-close class="public-detail-close"><span class="material-symbols-rounded">close</span></button></div><div class="public-detail-body">${body}</div>${action?`<div class="public-detail-actions">${action}</div>`:''}</div>`;document.body.appendChild(overlay);overlay.addEventListener('click',e=>{if(e.target===overlay)closePublicDetail();});overlay.querySelector('[data-public-detail-close]')?.addEventListener('click',closePublicDetail);overlay.querySelectorAll('[data-open-class-tab]').forEach(link=>link.addEventListener('click',()=>{sessionStorage.setItem('kelasku_selected_class',link.dataset.classId||'');sessionStorage.setItem('kelasku_class_tab',link.dataset.openClassTab||'overview');}));overlay.querySelectorAll('[data-public-quick-attendance]').forEach(btn=>btn.addEventListener('click',()=>showQuickAttendance(btn.dataset.publicQuickAttendance)));
 }
 
+let publicLinkDelegateBound=false;
+function activatePublicPeriod(btn){
+  const key=btn?.dataset?.publicLinkPeriod;if(!key)return;
+  document.querySelectorAll('[data-public-link-period]').forEach(tab=>{
+    const active=tab===btn;tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active));
+  });
+  document.querySelectorAll('[data-public-link-period-panel]').forEach(panel=>{panel.hidden=panel.dataset.publicLinkPeriodPanel!==key;});
+  document.querySelectorAll('[data-public-group]').forEach(group=>{
+    const panel=group.querySelector('.public-group-panel'),toggle=group.querySelector('[data-public-group-toggle]');
+    if(panel)panel.hidden=true;if(toggle)toggle.setAttribute('aria-expanded','false');group.classList.remove('open');
+  });
+}
+function toggleNamedPublicGroup(btn){
+  const section=btn?.closest?.('.public-named-link-group'),body=section?.querySelector('.public-named-group-body');if(!section||!body)return;
+  const opening=body.hidden!==false;
+  document.querySelectorAll('.public-named-link-group').forEach(other=>{if(other!==section){const otherBody=other.querySelector('.public-named-group-body');if(otherBody)otherBody.hidden=true;other.querySelector('[data-named-group-toggle]')?.setAttribute('aria-expanded','false');other.classList.remove('open');}});
+  body.hidden=!opening;btn.setAttribute('aria-expanded',String(opening));section.classList.toggle('open',opening);
+}
+function togglePublicCategory(toggle){
+  const group=toggle?.closest?.('[data-public-group]'),panel=group?.querySelector('.public-group-panel');if(!group||!panel)return;
+  const opening=panel.hidden;
+  document.querySelectorAll('[data-public-group]').forEach(other=>{const otherPanel=other.querySelector('.public-group-panel'),otherToggle=other.querySelector('[data-public-group-toggle]');if(otherPanel)otherPanel.hidden=true;if(otherToggle)otherToggle.setAttribute('aria-expanded','false');other.classList.remove('open');});
+  if(opening){panel.hidden=false;toggle.setAttribute('aria-expanded','true');group.classList.add('open');}
+}
+function bindPublicLinkDelegation(){
+  if(publicLinkDelegateBound)return;publicLinkDelegateBound=true;
+  document.addEventListener('click',event=>{
+    const period=event.target?.closest?.('[data-public-link-period]');if(period){event.preventDefault();activatePublicPeriod(period);return;}
+    const named=event.target?.closest?.('[data-named-group-toggle]');if(named){event.preventDefault();toggleNamedPublicGroup(named);return;}
+    const category=event.target?.closest?.('[data-public-group-toggle]');if(category){event.preventDefault();togglePublicCategory(category);return;}
+  },true);
+}
+
 function bindInteractions(){
+  bindPublicLinkDelegation();
   document.querySelectorAll('[data-open-class-tab]').forEach(link=>link.addEventListener('click',()=>{
     const id=link.dataset.classId||'';
     if(id){
@@ -640,49 +674,7 @@ function bindInteractions(){
     loginAndReturnToPublic();
   }));
 
-  document.querySelectorAll('[data-public-link-period]').forEach(btn=>btn.addEventListener('click',()=>{
-    const key=btn.dataset.publicLinkPeriod;
-    document.querySelectorAll('[data-public-link-period]').forEach(tab=>{
-      const active=tab===btn;
-      tab.classList.toggle('active',active);
-      tab.setAttribute('aria-selected',String(active));
-    });
-    document.querySelectorAll('[data-public-link-period-panel]').forEach(panel=>{panel.hidden=panel.dataset.publicLinkPeriodPanel!==key;});
-    // Saat pindah periode, tutup accordion kategori agar konteks tidak tercampur.
-    document.querySelectorAll('[data-public-group]').forEach(group=>{
-      const panel=group.querySelector('.public-group-panel');
-      const toggle=group.querySelector('[data-public-group-toggle]');
-      if(panel)panel.hidden=true;
-      if(toggle)toggle.setAttribute('aria-expanded','false');
-      group.classList.remove('open');
-    });
-  }));
-
-  document.querySelectorAll('[data-named-group-toggle]').forEach(btn=>btn.addEventListener('click',()=>{
-    const section=btn.closest('.public-named-link-group'),body=section?.querySelector('.public-named-group-body'),opening=body?.hidden!==false;
-    document.querySelectorAll('.public-named-link-group').forEach(other=>{if(other!==section){other.querySelector('.public-named-group-body')?.setAttribute('hidden','');other.querySelector('[data-named-group-toggle]')?.setAttribute('aria-expanded','false');other.classList.remove('open');}});
-    if(body)body.hidden=!opening;btn.setAttribute('aria-expanded',String(opening));section?.classList.toggle('open',opening);
-  }));
-  // Accordion ala room/category: hero kategori tetap menjadi parent control,
-  // daftar link baru muncul setelah kategori dipilih. Hanya satu kategori terbuka.
-  document.querySelectorAll('[data-public-group-toggle]').forEach(toggle=>toggle.addEventListener('click',()=>{
-    const group=toggle.closest('[data-public-group]');
-    const panel=group?.querySelector('.public-group-panel');
-    if(!group || !panel)return;
-    const opening=panel.hidden;
-    document.querySelectorAll('[data-public-group]').forEach(other=>{
-      const otherPanel=other.querySelector('.public-group-panel');
-      const otherToggle=other.querySelector('[data-public-group-toggle]');
-      if(otherPanel)otherPanel.hidden=true;
-      if(otherToggle)otherToggle.setAttribute('aria-expanded','false');
-      other.classList.remove('open');
-    });
-    if(opening){
-      panel.hidden=false;
-      toggle.setAttribute('aria-expanded','true');
-      group.classList.add('open');
-    }
-  }));
+  // Accordion Link Cepat ditangani event delegation agar tetap aktif setelah re-render.
 
   document.querySelectorAll('[data-show-more]').forEach(btn=>btn.onclick=()=>{
     const group=btn.closest('[data-public-group]');

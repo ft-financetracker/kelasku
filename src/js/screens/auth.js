@@ -1,7 +1,7 @@
 import { state, setSession } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, logo, svg } from '../core/utils.js';
-import { go } from '../core/router.js';
+import { go, routePath } from '../core/router.js';
 import { shouldShowAppSetup } from '../core/pwa.js';
 
 function safePostAuthUrl(){
@@ -9,7 +9,26 @@ function safePostAuthUrl(){
   raw=String(raw||'').trim();
   return raw.startsWith('/')&&!raw.startsWith('//')&&!raw.startsWith('/login')?raw:'';
 }
-function returnToExternalUrl(){const target=safePostAuthUrl();if(!target)return false;try{sessionStorage.removeItem('kelasku_post_auth_url');}catch{}window.location.assign(target);return true;}
+function navigateRouteAfterAuth(route){
+  const target=String(route||'dashboard');
+  go(target,{replace:true});
+  // Watchdog: bila render SPA gagal karena cache/runtime lama, jangan biarkan form login
+  // berhenti pada status "Berhasil". Hard-navigation hanya dipakai sebagai fallback.
+  window.setTimeout(()=>{
+    if(document.getElementById('auth-form')){
+      try{window.location.replace(routePath(target));}catch{window.location.href=routePath(target);}
+    }
+  },450);
+}
+function returnToExternalUrl(){
+  const target=safePostAuthUrl();
+  if(!target)return false;
+  try{sessionStorage.removeItem('kelasku_post_auth_url');}catch{}
+  try{window.location.replace(target);}catch{window.location.href=target;}
+  // Jika navigasi return tidak commit, masuk Dashboard agar user tidak terjebak di form login.
+  window.setTimeout(()=>{if(document.getElementById('auth-form'))navigateRouteAfterAuth('dashboard');},900);
+  return true;
+}
 
 export function renderAuth() {
   const app = document.getElementById('app');
@@ -103,14 +122,14 @@ async function submitAuth(event) {
     setSession(data.session_token, data.user);
     status.className = 'request-status ok';
     status.textContent = data.recovered ? 'Akun ditemukan. Session dipulihkan.' : 'Berhasil.';
-    if (!data.user.profile_complete) go('profile');
-    else if (shouldShowAppSetup()) go('setup');
+    if (!data.user.profile_complete) navigateRouteAfterAuth('profile');
+    else if (shouldShowAppSetup()) navigateRouteAfterAuth('setup');
     else if (returnToExternalUrl()) return;
-    else if (new URL(window.location.href).searchParams.get('attendance')) go('attendance-link');
+    else if (new URL(window.location.href).searchParams.get('attendance')) navigateRouteAfterAuth('attendance-link');
     else {
       const pendingRoute = sessionStorage.getItem('kelasku_post_auth_route') || '';
       if (pendingRoute) sessionStorage.removeItem('kelasku_post_auth_route');
-      go(pendingRoute || 'dashboard', { replace: true });
+      navigateRouteAfterAuth(pendingRoute || 'dashboard');
     }
   } catch (err) {
     status.className = 'request-status error';
