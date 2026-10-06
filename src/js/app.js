@@ -15,7 +15,7 @@ import { applyPreferences } from './core/preferences.js?v=680';
 
 import { renderSplash } from './screens/splash.js';
 import { renderOnboarding } from './screens/onboarding.js';
-import { renderAuth } from './screens/auth.js';
+import { renderAuth } from './screens/auth.js?v=680h3';
 import { renderProfile } from './screens/profile.js';
 import { renderSetup } from './screens/setup.js';
 import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=680h2';
