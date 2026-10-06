@@ -1,44 +1,5 @@
 [
   {
-    "version": "6.8.0",
-    "build": "20261006.680",
-    "date": "06 Okt 2026",
-    "title": "Appearance & Media Manager",
-    "description": "Tampilan kelas dan promo kini dapat dikelola tanpa memperberat Landing maupun Dashboard.",
-    "groups": [
-      {
-        "label": "Landing Page",
-        "items": [
-          "Background Landing per kelas dengan 3 preset ringan dan custom Desktop/Mobile.",
-          "Background custom dipreload/decode lalu diterapkan atomik untuk mencegah flash kosong saat refresh.",
-          "Engine R5.2 Fast Landing dan Mobile Compatibility tetap dipertahankan."
-        ]
-      },
-      {
-        "label": "Link Cepat",
-        "items": [
-          "Struktur Semester → Group opsional → Platform → Link.",
-          "Platform diperluas: Google Forms, Classroom, Docs, Sheets, Slides, Calendar, Instagram, TikTok, Teams, Canva, Notion, GitHub, Moodle, dan lainnya.",
-          "Platform custom tetap tersedia tanpa menambah request API."
-        ]
-      },
-      {
-        "label": "Super Admin",
-        "items": [
-          "Carousel promo Dashboard dapat ditambah, diedit, diurutkan, dijadwalkan, diberi gambar dan tombol tujuan.",
-          "Background umum aplikasi dapat dipilih dari preset ringan atau gambar custom.",
-          "Carousel tetap ikut compound Dashboard; tidak ada request tambahan saat membuka Dashboard."
-        ]
-      },
-      {
-        "label": "Release",
-        "items": [
-          "Version/build/release note disinkronkan ke v6.8.0 agar Info Update tidak lagi tertahan di v6.7.39."
-        ]
-      }
-    ]
-  },
-  {
     "version": "6.7.39",
     "build": "20260930.339",
     "date": "2026-09-30",

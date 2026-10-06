@@ -1,4 +1,4 @@
-import { api } from '../core/api.js?v=680';
+import { api } from '../core/api.js?v=6739r52';
 import { state } from '../core/state.js';
 import { primaryUrl } from '../core/utils.js';
 
@@ -14,25 +14,23 @@ let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
 const LANDING_PRESET_ASSETS = Object.freeze({
-  ACCESS:{desktop:'assets/public/hero-access.webp?v=680',mobile:'assets/public/hero-access.webp?v=680'},
-  LINKS:{desktop:'assets/public/hero-links.webp?v=680',mobile:'assets/public/hero-links.webp?v=680'},
-  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=680',mobile:'assets/public/hero-showcase.webp?v=680'},
-  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=680',mobile:'assets/public/campus-landscape-mobile.png?v=680'}
+  ACCESS:{desktop:'assets/public/hero-access.webp?v=6739',mobile:'assets/public/hero-access.webp?v=6739'},
+  LINKS:{desktop:'assets/public/hero-links.webp?v=6739',mobile:'assets/public/hero-links.webp?v=6739'},
+  SHOWCASE:{desktop:'assets/public/hero-showcase.webp?v=6739',mobile:'assets/public/hero-showcase.webp?v=6739'},
+  CAMPUS:{desktop:'assets/public/campus-landscape-desktop.png?v=6739',mobile:'assets/public/campus-landscape-mobile.png?v=6739'}
 });
 
 const PLATFORM = {
-  WHATSAPP:['WhatsApp','chat','Ruang komunikasi dan grup kelas'], ZOOM:['Zoom','videocam','Pertemuan online'],
-  GOOGLE_DRIVE:['Google Drive','folder','Dokumen dan arsip kelas'], GOOGLE_MEET:['Google Meet','video_call','Pertemuan Google Meet'],
-  GOOGLE_FORMS:['Google Forms','fact_check','Formulir dan absensi'], GOOGLE_CLASSROOM:['Google Classroom','school','Kelas dan tugas Google Classroom'],
-  GOOGLE_DOCS:['Google Docs','description','Dokumen kolaboratif'], GOOGLE_SHEETS:['Google Sheets','table_chart','Spreadsheet kelas'],
-  GOOGLE_SLIDES:['Google Slides','co_present','Presentasi kelas'], GOOGLE_CALENDAR:['Google Calendar','calendar_month','Kalender dan agenda'],
-  YOUTUBE:['YouTube','smart_display','Video dan playlist pembelajaran'], TELEGRAM:['Telegram','send','Kanal komunikasi tambahan'],
-  INSTAGRAM:['Instagram','photo_camera','Media sosial kelas'], FACEBOOK:['Facebook','public','Media sosial Facebook'], TIKTOK:['TikTok','music_note','Konten video singkat'],
-  MICROSOFT_TEAMS:['Microsoft Teams','groups','Ruang kolaborasi Teams'], ONEDRIVE:['OneDrive','cloud','Penyimpanan OneDrive'], DROPBOX:['Dropbox','inventory_2','Penyimpanan Dropbox'],
-  CANVA:['Canva','design_services','Desain dan materi visual'], NOTION:['Notion','view_quilt','Workspace dan catatan'], GITHUB:['GitHub','code','Repository dan project'], MOODLE:['Moodle / LMS','school','Learning management system'],
-  WEBSITE:['Website','language','Portal dan sumber informasi kelas'], OTHER:['Lainnya','link','Akses penting lainnya']
+  WHATSAPP: ['WhatsApp', 'chat', 'Ruang komunikasi dan grup kelas'],
+  ZOOM: ['Zoom', 'videocam', 'Akses perkuliahan dan pertemuan online'],
+  GOOGLE_DRIVE: ['Google Drive', 'folder', 'Materi, dokumen, dan arsip kelas'],
+  GOOGLE_MEET: ['Google Meet', 'video_call', 'Pertemuan kelas secara online'],
+  YOUTUBE: ['YouTube', 'smart_display', 'Channel dan playlist pembelajaran'],
+  TELEGRAM: ['Telegram', 'send', 'Kanal komunikasi tambahan'],
+  WEBSITE: ['Website', 'language', 'Portal dan sumber informasi kelas'],
+  OTHER: ['Lainnya', 'link', 'Akses penting lainnya']
 };
-const ORDERED=['WHATSAPP','ZOOM','GOOGLE_MEET','GOOGLE_CLASSROOM','GOOGLE_FORMS','GOOGLE_DRIVE','GOOGLE_DOCS','GOOGLE_SHEETS','GOOGLE_SLIDES','GOOGLE_CALENDAR','YOUTUBE','TELEGRAM','INSTAGRAM','TIKTOK','FACEBOOK','MICROSOFT_TEAMS','ONEDRIVE','DROPBOX','CANVA','NOTION','GITHUB','MOODLE','WEBSITE','OTHER'];
+const ORDERED = ['WHATSAPP','ZOOM','GOOGLE_MEET','GOOGLE_DRIVE','YOUTUBE','TELEGRAM','WEBSITE','OTHER'];
 const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const classCode = rawCode;
 const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v676_${classCode.toLowerCase()}` : '';
@@ -42,27 +40,19 @@ const LANDING_MEMBER_CONTEXT_TTL_MS = 20 * 60 * 1000;
 let memberContextInFlight = null;
 let memberContextInFlightKey = '';
 const PUBLIC_APPEARANCE_CACHE_KEY = classCode ? `kelasku_public_appearance_v6733_${classCode.toLowerCase()}` : '';
-const PUBLIC_BG_CACHE_KEY = classCode ? `kelasku_public_bg_v680_${classCode.toLowerCase()}` : '';
 function readPublicAppearanceCache(){
   if(!PUBLIC_APPEARANCE_CACHE_KEY)return {};
   try{return JSON.parse(localStorage.getItem(PUBLIC_APPEARANCE_CACHE_KEY)||'{}')||{};}catch{return {};}
 }
 function writePublicAppearanceCache(data){
   if(!PUBLIC_APPEARANCE_CACHE_KEY||!data)return;
-  const active=data?.appearance?.active||{}, current=readPublicAppearanceCache();
-  const next={desktop:String(active?.HERO_DESKTOP?.url||active?.ROOM_DESKTOP?.url||current.desktop||''),mobile:String(active?.HERO_MOBILE?.url||active?.ROOM_MOBILE?.url||current.mobile||'')};
+  const active=data?.appearance?.active||{};
+  const current=readPublicAppearanceCache();
+  const next={
+    desktop:String(active?.HERO_DESKTOP?.url||active?.ROOM_DESKTOP?.url||current.desktop||''),
+    mobile:String(active?.HERO_MOBILE?.url||active?.ROOM_MOBILE?.url||current.mobile||'')
+  };
   try{localStorage.setItem(PUBLIC_APPEARANCE_CACHE_KEY,JSON.stringify(next));}catch{}
-  const bg={preset:String(data?.appearance?.landing_page_background?.preset||'MIDNIGHT').toUpperCase(),desktop:String(active?.LANDING_BG_DESKTOP?.url||''),mobile:String(active?.LANDING_BG_MOBILE?.url||active?.LANDING_BG_DESKTOP?.url||'')};
-  try{if(PUBLIC_BG_CACHE_KEY)localStorage.setItem(PUBLIC_BG_CACHE_KEY,JSON.stringify(bg));}catch{}
-}
-function applyPublicPageBackground(data){
-  const active=data?.appearance?.active||{}; const preset=String(data?.appearance?.landing_page_background?.preset||'MIDNIGHT').toUpperCase();
-  document.documentElement.dataset.publicBgPreset=preset;
-  const mobile=matchMedia('(max-width:720px)').matches; const url=String((mobile?active?.LANDING_BG_MOBILE?.url:active?.LANDING_BG_DESKTOP?.url)||active?.LANDING_BG_DESKTOP?.url||active?.LANDING_BG_MOBILE?.url||'');
-  if(!url){document.documentElement.style.removeProperty('--public-class-bg-image');document.documentElement.classList.remove('public-bg-custom-ready');return;}
-  const img=new Image(); img.decoding='async'; img.src=url;
-  const apply=()=>{document.documentElement.style.setProperty('--public-class-bg-image',`url("${url.replace(/"/g,'%22')}")`);document.documentElement.classList.add('public-bg-custom-ready');};
-  if(img.complete&&img.naturalWidth)apply(); else (img.decode?img.decode():new Promise((res,rej)=>{img.onload=res;img.onerror=rej;})).then(apply).catch(()=>{});
 }
 const fmtDate = value => { try { return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value)); } catch { return value || '-'; } };
 const isFuture = value => value && new Date(value).getTime() >= Date.now();
@@ -289,7 +279,7 @@ function linkSectionBuckets(items=[]) {
 }
 
 function groupSection(key, items, scope='default') {
-  const baseMeta=PLATFORM[key]||PLATFORM.OTHER; const customLabel=String(items?.[0]?.platform_label||'').trim(); const [label,icon,copy]=[key==='OTHER'&&customLabel?customLabel:baseMeta[0],baseMeta[1],baseMeta[2]];
+  const [label, icon, copy] = PLATFORM[key] || PLATFORM.OTHER;
   const visible = items.slice(0,3);
   const extra = items.slice(3);
   const cards = arr => arr.map(item => {
@@ -320,28 +310,23 @@ function groupSection(key, items, scope='default') {
   </section>`;
 }
 
-function namedGroupKey(label='',index=0){
-  const clean=String(label||'group').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,28);
-  return `${clean||'group'}-${index+1}`;
-}
-function linkBucketBody(items=[],scope='default'){
-  const direct=items.filter(x=>!String(x.group_label||'').trim());
-  const namedOrder=[],named={};
-  items.filter(x=>String(x.group_label||'').trim()).forEach(item=>{const g=String(item.group_label||'').trim();if(!named[g]){named[g]=[];namedOrder.push(g);}named[g].push(item);});
-  const directGroups=groupsFromItems(direct);
-  const directHtml=ORDERED.filter(key=>Array.isArray(directGroups[key])&&directGroups[key].length).map(key=>groupSection(key,directGroups[key],scope)).join('');
-  const namedHtml=namedOrder.map((label,index)=>{const groupItems=named[label],groups=groupsFromItems(groupItems),key=namedGroupKey(label,index),body=ORDERED.filter(k=>Array.isArray(groups[k])&&groups[k].length).map(k=>groupSection(k,groups[k],`${scope}-${key}`)).join('');return `<section class="public-named-link-group" data-named-link-group="${esc(key)}"><button type="button" class="public-named-group-head" data-named-group-toggle="${esc(key)}" aria-expanded="false"><span class="material-symbols-rounded">folder_open</span><span><strong>${esc(label)}</strong><small>${groupItems.length} link · ${Object.keys(groups).length} kategori</small></span><span class="material-symbols-rounded public-named-group-chevron">expand_more</span></button><div class="public-named-group-body" hidden>${body}</div></section>`;}).join('');
-  return directHtml+namedHtml;
-}
 function linkPeriodUi(items=[]) {
   const buckets=linkSectionBuckets(items);
   if(!buckets.length) return {nav:'',panels:''};
-  const nav=`<section class="public-link-period-switch" aria-label="Kelompok link kelas"><button type="button" class="public-period-arrow" data-period-scroll="prev" aria-label="Tab sebelumnya"><span class="material-symbols-rounded">chevron_left</span></button><div class="public-link-period-tabs" data-period-tabs>${buckets.map((bucket,index)=>`<button type="button" class="public-link-period-tab ${index===0?'active':''}" data-public-link-period="${esc(bucket.key)}" aria-selected="${index===0?'true':'false'}">${esc(bucket.label)}</button>`).join('')}</div><button type="button" class="public-period-arrow" data-period-scroll="next" aria-label="Tab berikutnya"><span class="material-symbols-rounded">chevron_right</span></button></section>`;
-  const panels=buckets.map((bucket,index)=>`<div class="public-link-period-panel" data-public-link-period-panel="${esc(bucket.key)}" ${index?'hidden':''}>${linkBucketBody(bucket.items,bucket.key)}</div>`).join('');
+  const nav=`<section class="public-link-period-switch" aria-label="Kelompok link kelas">
+    <button type="button" class="public-period-arrow" data-period-scroll="prev" aria-label="Tab sebelumnya"><span class="material-symbols-rounded">chevron_left</span></button>
+    <div class="public-link-period-tabs" data-period-tabs>${buckets.map((bucket,index)=>`<button type="button" class="public-link-period-tab ${index===0?'active':''}" data-public-link-period="${esc(bucket.key)}" aria-selected="${index===0?'true':'false'}">${esc(bucket.label)}</button>`).join('')}</div>
+    <button type="button" class="public-period-arrow" data-period-scroll="next" aria-label="Tab berikutnya"><span class="material-symbols-rounded">chevron_right</span></button>
+  </section>`;
+  const panels=buckets.map((bucket,index)=>{
+    const groups=groupsFromItems(bucket.items);
+    const body=ORDERED.filter(key=>Array.isArray(groups[key])&&groups[key].length).map(key=>groupSection(key,groups[key],bucket.key)).join('');
+    return `<div class="public-link-period-panel" data-public-link-period-panel="${esc(bucket.key)}" ${index?'hidden':''}>${body}</div>`;
+  }).join('');
   return {nav,panels};
 }
 
-function publicRoleLabelfunction publicRoleLabel(role='') {
+function publicRoleLabel(role='') {
   const key=String(role||'').toUpperCase();
   return ({OWNER:'Owner',COORDINATOR:'Koordinator',MODERATOR:'Moderator',TEACHER:'Pengajar',OBSERVER:'Pengamat',MEMBER:'Member'})[key]||'';
 }
@@ -354,8 +339,8 @@ function publicHero(cls, appearance={}, memberData=null) {
   ].filter(Boolean);
   const visibility = cls.visibility || 'KELAS';
   const remembered=readPublicAppearanceCache();
-  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=680';
-  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=680';
+  const desktop=appearance?.active?.HERO_DESKTOP?.url || appearance?.active?.ROOM_DESKTOP?.url || remembered.desktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6739';
+  const mobile=appearance?.active?.HERO_MOBILE?.url || appearance?.active?.ROOM_MOBILE?.url || remembered.mobile || desktop || 'assets/classroom/hero-room-default-mobile.jpg?v=6739';
   const customHero=Boolean(desktop||mobile);
   const role=String(memberData?.class?.role||'').toUpperCase();
   const isLeader=Boolean(memberData?.permissions?.is_class_leader);
@@ -475,8 +460,8 @@ function showcase() {
 function syncPublicReleaseFooter(){
   const version=document.getElementById('public-footer-version');
   const updated=document.getElementById('public-footer-updated');
-  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.8.0'}`;
-  if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'06 Okt 2026, 09:36 WIB';
+  if(version)version.textContent=`v${window.KELASKU_CONFIG?.APP_VERSION||'6.7.39'}`;
+  if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'28 Sep 2026, 11:13 WIB';
 }
 
 function render(data, memberData=null, academic=null, { membershipLoading=false }={}) {
@@ -496,7 +481,6 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   currentPublicMemberData = memberData;
   currentPublicAppearance = data.appearance || {};
   writePublicAppearanceCache(data);
-  applyPublicPageBackground(data);
   // R5 progressive landing: public information stays visible while member data upgrades in background.
   // No second full-width "Menyiapkan informasi kelas" state.
   const infoSection = (isMember && academic)
@@ -658,11 +642,6 @@ function bindInteractions(){
     });
   }));
 
-  document.querySelectorAll('[data-named-group-toggle]').forEach(btn=>btn.addEventListener('click',()=>{
-    const section=btn.closest('.public-named-link-group'),body=section?.querySelector('.public-named-group-body'),opening=body?.hidden!==false;
-    document.querySelectorAll('.public-named-link-group').forEach(other=>{if(other!==section){other.querySelector('.public-named-group-body')?.setAttribute('hidden','');other.querySelector('[data-named-group-toggle]')?.setAttribute('aria-expanded','false');other.classList.remove('open');}});
-    if(body)body.hidden=!opening;btn.setAttribute('aria-expanded',String(opening));section?.classList.toggle('open',opening);
-  }));
   // Accordion ala room/category: hero kategori tetap menjadi parent control,
   // daftar link baru muncul setelah kategori dipilih. Hanya satu kategori terbuka.
   document.querySelectorAll('[data-public-group-toggle]').forEach(toggle=>toggle.addEventListener('click',()=>{
