@@ -304,12 +304,20 @@ function schedulesHtml(items, tasks = []) {
 function calendarMiniCard(item){
   const now=Date.now(),d=new Date(item.date),p=safeDateParts(d);
   const cancelled=String(item.schedule_state||'NORMAL').toUpperCase()==='CANCELLED';
-  const passed=!cancelled && dateMs(item.end_date||item.date,0)<now;
-  const stamp=cancelled?'BATAL':passed?(item.kind==='DEADLINE'?'LEWAT':'SELESAI'):'';
-  return `<article class="calendar-mini-card ${cancelled?'is-cancelled':passed?'is-past':''}">
+  const start=dateMs(item.date,0);
+  const explicitEnd=dateMs(item.end_date,0);
+  const effectiveEnd=explicitEnd || (item.kind==='JADWAL' ? start + 3*60*60*1000 : start);
+  const passed=!cancelled && effectiveEnd<now;
+  const active=!cancelled && item.kind==='JADWAL' && start<=now && effectiveEnd>=now;
+  const overdue=passed && item.kind==='DEADLINE';
+  const completed=passed && item.kind==='JADWAL';
+  const stamp=cancelled?'BATAL':overdue?'LEWAT':completed?'SELESAI':'';
+  const stateClass=cancelled?'is-cancelled':overdue?'is-overdue':completed?'is-past':active?'is-active':'is-upcoming';
+  return `<article class="calendar-mini-card ${stateClass}">
     <div class="academic-date-tile compact"><strong>${p.day}</strong><span>${p.month}</span></div>
     <div><span>${esc(item.kind)} · ${esc(item.class_name||'KelasKu')}</span><strong>${esc(item.title||'-')}</strong><small>${esc(shortDateTime(item.date))}</small></div>
-    ${stamp?`<span class="calendar-state-stamp ${cancelled?'danger':'done'}">${esc(stamp)}</span>`:svg(item.icon)}
+    ${completed?'<span class="calendar-card-watermark" aria-hidden="true">SELESAI</span>':''}
+    ${stamp?`<span class="calendar-state-stamp ${cancelled||overdue?'danger':'done'}">${esc(stamp)}</span>`:svg(item.icon)}
   </article>`;
 }
 

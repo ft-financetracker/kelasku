@@ -3918,3 +3918,97 @@ html.kk-mobile-safe-render .profile-avatar,html.kk-mobile-safe-render .member-av
   html.kk-mobile-safe-render .bottom-nav,html.kk-mobile-safe-render .bottom-nav.bottom-nav-minimal{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;flex:0 0 calc(76px + env(safe-area-inset-bottom))!important;width:100%!important}
   html.kk-mobile-safe-render *{animation:none!important;transition:none!important;filter:none!important}
 }
+
+/* ============================================================
+   R5.2 CLEANING C1 — Kalender status clarity
+   Scope: Calendar 30 Hari only. No layout/data changes.
+   ============================================================ */
+.calendar-mini-card{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+.calendar-mini-card>*{position:relative;z-index:2}
+.calendar-mini-card.is-past{
+  opacity:.56;
+  border-color:rgba(120,148,181,.14);
+  background:linear-gradient(135deg,rgba(8,26,55,.55),rgba(5,18,40,.46));
+  filter:saturate(.72);
+}
+.calendar-mini-card.is-past>div:nth-child(2)>strong{
+  text-decoration:none;
+  color:#A8B9CB;
+}
+.calendar-mini-card.is-past .academic-date-tile{
+  border-color:rgba(125,151,181,.18);
+  background:rgba(33,52,78,.34);
+  color:#A9BACE;
+}
+.calendar-card-watermark{
+  position:absolute!important;
+  z-index:1!important;
+  right:13%;
+  top:50%;
+  transform:translateY(-50%) rotate(-13deg);
+  display:block;
+  padding:3px 10px;
+  border:2px solid rgba(148,163,184,.22);
+  border-radius:6px;
+  color:rgba(174,190,209,.28);
+  font-size:clamp(24px,2.35vw,40px);
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.07em;
+  white-space:nowrap;
+  pointer-events:none;
+  user-select:none;
+}
+.calendar-mini-card.is-active{
+  border-color:rgba(16,185,129,.62);
+  background:linear-gradient(135deg,rgba(6,56,54,.78),rgba(5,34,48,.64));
+  box-shadow:inset 0 0 0 1px rgba(52,211,153,.12),0 0 22px rgba(16,185,129,.08);
+}
+.calendar-mini-card.is-active .academic-date-tile{
+  border-color:rgba(52,211,153,.48);
+  background:rgba(16,185,129,.13);
+}
+.calendar-mini-card.is-active .academic-date-tile strong,
+.calendar-mini-card.is-active .academic-date-tile span,
+.calendar-mini-card.is-active>div:nth-child(2)>span,
+.calendar-mini-card.is-active>.icon{
+  color:#6EE7B7;
+}
+.calendar-mini-card.is-overdue{
+  opacity:.9;
+  border-color:rgba(244,63,94,.42);
+  background:linear-gradient(135deg,rgba(69,20,39,.56),rgba(39,17,38,.58));
+}
+.calendar-mini-card.is-overdue .academic-date-tile{
+  border-color:rgba(244,63,94,.38);
+  background:rgba(244,63,94,.10);
+}
+.calendar-mini-card.is-overdue .academic-date-tile strong,
+.calendar-mini-card.is-overdue .academic-date-tile span,
+.calendar-mini-card.is-overdue>div:nth-child(2)>span{color:#FDA4AF}
+.calendar-mini-card.is-overdue .calendar-state-stamp.danger{
+  border-color:rgba(244,63,94,.42);
+  background:rgba(244,63,94,.12);
+  color:#FDA4AF;
+}
+@media(max-width:620px){
+  .calendar-card-watermark{right:11%;font-size:30px}
+}
+html[data-theme="light"] .calendar-mini-card.is-past{
+  background:#EEF3F8;
+  border-color:#D6E0EA;
+}
+html[data-theme="light"] .calendar-mini-card.is-active{
+  background:#ECFDF5;
+  border-color:#34D399;
+  box-shadow:inset 0 0 0 1px rgba(16,185,129,.08);
+}
+html[data-theme="light"] .calendar-mini-card.is-overdue{
+  background:#FFF1F2;
+  border-color:#FDA4AF;
+}
+
