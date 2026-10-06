@@ -13,21 +13,6 @@ let currentPublicClassId = '';
 let currentPublicData = null;
 let currentPublicMemberData = null;
 let currentPublicAppearance = {};
-const publicUiState={room:'schedule',period:'',namedGroup:'',category:''};
-function capturePublicUiState(){
-  const room=document.querySelector('[data-public-room].active')?.dataset?.publicRoom;if(room)publicUiState.room=room;
-  const period=document.querySelector('[data-public-link-period].active')?.dataset?.publicLinkPeriod;if(period)publicUiState.period=period;
-  const named=document.querySelector('.public-named-link-group.open')?.dataset?.namedLinkGroup;if(named)publicUiState.namedGroup=named;
-  const category=document.querySelector('[data-public-group].open');if(category)publicUiState.category=`${category.dataset.publicGroupScope||''}|${category.dataset.publicGroup||''}`;
-}
-function restorePublicUiState(){
-  const roomButtons=[...document.querySelectorAll('[data-public-room]')];
-  if(roomButtons.length){const chosen=roomButtons.find(x=>x.dataset.publicRoom===publicUiState.room)||roomButtons[0];roomButtons.forEach(x=>{const active=x===chosen;x.classList.toggle('active',active);x.setAttribute('aria-selected',String(active));});document.querySelectorAll('[data-public-room-panel]').forEach(panel=>{panel.hidden=panel.dataset.publicRoomPanel!==chosen.dataset.publicRoom;});publicUiState.room=chosen.dataset.publicRoom||publicUiState.room;}
-  const periodButtons=[...document.querySelectorAll('[data-public-link-period]')];
-  if(periodButtons.length){const chosen=periodButtons.find(x=>x.dataset.publicLinkPeriod===publicUiState.period)||periodButtons[0];periodButtons.forEach(x=>{const active=x===chosen;x.classList.toggle('active',active);x.setAttribute('aria-selected',String(active));});document.querySelectorAll('[data-public-link-period-panel]').forEach(panel=>{panel.hidden=panel.dataset.publicLinkPeriodPanel!==chosen.dataset.publicLinkPeriod;});publicUiState.period=chosen.dataset.publicLinkPeriod||publicUiState.period;}
-  document.querySelectorAll('.public-named-link-group').forEach(group=>{const open=Boolean(publicUiState.namedGroup&&group.dataset.namedLinkGroup===publicUiState.namedGroup&&!group.closest('[data-public-link-period-panel]')?.hidden);const body=group.querySelector('.public-named-group-body'),toggle=group.querySelector('[data-named-group-toggle]');if(body)body.hidden=!open;if(toggle)toggle.setAttribute('aria-expanded',String(open));group.classList.toggle('open',open);});
-  document.querySelectorAll('[data-public-group]').forEach(group=>{const key=`${group.dataset.publicGroupScope||''}|${group.dataset.publicGroup||''}`,visible=!group.closest('[data-public-link-period-panel]')?.hidden&&!group.closest('.public-named-group-body')?.hidden,open=Boolean(publicUiState.category&&key===publicUiState.category&&visible);const panel=group.querySelector('.public-group-panel'),toggle=group.querySelector('[data-public-group-toggle]');if(panel)panel.hidden=!open;if(toggle)toggle.setAttribute('aria-expanded',String(open));group.classList.toggle('open',open);});
-}
 const LANDING_PRESET_ASSETS = Object.freeze({
   ACCESS:{desktop:'assets/public/hero-access.webp?v=680',mobile:'assets/public/hero-access.webp?v=680'},
   LINKS:{desktop:'assets/public/hero-links.webp?v=680',mobile:'assets/public/hero-links.webp?v=680'},
@@ -50,7 +35,7 @@ const PLATFORM = {
 const ORDERED=['WHATSAPP','ZOOM','GOOGLE_MEET','GOOGLE_CLASSROOM','GOOGLE_FORMS','GOOGLE_DRIVE','GOOGLE_DOCS','GOOGLE_SHEETS','GOOGLE_SLIDES','GOOGLE_CALENDAR','YOUTUBE','TELEGRAM','INSTAGRAM','TIKTOK','FACEBOOK','MICROSOFT_TEAMS','ONEDRIVE','DROPBOX','CANVA','NOTION','GITHUB','MOODLE','WEBSITE','OTHER'];
 const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const classCode = rawCode;
-const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v680h4_${classCode.toLowerCase()}` : '';
+const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v676_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
 const PUBLIC_REVALIDATE_MS = 90 * 1000;
 const LANDING_MEMBER_CONTEXT_TTL_MS = 20 * 60 * 1000;
@@ -495,7 +480,6 @@ function syncPublicReleaseFooter(){
 }
 
 function render(data, memberData=null, academic=null, { membershipLoading=false }={}) {
-  capturePublicUiState();
   const cls = data.class || {};
   document.title = `${cls.name || 'Link Kelas'} — KelasKu`;
   syncPublicMetadata(cls);
@@ -525,7 +509,6 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
     <section class="public-section-block">${imageSectionHead('links','LINK CEPAT','Akses penting kelas','Pilih tab, lalu buka kategori link yang dibutuhkan.')}${linkUi.panels || `<div class="public-empty"><span class="material-symbols-rounded">link_off</span><strong>Belum ada link yang dibagikan</strong><p>Pengelola kelas belum menambahkan link untuk akses ini.</p></div>`}</section>
     ${showcase()}`;
   bindInteractions();
-  restorePublicUiState();
   syncPublicReleaseFooter();
 }
 
@@ -589,7 +572,6 @@ function showPublicAcademicDetail(type,id){
 let publicLinkDelegateBound=false;
 function activatePublicPeriod(btn){
   const key=btn?.dataset?.publicLinkPeriod;if(!key)return;
-  publicUiState.period=key;publicUiState.namedGroup='';publicUiState.category='';
   document.querySelectorAll('[data-public-link-period]').forEach(tab=>{
     const active=tab===btn;tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active));
   });
@@ -603,13 +585,13 @@ function toggleNamedPublicGroup(btn){
   const section=btn?.closest?.('.public-named-link-group'),body=section?.querySelector('.public-named-group-body');if(!section||!body)return;
   const opening=body.hidden!==false;
   document.querySelectorAll('.public-named-link-group').forEach(other=>{if(other!==section){const otherBody=other.querySelector('.public-named-group-body');if(otherBody)otherBody.hidden=true;other.querySelector('[data-named-group-toggle]')?.setAttribute('aria-expanded','false');other.classList.remove('open');}});
-  body.hidden=!opening;btn.setAttribute('aria-expanded',String(opening));section.classList.toggle('open',opening);publicUiState.namedGroup=opening?String(section.dataset.namedLinkGroup||''):'';publicUiState.category='';
+  body.hidden=!opening;btn.setAttribute('aria-expanded',String(opening));section.classList.toggle('open',opening);
 }
 function togglePublicCategory(toggle){
   const group=toggle?.closest?.('[data-public-group]'),panel=group?.querySelector('.public-group-panel');if(!group||!panel)return;
   const opening=panel.hidden;
   document.querySelectorAll('[data-public-group]').forEach(other=>{const otherPanel=other.querySelector('.public-group-panel'),otherToggle=other.querySelector('[data-public-group-toggle]');if(otherPanel)otherPanel.hidden=true;if(otherToggle)otherToggle.setAttribute('aria-expanded','false');other.classList.remove('open');});
-  if(opening){panel.hidden=false;toggle.setAttribute('aria-expanded','true');group.classList.add('open');publicUiState.category=`${group.dataset.publicGroupScope||''}|${group.dataset.publicGroup||''}`;}else publicUiState.category='';
+  if(opening){panel.hidden=false;toggle.setAttribute('aria-expanded','true');group.classList.add('open');}
 }
 function bindPublicLinkDelegation(){
   if(publicLinkDelegateBound)return;publicLinkDelegateBound=true;
@@ -659,7 +641,6 @@ function bindInteractions(){
 
   document.querySelectorAll('[data-public-room]').forEach(btn=>btn.addEventListener('click',()=>{
     const key=btn.dataset.publicRoom;
-    publicUiState.room=key;
     document.querySelectorAll('[data-public-room]').forEach(item=>{
       const active=item===btn;
       item.classList.toggle('active',active);
