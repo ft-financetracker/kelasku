@@ -12,6 +12,7 @@ let carouselMoving = false;
 let updateEventHandler = null;
 let notificationEventHandler = null;
 let notificationPollBound = false;
+let dashboardAttendanceHydrateTimer = null;
 
 export function renderDashboard() {
   const content = `
@@ -98,6 +99,7 @@ function drawDashboard(d) {
 
   const user = d.user || state.user || {};
   const s = d.summary || {};
+  const activeTasks = dashboardActiveTasks(d);
   const firstName = (user.full_name || user.username || 'Mahasiswa').split(' ')[0];
 
   slot.innerHTML = `
@@ -108,7 +110,7 @@ function drawDashboard(d) {
 
     <section class="dashboard-summary-strip" aria-label="Ringkasan dashboard">
       ${summaryMini('i-class', s.active_classes || 0, 'Kelas Aktif', 'classes')}
-      ${summaryMini('i-task', s.open_tasks || 0, 'Tugas Aktif', 'tasks')}
+      ${summaryMini('i-task', activeTasks.length, 'Tugas Aktif', 'tasks')}
       ${summaryMini('i-file', s.new_materials || 0, 'Materi Baru', 'materials')}
       ${summaryMini('i-bell', unreadNotificationCount(), 'Notifikasi', 'notifications')}
     </section>
@@ -127,7 +129,8 @@ function drawDashboard(d) {
       <div class="panel"><div class="panel-head"><div class="panel-title">Kelas Aktif</div><button class="mini-link button-link" id="open-all-classes">Lihat Semua</button></div>${(d.classes || []).length ? `<div class="list">${d.classes.slice(0,4).map(classRow).join('')}</div>` : empty('Belum ada kelas', 'Buat kelas sendiri atau masuk menggunakan Class Code / Join Code.')}</div>
       <div class="panel"><div class="panel-head"><div class="panel-title">Jadwal Hari Ini</div><button class="mini-link button-link" data-dashboard-route="schedule">Lihat Jadwal</button></div>${(d.schedules || []).length ? `<div class="list">${d.schedules.slice(0,5).map(x => row('i-calendar', x.title, `${x.time || ''}${x.location ? ' • '+x.location : ''}`, x.class_name)).join('')}</div>` : empty('Tidak ada jadwal', 'Jadwal hari ini akan tampil di sini.')}</div>
       <div class="panel"><div class="panel-head"><div class="panel-title">Pengumuman Terbaru</div><button class="mini-link button-link" data-dashboard-route="announcements">Lihat Semua</button></div>${(d.announcements || []).length ? `<div class="list">${d.announcements.slice(0,4).map(x => row('i-mega', x.title, x.body || '', x.class_name)).join('')}</div>` : empty('Belum ada pengumuman', 'Informasi terbaru kelas akan muncul di sini.')}</div>
-      <div class="panel"><div class="panel-head"><div class="panel-title">Tugas Terdekat</div><button class="mini-link button-link" data-dashboard-route="tasks">Lihat Tugas</button></div>${(d.tasks || []).length ? `<div class="list">${d.tasks.slice(0,4).map(x => row('i-task', x.title, deadlineLabel(x.deadline), x.class_name)).join('')}</div>` : empty('Tidak ada tugas aktif', 'Tugas dan deadline terdekat akan tampil di sini.')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Tugas Terdekat</div><button class="mini-link button-link" data-dashboard-route="tasks">Lihat Tugas</button></div>${activeTasks.length ? `<div class="list">${activeTasks.slice(0,4).map(x => row('i-task', x.title, deadlineLabel(x.deadline), x.class_name)).join('')}</div>` : empty('Tidak ada tugas aktif', 'Tugas dan deadline terdekat akan tampil di sini.')}</div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">Absensi Aktif</div><button class="mini-link button-link" data-dashboard-route="attendance">Buka Absensi</button></div><div id="dashboard-attendance-body">${dashboardAttendanceBody()}</div></div>
     </section>`;
 
   document.getElementById('open-all-classes')?.addEventListener('click', () => go('classes'));
@@ -144,11 +147,12 @@ function drawDashboard(d) {
     };
   });
   bindCarousel();
+  scheduleDashboardAttendanceHydration();
 }
 
 function carouselHtml(d) {
   const nextSchedule = (d.schedules || [])[0];
-  const nextTask = (d.tasks || [])[0];
+  const nextTask = dashboardActiveTasks(d)[0];
   const classCount = Number(d.summary?.active_classes || 0);
   const slides = [
     { eyebrow:'KELAS SAYA', title:`${classCount} kelas dalam satu ruang belajar`, copy:classCount ? 'Jadwal, tugas, review, materi, absensi, dan analitik terhubung ke kelasmu.' : 'Buat atau gabung kelas untuk mulai membangun ruang belajar.', action:'Buka Kelas', route:'classes', image:'kelas' },
@@ -209,6 +213,67 @@ function classRow(item) {
   return `<button type="button" class="list-row list-row-button" data-dashboard-class="${esc(classId)}"><div class="status-icon">${svg('i-class')}</div><div><h4>${esc(item.name)}</h4><p>${esc((item.code || item.class_code || '') + ' • ' + role)}</p></div>${svg('i-arrow')}</button>`;
 }
 function roleLabel(role){const key=String(role||'MEMBER').toUpperCase();if(key==='COORDINATOR')return 'Koordinator';if(key==='OWNER')return 'Owner';if(key==='MODERATOR')return 'Moderator';return 'Member';}
+function dashboardActiveTasks(d, now = Date.now()) {
+  return (d?.tasks || []).filter(item => {
+    const submission = String(item?.submission_status || '').toUpperCase();
+    if (['SUBMITTED','LATE','REVIEWED','GRADED'].includes(submission)) return false;
+    if (!item?.deadline) return true;
+    const deadline = new Date(item.deadline).getTime();
+    return !Number.isFinite(deadline) || deadline >= now;
+  }).sort((a,b) => {
+    const ad=a?.deadline?new Date(a.deadline).getTime():Infinity;
+    const bd=b?.deadline?new Date(b.deadline).getTime():Infinity;
+    return ad-bd;
+  });
+}
+
+function dashboardActiveAttendance() {
+  const items = state.academicHub?.attendance || [];
+  const now=Date.now();
+  return items.filter(item => {
+    const own = String(item?.my_status || 'UNMARKED').toUpperCase();
+    const windowStatus = String(item?.window_status || '').toUpperCase();
+    const openAt=item?.open_at?new Date(item.open_at).getTime():NaN;
+    const closeAt=item?.close_at?new Date(item.close_at).getTime():NaN;
+    const insideWindow=(!Number.isFinite(openAt)||openAt<=now)&&(!Number.isFinite(closeAt)||closeAt>=now);
+    return windowStatus === 'OPEN' && insideWindow && own === 'UNMARKED' && item?.self_checkin_enabled !== false;
+  }).sort((a,b) => {
+    const ac=a?.close_at?new Date(a.close_at).getTime():Infinity;
+    const bc=b?.close_at?new Date(b.close_at).getTime():Infinity;
+    return ac-bc;
+  });
+}
+
+function dashboardAttendanceBody() {
+  if (!state.academicHub) return empty('Memeriksa absensi…', 'Absensi aktif akan muncul otomatis tanpa menahan Dashboard.');
+  const items=dashboardActiveAttendance();
+  if (!items.length) return empty('Tidak ada absensi aktif', 'Sesi presensi yang sedang dibuka akan tampil di sini.');
+  return `<div class="list">${items.slice(0,4).map(item => row('i-check', item.title || 'Absensi Kelas', item.close_at ? `Tutup ${fmtDate(item.close_at)}` : 'Sedang dibuka', item.class_name || 'KelasKu')).join('')}</div>`;
+}
+
+function hydrateDashboardAttendance() {
+  const body=document.getElementById('dashboard-attendance-body');
+  if (!body || currentRoute() !== 'dashboard') return false;
+  body.innerHTML=dashboardAttendanceBody();
+  return true;
+}
+
+function scheduleDashboardAttendanceHydration() {
+  clearTimeout(dashboardAttendanceHydrateTimer);
+  const initialAt=Number(state.academicHubAt||0);
+  let attempt=0;
+  const run=()=>{
+    if (currentRoute() !== 'dashboard') return;
+    hydrateDashboardAttendance();
+    const currentAt=Number(state.academicHubAt||0);
+    const fresh=Boolean(state.academicHub)&&Date.now()-currentAt<60000;
+    const refreshed=Boolean(currentAt&&currentAt!==initialAt);
+    if (fresh || refreshed || ++attempt>=24) return;
+    dashboardAttendanceHydrateTimer=setTimeout(run,250);
+  };
+  run();
+}
+
 function deadlineLabel(value) {
   if (!value) return 'Tanpa deadline';
   try { return 'Deadline ' + new Intl.DateTimeFormat('id-ID',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value)); }
