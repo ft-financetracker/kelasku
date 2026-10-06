@@ -2,7 +2,7 @@ import { state, clearSession } from '../core/state.js';
 import { api } from '../core/api.js';
 import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
-import { go, currentRoute, openDeepLink, routePath } from '../core/router.js';
+import { go, currentRoute, openDeepLink } from '../core/router.js';
 import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js';
 
 let carouselTimer = null;
@@ -29,7 +29,6 @@ export function renderDashboard() {
     onSearch: () => go('classes'),
     onNotifications: toggleNotifications
   });
-  bindDashboardRouteDelegation();
 
   if (state.dashboard) drawDashboard(state.dashboard);
   else drawSkeleton();
@@ -54,32 +53,6 @@ export function renderDashboard() {
   notificationEventHandler=()=>{refreshNotificationSummary();refreshShellIndicators();if(!document.getElementById('notif-drawer')?.classList.contains('hidden'))renderNotificationDrawer();};
   window.addEventListener('kelasku-notifications-updated',notificationEventHandler);
   refreshDashboard();
-}
-
-function safeDashboardRoute(route, fallbackHref='') {
-  if (!route) return;
-  if (route === 'notifications') { toggleNotifications(); return; }
-  try {
-    go(route);
-  } catch (err) {
-    console.error('Dashboard navigation fallback:', err);
-    const href = fallbackHref || routePath(route);
-    try { window.location.assign(href); } catch { window.location.href = href; }
-  }
-}
-
-function bindDashboardRouteDelegation() {
-  if (window.__kelaskuDashboardRouteDelegationBound) return;
-  window.__kelaskuDashboardRouteDelegationBound = true;
-  document.addEventListener('click', event => {
-    const node = event.target?.closest?.('[data-dashboard-route]');
-    if (!node) return;
-    if (node.tagName === 'A' && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button === 1)) return;
-    const route = String(node.dataset.dashboardRoute || '');
-    if (!route) return;
-    event.preventDefault();
-    safeDashboardRoute(route, node.getAttribute?.('href') || '');
-  }, true);
 }
 
 function empty(title, copy) {
@@ -158,6 +131,11 @@ function drawDashboard(d) {
     </section>`;
 
   document.getElementById('open-all-classes')?.addEventListener('click', () => go('classes'));
+  slot.querySelectorAll('[data-dashboard-route]').forEach(btn => btn.onclick = () => {
+    const route = btn.dataset.dashboardRoute;
+    if (route === 'notifications') toggleNotifications();
+    else go(route);
+  });
   slot.querySelectorAll('[data-carousel-external]').forEach(btn=>btn.onclick=()=>{const url=btn.dataset.carouselExternal;if(/^https?:\/\//i.test(url)||url.startsWith('/'))location.assign(url);});
   slot.querySelectorAll('[data-carousel-class]').forEach(btn=>btn.onclick=()=>{state.selectedClassId=btn.dataset.carouselClass;sessionStorage.setItem('kelasku_selected_class',state.selectedClassId);go('class');});
   slot.querySelectorAll('[data-dashboard-class]').forEach(btn => {
@@ -210,11 +188,11 @@ function restartCarousel(show) {
 }
 
 function quickAction(icon,label,route) {
-  return `<a class="dashboard-quick-action" data-dashboard-route="${esc(route)}" href="${esc(routePath(route))}"><span>${svg(icon)}</span><strong>${esc(label)}</strong></a>`;
+  return `<button type="button" class="dashboard-quick-action" data-dashboard-route="${esc(route)}"><span>${svg(icon)}</span><strong>${esc(label)}</strong></button>`;
 }
 
 function summaryMini(icon, value, label, route) {
-  return `<a class="summary-mini" data-dashboard-route="${esc(route)}" href="${esc(routePath(route))}"><span class="summary-mini-icon">${svg(icon)}</span><span class="summary-mini-copy"><strong data-summary-value="${esc(route)}">${Number(value||0)}</strong><small>${esc(label)}</small></span></a>`;
+  return `<button type="button" class="summary-mini" data-dashboard-route="${esc(route)}"><span class="summary-mini-icon">${svg(icon)}</span><span class="summary-mini-copy"><strong data-summary-value="${esc(route)}">${Number(value||0)}</strong><small>${esc(label)}</small></span></button>`;
 }
 function unreadNotificationCount(){ return (state.notifications || []).filter(n => !n.read_at).length; }
 function badgeText(value){const n=Number(value||0);return n>9?'9+':String(n);}

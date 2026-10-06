@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { esc, svg, logo, toast } from './utils.js';
-import { go, routePath } from './router.js';
+import { go } from './router.js';
 
 function unreadCount(type){const key=String(type||'').toUpperCase();return (state.notifications||[]).filter(n=>!n.read_at&&String(n.type||'SYSTEM').toUpperCase()===key).length;}
 function unreadAny(types=[]){const set=new Set(types.map(x=>String(x).toUpperCase()));return (state.notifications||[]).filter(n=>!n.read_at&&set.has(String(n.type||'SYSTEM').toUpperCase())).length;}
@@ -39,10 +39,10 @@ export function appShell(options = {}) {
 ${logo(true)}
           ${options.hideSearch ? '<div class="search-spacer"></div>' : `<button type="button" class="search search-button" id="shell-search">${esc(searchPlaceholder)}</button>`}
           <div class="top-actions">
-            <a class="icon-btn shell-mobile-quick" id="shell-settings" data-route="settings" href="${routePath('settings')}" title="Pengaturan" aria-label="Pengaturan">${svg('i-gear')}</a>
-            ${admin ? `<a class="icon-btn shell-mobile-quick" id="shell-admin" data-route="admin" href="${routePath('admin')}" title="Super Admin" aria-label="Super Admin">${svg('i-shield')}</a>` : ''}
+            <button class="icon-btn shell-mobile-quick" id="shell-settings" title="Pengaturan" aria-label="Pengaturan">${svg('i-gear')}</button>
+            ${admin ? `<button class="icon-btn shell-mobile-quick" id="shell-admin" title="Super Admin" aria-label="Super Admin">${svg('i-shield')}</button>` : ''}
             <button class="icon-btn" id="shell-notif" title="Notifikasi" aria-label="Notifikasi">${svg('i-bell')}<span id="notif-badge" class="badge hidden">0</span></button>
-            <a class="icon-btn shell-account-btn" id="shell-account" data-route="account" href="${routePath('account')}" title="Profil" aria-label="Profil">${state.user?.avatar_url ? `<img class="shell-avatar-img" src="${esc(state.user.avatar_url)}" alt="">` : svg('i-user')}</a>
+            <button class="icon-btn shell-account-btn" id="shell-account" title="Profil" aria-label="Profil">${state.user?.avatar_url ? `<img class="shell-avatar-img" src="${esc(state.user.avatar_url)}" alt="">` : svg('i-user')}</button>
           </div>
         </div>
         <div class="dashboard-body">${content}</div>
@@ -58,40 +58,12 @@ ${logo(true)}
     </div>`;
 }
 
-function safeShellRoute(route, fallbackHref='') {
-  if (!route) return;
-  if (route.startsWith('future:')) {
-    const label = route.split(':')[1] || 'Fitur';
-    toast(`${label.charAt(0).toUpperCase() + label.slice(1)} akan dibuka pada fase berikutnya.`);
-    return;
-  }
-  try {
-    go(route);
-  } catch (err) {
-    console.error('Shell navigation fallback:', err);
-    const href = fallbackHref || routePath(route);
-    try { window.location.assign(href); } catch { window.location.href = href; }
-  }
-}
-
-function bindShellRouteDelegation() {
-  if (window.__kelaskuShellRouteDelegationBound) return;
-  window.__kelaskuShellRouteDelegationBound = true;
-  document.addEventListener('click', event => {
-    const node = event.target?.closest?.('[data-route]');
-    if (!node) return;
-    if (node.tagName === 'A' && (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button === 1)) return;
-    const route = String(node.dataset.route || '');
-    if (!route) return;
-    event.preventDefault();
-    safeShellRoute(route, node.getAttribute?.('href') || '');
-  }, true);
-}
-
 export function bindAppShell(options = {}) {
   refreshShellIndicators();
-  bindShellRouteDelegation();
   if(!window.__kelaskuShellSignalBound){window.__kelaskuShellSignalBound=true;window.addEventListener('kelasku-notifications-updated',refreshShellIndicators);}
+  document.querySelectorAll('[data-route]').forEach(btn => {
+    btn.onclick = () => handleRoute(btn.dataset.route);
+  });
 
   const brandToggle = document.getElementById('sidebar-brand-toggle');
   if (brandToggle) brandToggle.onclick = () => {
@@ -102,6 +74,15 @@ export function bindAppShell(options = {}) {
     brandToggle.setAttribute('aria-label', collapsed ? 'Buka menu' : 'Ciutkan menu');
     brandToggle.title = collapsed ? 'Buka menu' : 'Ciutkan menu';
   };
+
+  const account = document.getElementById('shell-account');
+  if (account) account.onclick = () => go('account');
+
+  const settings = document.getElementById('shell-settings');
+  if (settings) settings.onclick = () => go('settings');
+
+  const admin = document.getElementById('shell-admin');
+  if (admin) admin.onclick = () => go('admin');
 
   const notif = document.getElementById('shell-notif');
   if (notif) notif.onclick = () => {
@@ -116,15 +97,23 @@ export function bindAppShell(options = {}) {
   };
 }
 
-function handleRoute(route) { safeShellRoute(route); }
+function handleRoute(route) {
+  if (!route) return;
+  if (route.startsWith('future:')) {
+    const label = route.split(':')[1] || 'Fitur';
+    toast(`${label.charAt(0).toUpperCase() + label.slice(1)} akan dibuka pada fase berikutnya.`);
+    return;
+  }
+  go(route);
+}
 
 function sideItem(icon, label, route, active, homeCta = false) {
   const cls = `nav-item ${active ? 'active' : ''} ${homeCta ? 'nav-home-cta' : ''}`;
   const iconHtml = homeCta ? `<span class="nav-diamond">${svg(icon)}</span>` : svg(icon);
-  return `<a class="${cls}" data-route="${esc(route)}" href="${esc(routePath(route))}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span>${signalForRoute(route)}</a>`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span>${signalForRoute(route)}</button>`;
 }
 
 function bottomMaterialItem(symbol, label, route, active) {
   const cls = `bottom-item bottom-material-item ${active ? 'active' : ''}`;
-  return `<a class="${cls}" data-route="${esc(route)}" href="${esc(routePath(route))}" title="${esc(label)}" aria-label="${esc(label)}"><span class="bottom-material-hit"><span class="material-symbols-rounded bottom-material-icon">${esc(symbol)}</span></span>${signalForRoute(route)}</a>`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}" aria-label="${esc(label)}"><span class="bottom-material-hit"><span class="material-symbols-rounded bottom-material-icon">${esc(symbol)}</span></span>${signalForRoute(route)}</button>`;
 }
