@@ -508,3 +508,9 @@ a{color:inherit}.material-symbols-rounded{font-variation-settings:'wght' 300,'FI
   opacity:1;cursor:default;color:#BFD2E5;background:#0A315C;
   border:1px solid rgba(91,160,240,.22);box-shadow:none;
 }
+
+
+/* R5.2 — non-blocking authenticated Landing state */
+.public-access-ready{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px;border-radius:10px;border:1px solid rgba(34,224,199,.24);background:rgba(34,224,199,.08);color:#82eadb;font-size:.76rem;font-weight:800;white-space:nowrap}
+.public-access-ready.compact{min-height:30px;padding:5px 8px;font-size:.7rem}
+@media(max-width:600px){.public-active-attendance .public-access-ready{width:100%}}
