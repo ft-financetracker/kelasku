@@ -1997,12 +1997,28 @@ function bindClassLinksSettings(data){
   document.getElementById('public-links-enabled')?.addEventListener('change',e=>document.querySelector('.class-public-url')?.classList.toggle('is-disabled',!e.currentTarget.checked));
   document.getElementById('save-class-links')?.addEventListener('click',()=>saveClassLinks(data));
 }
+function invalidatePublicLinkCacheForClass(data={}){
+  const classId=String(data?.class?.class_id||state.selectedClassId||'');
+  const refs=[String(data?.class?.class_code||'').replace(/^KLS-/i,'').trim().toLowerCase(),String(data?.class?.public_slug||'').trim().toLowerCase()].filter(Boolean);
+  try{
+    const remove=[];
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!/^kelasku_public_links_cache_/i.test(key))continue;
+      if(refs.some(ref=>key.toLowerCase().endsWith('_'+ref))){remove.push(key);continue;}
+      try{const cached=JSON.parse(localStorage.getItem(key)||'null');if(classId&&String(cached?.data?.class?.class_id||'')===classId)remove.push(key);}catch{}
+    }
+    remove.forEach(key=>localStorage.removeItem(key));
+  }catch{}
+}
 async function saveClassLinks(data){
   const btn=document.getElementById('save-class-links'),status=document.getElementById('class-links-status');if(!btn||btn.disabled)return;
-  const links=[...document.querySelectorAll('[data-class-link-row]')].map(row=>({link_id:row.dataset.linkId||'',section_label:row.querySelector('.link-section')?.value.trim()||'',platform:row.querySelector('.link-platform')?.value||'OTHER',label:row.querySelector('.link-label')?.value.trim()||'',url:row.querySelector('.link-url')?.value.trim()||'',description:row.querySelector('.link-description')?.value.trim()||'',visibility:row.querySelector('.link-visibility')?.value||'PUBLIC'})).filter(item=>item.label||item.url);
-  if(links.length>CLASS_LINK_LIMIT){status.className='request-status error';status.textContent=`Maksimal ${CLASS_LINK_LIMIT} link per kelas.`;return;}const sectionCount=new Set(links.map(item=>String(item.section_label||'Umum').trim().toLowerCase())).size;if(sectionCount>CLASS_LINK_TAB_LIMIT){status.className='request-status error';status.textContent=`Maksimal ${CLASS_LINK_TAB_LIMIT} tab/kelompok.`;return;}const invalid=links.find(item=>!item.label||!/^https?:\/\//i.test(item.url));if(invalid){status.className='request-status error';status.textContent='Setiap link wajib punya nama dan URL http/https yang valid.';return;}
+  // Gunakan satu source of truth agar field baru (group_label/platform_label) tidak hilang
+  // ketika payload dikirim ke backend.
+  const links=collectClassLinkDrafts().map(item=>({...item,section_label:String(item.section_label||'').trim(),group_label:String(item.group_label||'').trim(),platform_label:String(item.platform_label||'').trim(),label:String(item.label||'').trim(),url:String(item.url||'').trim(),description:String(item.description||'').trim()})).filter(item=>item.label||item.url);
+  if(links.length>CLASS_LINK_LIMIT){status.className='request-status error';status.textContent=`Maksimal ${CLASS_LINK_LIMIT} link per kelas.`;return;}const sectionCount=new Set(links.map(item=>String(item.section_label||'Umum').trim().toLowerCase())).size;if(sectionCount>CLASS_LINK_TAB_LIMIT){status.className='request-status error';status.textContent=`Maksimal ${CLASS_LINK_TAB_LIMIT} tab/kelompok.`;return;}const invalid=links.find(item=>!item.label||!/^https?:\/\//i.test(item.url));if(invalid){status.className='request-status error';status.textContent='Setiap link wajib punya nama dan URL http/https yang valid.';return;}const invalidCustom=links.find(item=>String(item.platform||'').toUpperCase()==='OTHER'&&!String(item.platform_label||'').trim());if(invalidCustom){status.className='request-status error';status.textContent='Platform Custom wajib memiliki nama platform.';return;}
   const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Menyimpan…</span>';status.className='request-status progress';status.textContent='Menyimpan link kelas…';
-  try{const result=await api('saveClassLinks',{class_id:state.selectedClassId,public_links_enabled:document.getElementById('public-links-enabled')?.checked===true,links},{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});if(currentClassData){currentClassData.class_links=result.items||[];currentClassData.settings.public_links_enabled=result.public_links_enabled;state.classDetails[state.selectedClassId]=currentClassData;}status.className='request-status ok';status.textContent='Link kelas tersimpan ✓';toast('Link kelas tersimpan.');}
+  try{const result=await api('saveClassLinks',{class_id:state.selectedClassId,public_links_enabled:document.getElementById('public-links-enabled')?.checked===true,links},{onSlow:()=>status.textContent='Masih diproses. Tombol tetap dikunci.'});if(currentClassData){currentClassData.class_links=result.items||[];currentClassData.settings.public_links_enabled=result.public_links_enabled;state.classDetails[state.selectedClassId]=currentClassData;}invalidatePublicLinkCacheForClass(currentClassData||data);renderClassLinksManager(result.items||links);status.className='request-status ok';status.textContent='Link kelas tersimpan ✓';toast('Link kelas tersimpan. Landing akan membaca struktur terbaru.');}
   catch(err){status.className='request-status error';status.textContent=err.message;}
   finally{btn.disabled=false;btn.innerHTML=old;}
 }
