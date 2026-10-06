@@ -1,4 +1,4 @@
-import { api } from '../core/api.js';
+import { api } from '../core/api.js?v=6739r52';
 import { state } from '../core/state.js';
 import { primaryUrl } from '../core/utils.js';
 
@@ -35,6 +35,10 @@ const esc = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','
 const classCode = rawCode;
 const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v676_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
+const PUBLIC_REVALIDATE_MS = 90 * 1000;
+const LANDING_MEMBER_CONTEXT_TTL_MS = 20 * 60 * 1000;
+let memberContextInFlight = null;
+let memberContextInFlightKey = '';
 const PUBLIC_APPEARANCE_CACHE_KEY = classCode ? `kelasku_public_appearance_v6733_${classCode.toLowerCase()}` : '';
 function readPublicAppearanceCache(){
   if(!PUBLIC_APPEARANCE_CACHE_KEY)return {};
@@ -84,6 +88,153 @@ function writePublicCache(data){
 }
 function samePublicData(a,b){
   try{return JSON.stringify(a)===JSON.stringify(b);}catch{return false;}
+}
+
+function readPublicCacheEntry(){
+  if(!PUBLIC_CACHE_KEY)return null;
+  try{
+    const cached=JSON.parse(localStorage.getItem(PUBLIC_CACHE_KEY)||'null');
+    if(!cached?.data || !cached?.at || Date.now()-Number(cached.at)>PUBLIC_CACHE_MS)return null;
+    return {data:cached.data,at:Number(cached.at)};
+  }catch{return null;}
+}
+function landingUserCacheId(){
+  return String(state.user?.user_id||state.user?.kelasku_id||state.user?.username||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,80);
+}
+function landingMemberCacheKey(classId){
+  const userId=landingUserCacheId();
+  return userId&&classId?`kelasku_landing_member_ctx_r52_${userId}_${String(classId).replace(/[^A-Za-z0-9_-]/g,'')}`:'';
+}
+function landingAcademicSignature(data={}){
+  const academic=data.public_academic||{};
+  const tasks=(academic.tasks||[]).map(x=>String(x.task_id||'')).filter(Boolean).sort();
+  const attendance=(academic.attendance||academic.attendance_sessions||[]).map(x=>String(x.attendance_id||'')).filter(Boolean).sort();
+  return `${tasks.join(',')}|${attendance.join(',')}`;
+}
+function readLandingMemberContext(data={}){
+  const classId=String(data.class?.class_id||'');
+  const key=landingMemberCacheKey(classId);
+  if(!key || !state.sessionToken || !state.user)return null;
+  try{
+    const cached=JSON.parse(sessionStorage.getItem(key)||'null');
+    if(!cached?.data || !cached?.at)return null;
+    if(Date.now()-Number(cached.at)>LANDING_MEMBER_CONTEXT_TTL_MS)return null;
+    if(String(cached.signature||'')!==landingAcademicSignature(data))return null;
+    return cached.data;
+  }catch{return null;}
+}
+function writeLandingMemberContext(data={},context=null){
+  const classId=String(data.class?.class_id||'');
+  const key=landingMemberCacheKey(classId);
+  if(!key || !context)return;
+  try{sessionStorage.setItem(key,JSON.stringify({at:Date.now(),signature:landingAcademicSignature(data),data:context}));}catch{}
+
+  // Persist only non-sensitive membership metadata. Private URLs/tokens stay in
+  // sessionStorage, while future tabs can still recognize the member instantly.
+  try{
+    if(context.class?.class_id){
+      const next=[...(state.myClasses||[])];
+      const at=next.findIndex(x=>String(x.class_id||'')===String(context.class.class_id));
+      const item={...context.class,is_class_leader:Boolean(context.permissions?.is_class_leader)};
+      if(at>=0)next[at]=item;else next.push(item);
+      state.myClasses=next;
+      state.myClassesAt=Date.now();
+      localStorage.setItem('kelasku_classes_cache',JSON.stringify(next));
+      localStorage.setItem('kelasku_classes_cache_at',String(state.myClassesAt));
+    }
+  }catch{}
+}
+function clearLandingMemberContext(data={}){
+  const key=landingMemberCacheKey(String(data.class?.class_id||''));
+  if(!key)return;
+  try{sessionStorage.removeItem(key);}catch{}
+}
+function localMemberShell(classId){
+  if(!state.sessionToken || !state.user || !classId)return null;
+  const item=(state.myClasses||[]).find(x=>String(x.class_id||'')===String(classId));
+  if(!item)return null;
+  const role=String(item.role||'MEMBER').toUpperCase();
+  return {
+    class:{...item,role},
+    permissions:{
+      role,
+      is_class_leader:Boolean(item.is_class_leader),
+      is_participant:!['TEACHER','OBSERVER'].includes(role)
+    },
+    __local_membership_only:true
+  };
+}
+function mergeLandingMemberAcademic(publicAcademic={},context={}){
+  const taskStates=context.task_states||{};
+  return {
+    permissions:context.permissions||{},
+    schedules:Array.isArray(publicAcademic.schedules)?publicAcademic.schedules:[],
+    tasks:(publicAcademic.tasks||[]).map(item=>({
+      ...item,
+      submission_status:taskStates[String(item.task_id||'')]?.submission_status||'NOT_SUBMITTED'
+    })),
+    announcements:Array.isArray(publicAcademic.announcements)?publicAcademic.announcements:[],
+    materials:[],
+    attendance_sessions:Array.isArray(context.attendance_sessions)?context.attendance_sessions:[]
+  };
+}
+async function fetchLandingMemberContext(data={}){
+  if(!state.sessionToken || !state.user || !data.class?.class_id)return null;
+  const classId=String(data.class.class_id);
+  const requestKey=`${classId}|${landingAcademicSignature(data)}`;
+  if(memberContextInFlight && memberContextInFlightKey===requestKey)return memberContextInFlight;
+  const attemptKey=`${landingMemberCacheKey(classId)}_attempt`;
+  try{
+    const lastAttempt=Number(sessionStorage.getItem(attemptKey)||0);
+    if(lastAttempt && Date.now()-lastAttempt<30000)return null;
+    sessionStorage.setItem(attemptKey,String(Date.now()));
+  }catch{}
+  const academic=data.public_academic||{};
+  const payload={
+    class_id:classId,
+    task_ids:(academic.tasks||[]).map(x=>x.task_id).filter(Boolean).slice(0,12),
+    attendance_ids:(academic.attendance||academic.attendance_sessions||[]).map(x=>x.attendance_id).filter(Boolean).slice(0,8)
+  };
+  memberContextInFlightKey=requestKey;
+  memberContextInFlight=api('getLandingMemberContext',payload,{timeout:9000,timeoutMessage:'Sinkronisasi anggota belum selesai. Landing tetap dapat digunakan.'})
+    .finally(()=>{memberContextInFlight=null;memberContextInFlightKey='';});
+  return memberContextInFlight;
+}
+async function upgradeLandingMember(data={}){
+  if(!state.sessionToken || !state.user || !data.class?.class_id)return;
+  const cachedContext=readLandingMemberContext(data);
+  if(cachedContext){
+    render(data,cachedContext,mergeLandingMemberAcademic(data.public_academic||{},cachedContext),{membershipLoading:false});
+    return;
+  }
+
+  // Fast-path: class membership already cached by the app shell. This is UI-only;
+  // private URLs and check-in tokens still wait for the server context below.
+  const localMember=localMemberShell(data.class.class_id);
+  if(localMember)render(data,localMember,null,{membershipLoading:false});
+
+  try{
+    const context=await fetchLandingMemberContext(data);
+    if(!context)return;
+    writeLandingMemberContext(data,context);
+    const latest=currentPublicData?.class?.class_id===data.class.class_id?currentPublicData:data;
+    render(latest,context,mergeLandingMemberAcademic(latest.public_academic||{},context),{membershipLoading:false});
+  }catch(err){
+    // Landing publik tidak boleh ikut macet hanya karena konteks anggota lambat.
+    // AUTH_EXPIRED dibersihkan oleh api.js. Bila server secara eksplisit menolak
+    // membership, metadata lokal kelas ikut dibersihkan agar UI tidak menyesatkan.
+    if(!state.sessionToken){
+      clearLandingMemberContext(data);
+    }else if(String(err?.code||'')==='FORBIDDEN'){
+      clearLandingMemberContext(data);
+      const classId=String(data.class?.class_id||'');
+      state.myClasses=(state.myClasses||[]).filter(x=>String(x.class_id||'')!==classId);
+      state.myClassesAt=Date.now();
+      try{localStorage.setItem('kelasku_classes_cache',JSON.stringify(state.myClasses));localStorage.setItem('kelasku_classes_cache_at',String(state.myClassesAt));}catch{}
+      const latest=currentPublicData?.class?.class_id===classId?currentPublicData:data;
+      render(latest,null,null,{membershipLoading:false});
+    }
+  }
 }
 
 function publicReturnPath(){
@@ -261,23 +412,22 @@ function academicLoading() {
   return `<section class="public-room-hub public-room-loading" aria-live="polite"><div class="public-inline-loader"><span class="public-loader"></span><div><strong>Menyiapkan informasi kelas…</strong><small>Link publik sudah dapat digunakan sambil data anggota dimuat.</small></div></div></section>`;
 }
 
-function guestAcademicHub(loggedIn,academic={}, {membershipLoading=false, memberConfirmed=false}={}) {
+function guestAcademicHub(loggedIn,academic={}, {membershipLoading=false, memberConfirmed=false, classId=''}={}) {
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
   const activeAttendance=attendance[0];
   const accessText=!loggedIn
     ? 'Login sebagai anggota kelas untuk mengisi absensi.'
     : memberConfirmed
-      ? 'Anggota terverifikasi. Data anggota sedang disiapkan.'
-      : membershipLoading
-        ? 'Sesi login terdeteksi. Akses anggota sedang diverifikasi.'
-        : 'Sesi login terdeteksi. Akses anggota belum terverifikasi.';
+      ? 'Akun aktif. Fitur anggota akan muncul otomatis saat data siap.'
+      : 'Akun KelasKu aktif. Landing publik tetap siap digunakan.';
+  const roomAttendance=memberConfirmed&&classId?`<a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-primary-action">Buka Absensi</a>`:'';
   const accessButton=!loggedIn
     ? '<button type="button" data-locked-action="Absensi" class="public-primary-action">Masuk untuk Absensi</button>'
-    : `<button type="button" class="public-primary-action public-access-state" disabled>${membershipLoading||memberConfirmed?'Memeriksa akses…':'Akses anggota'}</button>`;
+    : (roomAttendance||'<span class="public-access-ready">Akun aktif</span>');
   const rowAccessButton=!loggedIn
     ? '<button type="button" data-locked-action="Absensi" class="public-primary-action">Login</button>'
-    : `<button type="button" class="public-primary-action public-access-state" disabled>${membershipLoading||memberConfirmed?'Memeriksa…':'Akses anggota'}</button>`;
+    : (roomAttendance||'<span class="public-access-ready compact">Akun aktif</span>');
   const activeBanner=activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI AKTIF</span><strong>${esc(activeAttendance.title||'Absensi Kelas')}</strong><small>${esc(accessText)}</small></div>${accessButton}</div>`:'';
   const panels={
     schedule:`${activeBanner}${publicScheduleBlock(allSchedules,activeAttendance,{guest:true})}`,
@@ -290,10 +440,8 @@ function guestAcademicHub(loggedIn,academic={}, {membershipLoading=false, member
   const sectionCopy=!loggedIn
     ? 'Jadwal publik dapat dilihat. Absensi internal memerlukan login sebagai anggota kelas.'
     : memberConfirmed
-      ? 'Akun aktif dan keanggotaan terverifikasi. Data anggota sedang dimuat di belakang layar.'
-      : membershipLoading
-        ? 'Akun KelasKu terdeteksi. Akses kelas sedang diverifikasi tanpa menahan Landing.'
-        : 'Sesi login terdeteksi. Konten anggota tetap dikunci sampai keanggotaan terverifikasi server.';
+      ? 'Akun aktif. Landing tetap dapat digunakan tanpa menunggu sinkronisasi anggota.'
+      : 'Akun KelasKu aktif. Konten publik langsung tersedia; fitur anggota dimuat tanpa menahan halaman.';
   return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas',sectionCopy)}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span>${counts[key]?`<b class="public-tab-signal">${counts[key]>9?'9+':counts[key]}</b>`:''}</button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
@@ -325,7 +473,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   // Guest hanya memakai `data.items` dari endpoint publik yang sudah disaring server-side.
   // Fallback groups dipertahankan untuk cache/release lama, tetap hanya berisi PUBLIC links.
   const publicItems=Array.isArray(data.items)?data.items:Object.values(data.groups||{}).flat();
-  const sourceItems=isMember?(memberData.class_links||[]):publicItems;
+  const sourceItems=(isMember&&Array.isArray(memberData?.class_links))?memberData.class_links:publicItems;
   const linkUi=linkPeriodUi(sourceItems);
   currentPublicAcademic = (isMember && academic) ? academic : (data.public_academic || {});
   currentPublicClassId = cls.class_id || '';
@@ -337,7 +485,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   // No second full-width "Menyiapkan informasi kelas" state.
   const infoSection = (isMember && academic)
     ? memberAcademicHub(academic,cls.class_id||'')
-    : guestAcademicHub(loggedIn,data.public_academic||{}, {membershipLoading, memberConfirmed:isMember});
+    : guestAcademicHub(loggedIn,data.public_academic||{}, {membershipLoading:false, memberConfirmed:isMember, classId:cls.class_id||''});
 
   content.innerHTML = `${publicHero(cls,data.appearance||{},memberData)}
     ${infoSection}
@@ -605,44 +753,32 @@ function renderError(message) {
 }
 
 async function init() {
-  // Landing publik sengaja tidak mendaftarkan PWA/Service Worker aplikasi.
-  // Ini menjaga klik Landing tetap terasa sebagai halaman web publik, bukan membuka app shell.
+  // Landing publik tidak mendaftarkan Service Worker aplikasi.
   if (!classCode) return renderError('Kode kelas tidak ditemukan pada URL.');
-  const cached=readPublicCache();
+
+  const cacheEntry=readPublicCacheEntry();
+  const cached=cacheEntry?.data||null;
   if(cached){
-    const cachedMemberLookup=Boolean(state.sessionToken && cached.class?.class_id);
-    render(cached,null,null,{membershipLoading:cachedMemberLookup});
+    const cachedContext=readLandingMemberContext(cached);
+    const localMember=cachedContext||localMemberShell(cached.class?.class_id||'');
+    const cachedAcademic=cachedContext?mergeLandingMemberAcademic(cached.public_academic||{},cachedContext):null;
+    render(cached,localMember,cachedAcademic,{membershipLoading:false});
+    // Member upgrade tidak menahan public refresh dan tidak menampilkan spinner akses.
+    upgradeLandingMember(cached).catch(()=>{});
   }
+
+  // Refresh berulang dalam 90 detik memakai cache lokal sepenuhnya. Ini menghindari
+  // request Apps Script yang sama setiap kali user menekan refresh.
+  if(cacheEntry && Date.now()-Number(cacheEntry.at||0)<PUBLIC_REVALIDATE_MS)return;
+
   try {
-    const data = await api('getPublicClassLinks', { class_code: classCode }, { auth: false, timeout: 16000 });
+    const data = await api('getPublicClassLinks', { class_code: classCode }, { auth: false, timeout: 12000 });
     writePublicCache(data);
-    const mayHaveMemberData=Boolean(state.sessionToken && data.class?.class_id);
-
-    // Cache-first on repeat visits; network refresh only redraws public content if it changed.
-    if(!cached || !samePublicData(cached,data))render(data,null,null,{membershipLoading:mayHaveMemberData});
-    if(!mayHaveMemberData)return;
-
-    // R5.1 auth-first landing: status login berasal dari session lokal sehingga tampil instan.
-    // Konten anggota TIDAK pernah dibuka dari cache lokal. Keanggotaan tetap harus lolos
-    // getClassDetail dari server; baru setelah itu data akademik anggota dimuat.
-    let memberData=null,memberAcademic=null;
-    render(data,null,null,{membershipLoading:true});
-    try{
-      memberData=await api('getClassDetail',{class_id:data.class.class_id},{timeout:14000});
-      render(data,memberData,null,{membershipLoading:true});
-    }catch(err){
-      // AUTH_EXPIRED/UNAUTHORIZED_SESSION akan membersihkan session melalui api.js.
-      // Timeout/forbidden tetap tidak membuka data privat.
-      render(data,null,null,{membershipLoading:false});
-      return;
-    }
-    try{
-      memberAcademic=await api('getClassAcademic',{class_id:data.class.class_id},{timeout:14000});
-      render(data,memberData,memberAcademic,{membershipLoading:false});
-    }catch(err){
-      // Detail anggota sudah valid; Landing tetap usable walau academic request lambat/gagal.
-      render(data,memberData,null,{membershipLoading:false});
-    }
+    const context=readLandingMemberContext(data);
+    const localMember=context||localMemberShell(data.class?.class_id||'');
+    const academic=context?mergeLandingMemberAcademic(data.public_academic||{},context):null;
+    if(!cached || !samePublicData(cached,data))render(data,localMember,academic,{membershipLoading:false});
+    upgradeLandingMember(data).catch(()=>{});
   } catch (err) {
     if(!cached)renderError(err.message);
   }

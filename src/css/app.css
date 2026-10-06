@@ -3875,3 +3875,46 @@ html[data-theme="light"] .analytics-quick-kpis article,html[data-theme="light"] 
   }
   .main,.dashboard,.app-root{filter:none!important}
 }
+
+
+/* ============================================================
+   R5.2 — Launch mobile GPU-safe render path (Android <= 900px)
+   Keeps layout/data intact while reducing compositor pressure.
+   ============================================================ */
+html.kk-mobile-safe-render{--shadow:none!important;background:#06142F!important}
+html.kk-mobile-safe-render body{background:#06142F!important;background-image:none!important;background-attachment:scroll!important}
+html.kk-mobile-safe-render body::before,html.kk-mobile-safe-render body::after{content:none!important;display:none!important;background:none!important}
+html.kk-mobile-safe-render *,html.kk-mobile-safe-render *::before,html.kk-mobile-safe-render *::after{
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+html.kk-mobile-safe-render .skeleton::after{display:none!important;animation:none!important}
+html.kk-mobile-safe-render .loader,html.kk-mobile-safe-render .btn-spinner{animation:none!important}
+html.kk-mobile-safe-render .main,html.kk-mobile-safe-render .dashboard,html.kk-mobile-safe-render #app,html.kk-mobile-safe-render .app-root{
+  background:#06142F!important;background-image:none!important;filter:none!important;
+}
+html.kk-mobile-safe-render .glass,html.kk-mobile-safe-render .panel,html.kk-mobile-safe-render .sidebar,html.kk-mobile-safe-render .bottom-nav,html.kk-mobile-safe-render .bottom-nav.bottom-nav-minimal,html.kk-mobile-safe-render .overlay,html.kk-mobile-safe-render .app-dialog-backdrop,html.kk-mobile-safe-render .update-progress-overlay,html.kk-mobile-safe-render .appearance-savebar{
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;
+}
+html.kk-mobile-safe-render .bottom-nav,html.kk-mobile-safe-render .bottom-nav.bottom-nav-minimal{
+  background:#06162F!important;background-image:none!important;border-top:1px solid rgba(91,160,240,.16)!important;box-shadow:none!important;
+}
+html.kk-mobile-safe-render .bottom-nav::before,html.kk-mobile-safe-render .bottom-nav.bottom-nav-minimal::before{display:none!important;content:none!important}
+html.kk-mobile-safe-render .bottom-home-cta{transform:none!important}
+html.kk-mobile-safe-render .bottom-diamond{transform:none!important;border-radius:14px!important;box-shadow:none!important}
+html.kk-mobile-safe-render .bottom-diamond .icon{transform:none!important}
+html.kk-mobile-safe-render .profile-avatar,html.kk-mobile-safe-render .member-avatar,html.kk-mobile-safe-render .logo-hero{filter:none!important;box-shadow:none!important}
+@media(max-width:900px){
+  html.kk-mobile-safe-render .panel,html.kk-mobile-safe-render .profile-card,html.kk-mobile-safe-render .settings-section,html.kk-mobile-safe-render .account-id-box{box-shadow:none!important}
+  html.kk-mobile-safe-render .carousel-track,html.kk-mobile-safe-render .carousel-slide{will-change:auto!important}
+}
+
+/* R5.2 Android safe mode: keep the app shell inside one viewport and scroll
+   only the main pane, so the bottom navigation no longer needs a fixed layer. */
+@media(max-width:900px){
+  html.kk-mobile-safe-render,html.kk-mobile-safe-render body{height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+  html.kk-mobile-safe-render #app{height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+  html.kk-mobile-safe-render .dashboard{height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+  html.kk-mobile-safe-render .main{flex:1 1 auto!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:auto!important;padding-bottom:14px!important}
+  html.kk-mobile-safe-render .bottom-nav,html.kk-mobile-safe-render .bottom-nav.bottom-nav-minimal{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;flex:0 0 calc(76px + env(safe-area-inset-bottom))!important;width:100%!important}
+  html.kk-mobile-safe-render *{animation:none!important;transition:none!important;filter:none!important}
+}

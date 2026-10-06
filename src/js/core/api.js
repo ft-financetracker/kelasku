@@ -100,7 +100,9 @@ export function api(action, payload = {}, options = {}) {
       const response = data.response || {};
       if (!response.ok) {
         if (['AUTH_EXPIRED', 'UNAUTHORIZED_SESSION'].includes(response.code)) clearSession();
-        finish(reject, new Error(response.message || 'Terjadi kesalahan pada server.'));
+        const error = new Error(response.message || 'Terjadi kesalahan pada server.');
+        error.code = response.code || 'SERVER_ERROR';
+        finish(reject, error);
         return;
       }
 
