@@ -225,10 +225,11 @@ async function upgradeLandingMember(data={}){
     return;
   }
 
-  // Fast-path: class membership already cached by the app shell. This is UI-only;
-  // private URLs and check-in tokens still wait for the server context below.
+  // Fast-path UX: konten publik langsung siap, sedangkan konteks anggota diperiksa
+  // di belakang. Selama proses ini jangan arahkan user ke Ruang Kelas seolah-olah
+  // quick attendance Landing tidak tersedia.
   const localMember=localMemberShell(data.class.class_id);
-  if(localMember)render(data,localMember,null,{membershipLoading:false});
+  render(data,localMember,null,{membershipLoading:true});
 
   try{
     const context=await fetchLandingMemberContext(data);
@@ -448,32 +449,45 @@ function guestAcademicHub(loggedIn,academic={}, {membershipLoading=false, member
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
   const activeAttendance=attendance[0];
+  const memberPending=Boolean(loggedIn&&membershipLoading);
+  const pendingButton='<button type="button" class="public-primary-action" disabled aria-busy="true"><span class="public-loader" style="width:16px;height:16px;border-width:2px" aria-hidden="true"></span><span>Memeriksa absensi…</span></button>';
+  const pendingAttendance=`<div class="public-room-row public-room-row-action" aria-live="polite"><span class="public-room-row-icon material-symbols-rounded">how_to_reg</span><div><strong>Memeriksa absensi aktif…</strong><small>Landing tetap bisa digunakan sambil data akun disinkronkan.</small></div>${pendingButton}</div>`;
   const accessText=!loggedIn
     ? 'Login sebagai anggota kelas untuk mengisi absensi.'
-    : memberConfirmed
-      ? 'Akun aktif. Fitur anggota akan muncul otomatis saat data siap.'
-      : 'Akun KelasKu aktif. Landing publik tetap siap digunakan.';
-  const roomAttendance=memberConfirmed&&classId?`<a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-primary-action">Buka Absensi</a>`:'';
+    : memberPending
+      ? 'Absensi personal sedang diperiksa. Landing tetap bisa digunakan.'
+      : memberConfirmed
+        ? 'Akun aktif. Fitur anggota siap digunakan.'
+        : 'Akun KelasKu aktif. Landing publik tetap siap digunakan.';
+  const roomAttendance=!memberPending&&memberConfirmed&&classId?`<a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-primary-action">Buka Absensi</a>`:'';
   const accessButton=!loggedIn
     ? '<button type="button" data-locked-action="Absensi" class="public-primary-action">Masuk untuk Absensi</button>'
-    : (roomAttendance||'<span class="public-access-ready">Akun aktif</span>');
+    : memberPending
+      ? pendingButton
+      : (roomAttendance||'<span class="public-access-ready">Akun aktif</span>');
   const rowAccessButton=!loggedIn
     ? '<button type="button" data-locked-action="Absensi" class="public-primary-action">Login</button>'
-    : (roomAttendance||'<span class="public-access-ready compact">Akun aktif</span>');
-  const activeBanner=activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI AKTIF</span><strong>${esc(activeAttendance.title||'Absensi Kelas')}</strong><small>${esc(accessText)}</small></div>${accessButton}</div>`:'';
+    : memberPending
+      ? pendingButton
+      : (roomAttendance||'<span class="public-access-ready compact">Akun aktif</span>');
+  const activeBanner=memberPending
+    ? `<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI</span><strong>Memeriksa absensi aktif…</strong><small>${esc(accessText)}</small></div>${pendingButton}</div>`
+    : activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI AKTIF</span><strong>${esc(activeAttendance.title||'Absensi Kelas')}</strong><small>${esc(accessText)}</small></div>${accessButton}</div>`:'';
   const panels={
-    schedule:`${activeBanner}${publicScheduleBlock(allSchedules,activeAttendance,{guest:true})}`,
-    attendance:roomList(attendance,'Belum ada absensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-guest-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title)}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi aktif'}</small></div></button>${rowAccessButton}</div>`),
+    schedule:`${activeBanner}${publicScheduleBlock(allSchedules,memberPending?null:activeAttendance,{guest:true})}`,
+    attendance:memberPending?pendingAttendance:roomList(attendance,'Belum ada absensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-guest-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title)}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi aktif'}</small></div></button>${rowAccessButton}</div>`),
     tasks:roomList(tasks,'Belum ada tugas publik.',x=>`<button type="button" data-guest-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title)}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements:roomList(announcements,'Belum ada informasi publik.',x=>`<button type="button" data-guest-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title)}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
-  const counts={schedule:allSchedules.length,attendance:attendance.length,tasks:tasks.length,announcements:announcements.length};
+  const counts={schedule:allSchedules.length,attendance:memberPending?0:attendance.length,tasks:tasks.length,announcements:announcements.length};
   const tabs=[['schedule','calendar_month','Jadwal'],['attendance','done_all','Absensi'],['tasks','checklist','Tugas'],['announcements','campaign','Info']];
   const sectionCopy=!loggedIn
     ? 'Jadwal publik dapat dilihat. Absensi internal memerlukan login sebagai anggota kelas.'
-    : memberConfirmed
-      ? 'Akun aktif. Landing tetap dapat digunakan tanpa menunggu sinkronisasi anggota.'
-      : 'Akun KelasKu aktif. Konten publik langsung tersedia; fitur anggota dimuat tanpa menahan halaman.';
+    : memberPending
+      ? 'Konten publik langsung siap; absensi personal diperiksa di belakang tanpa menahan Landing.'
+      : memberConfirmed
+        ? 'Akun aktif. Landing tetap dapat digunakan tanpa menunggu proses lain.'
+        : 'Akun KelasKu aktif. Konten publik langsung tersedia.';
   return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas',sectionCopy)}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span>${counts[key]?`<b class="public-tab-signal">${counts[key]>9?'9+':counts[key]}</b>`:''}</button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
@@ -811,7 +825,7 @@ async function init() {
     const cachedContext=readLandingMemberContext(cached);
     const localMember=cachedContext||localMemberShell(cached.class?.class_id||'');
     const cachedAcademic=cachedContext?mergeLandingMemberAcademic(cached.public_academic||{},cachedContext):null;
-    render(cached,localMember,cachedAcademic,{membershipLoading:false});
+    render(cached,localMember,cachedAcademic,{membershipLoading:Boolean(state.sessionToken&&state.user&&!cachedContext)});
     // Member upgrade tidak menahan public refresh dan tidak menampilkan spinner akses.
     upgradeLandingMember(cached).catch(()=>{});
   }
@@ -826,7 +840,7 @@ async function init() {
     const context=readLandingMemberContext(data);
     const localMember=context||localMemberShell(data.class?.class_id||'');
     const academic=context?mergeLandingMemberAcademic(data.public_academic||{},context):null;
-    if(!cached || !samePublicData(cached,data))render(data,localMember,academic,{membershipLoading:false});
+    if(!cached || !samePublicData(cached,data))render(data,localMember,academic,{membershipLoading:Boolean(state.sessionToken&&state.user&&!context)});
     upgradeLandingMember(data).catch(()=>{});
   } catch (err) {
     if(!cached)renderError(err.message);
