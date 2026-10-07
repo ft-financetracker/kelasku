@@ -36,7 +36,7 @@ const classCode = rawCode;
 const PUBLIC_CACHE_KEY = classCode ? `kelasku_public_links_cache_v676_${classCode.toLowerCase()}` : '';
 const PUBLIC_CACHE_MS = 10 * 60 * 1000;
 const PUBLIC_REVALIDATE_MS = 90 * 1000;
-const LANDING_MEMBER_CONTEXT_TTL_MS = 20 * 60 * 1000;
+const LANDING_MEMBER_CONTEXT_TTL_MS = 90 * 1000;
 let memberContextInFlight = null;
 let memberContextInFlightKey = '';
 const PUBLIC_APPEARANCE_CACHE_KEY = classCode ? `kelasku_public_appearance_v6733_${classCode.toLowerCase()}` : '';
@@ -118,7 +118,7 @@ function landingUserCacheId(){
 }
 function landingMemberCacheKey(classId){
   const userId=landingUserCacheId();
-  return userId&&classId?`kelasku_landing_member_ctx_r52_${userId}_${String(classId).replace(/[^A-Za-z0-9_-]/g,'')}`:'';
+  return userId&&classId?`kelasku_landing_member_ctx_r52c5_${userId}_${String(classId).replace(/[^A-Za-z0-9_-]/g,'')}`:'';
 }
 function landingAcademicSignature(data={}){
   const academic=data.public_academic||{};
@@ -210,7 +210,7 @@ async function fetchLandingMemberContext(data={}){
   const payload={
     class_id:classId,
     task_ids:(academic.tasks||[]).map(x=>x.task_id).filter(Boolean).slice(0,12),
-    attendance_ids:(academic.attendance||academic.attendance_sessions||[]).map(x=>x.attendance_id).filter(Boolean).slice(0,8)
+    attendance_ids:(academic.attendance||academic.attendance_sessions||[]).map(x=>x.attendance_id).filter(Boolean).slice(0,10)
   };
   memberContextInFlightKey=requestKey;
   memberContextInFlight=api('getLandingMemberContext',payload,{timeout:9000,timeoutMessage:'Sinkronisasi anggota belum selesai. Landing tetap dapat digunakan.'})
@@ -404,23 +404,38 @@ function imageSectionHead(kind,kicker,title,copy='',extra='') {
   return `<div class="public-image-head public-image-head-${esc(kind)} public-image-head-v6728"><picture class="public-image-head-bg-v6728" aria-hidden="true"><source media="(max-width:720px)" srcset="${esc(mobile)}"><img src="${esc(desktop)}" alt="" loading="lazy"></picture><span class="public-image-head-shade-v6728" aria-hidden="true"></span><div class="public-image-head-copy"><span class="public-kicker">${esc(kicker)}</span><h2>${esc(title)}</h2>${copy?`<p>${esc(copy)}</p>`:''}</div>${extra||''}</div>`;
 }
 
+function publicAttendanceBlock(items=[]) {
+  const limited=items.slice(0,10);
+  if(!limited.length)return `<div class="public-room-empty"><span class="material-symbols-rounded">task_alt</span><span>Tidak ada absensi aktif yang perlu kamu isi.</span></div>`;
+  const first=limited.slice(0,5),extra=limited.slice(5,10);
+  return `<div class="public-attendance-list">${first.map(publicAttendanceRowHtml).join('')}${extra.length?`<div class="public-attendance-extra" hidden>${extra.map(publicAttendanceRowHtml).join('')}</div>`:''}</div>${extra.length?`<div class="public-schedule-controls public-attendance-controls"><button type="button" class="public-schedule-toggle" data-public-attendance-expand><span class="material-symbols-rounded">unfold_more</span><span>Lihat ${extra.length} absensi lainnya</span></button><button type="button" class="public-schedule-toggle" data-public-attendance-collapse hidden><span class="material-symbols-rounded">unfold_less</span><span>Tampilkan 5 pertama</span></button></div>`:''}`;
+}
+
 function memberAcademicHub(academic={}, classId='') {
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
+  const ongoingScheduleIds=new Set(allSchedules.filter(x=>schedulePhase(x)==='ONGOING').map(x=>String(x.schedule_id||'')));
   const tasks=(academic.tasks||[]).filter(x=>!['SUBMITTED','REVIEWED','GRADED'].includes(String(x.submission_status||'').toUpperCase()) && taskStillActive(x)).sort(byDate('deadline')).slice(0,4);
   const attendance=(academic.permissions?.is_participant===false?[]:(academic.attendance_sessions||[]))
     .filter(x=>String(x.my_status||'UNMARKED').toUpperCase()==='UNMARKED')
-    .sort((a,b)=>{const rank={LATE:0,OPEN:1,UPCOMING:2,CLOSED:3},ak=publicAttendanceState(a).key,bk=publicAttendanceState(b).key,ar=rank[ak]??9,br=rank[bk]??9;if(ar!==br)return ar-br;const ad=new Date(a.open_at||a.start_at||0).getTime()||0,bd=new Date(b.open_at||b.start_at||0).getTime()||0;return ak==='CLOSED'?bd-ad:ad-bd;})
-    .slice(0,4);
+    .filter(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key))
+    .sort((a,b)=>{
+      const aOngoing=ongoingScheduleIds.has(String(a.source_schedule_id||''))?0:1;
+      const bOngoing=ongoingScheduleIds.has(String(b.source_schedule_id||''))?0:1;
+      if(aOngoing!==bOngoing)return aOngoing-bOngoing;
+      const ad=new Date(a.open_at||a.start_at||0).getTime()||0,bd=new Date(b.open_at||b.start_at||0).getTime()||0;
+      return bd-ad;
+    })
+    .slice(0,10);
   const announcements=(academic.announcements||[]).slice(0,4);
-  const activeAttendance=attendance.find(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key));
+  const activeAttendance=attendance[0]||null;
   const activeBanner=activeAttendance?publicActiveAttendanceBanner(activeAttendance):'';
   const panels = {
     schedule: `${activeBanner}${publicScheduleBlock(allSchedules,activeAttendance,{guest:false,classId})}`,
-    attendance: attendance.length?`<div class="public-attendance-list">${attendance.map(publicAttendanceRowHtml).join('')}</div>`:`<div class="public-room-empty"><span class="material-symbols-rounded">task_alt</span><span>Tidak ada absensi yang perlu kamu isi.</span></div>`,
+    attendance: publicAttendanceBlock(attendance),
     tasks: roomList(tasks,'Tidak ada tugas aktif.',x=>`<button type="button" data-public-open-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title || 'Tugas')}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}${x.submission_status?` · ${esc(x.submission_status)}`:''}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements: roomList(announcements,'Belum ada informasi terbaru.',x=>`<button type="button" data-public-open-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title || 'Pengumuman')}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
-  const counts={schedule:allSchedules.length,attendance:attendance.filter(x=>['OPEN','LATE'].includes(publicAttendanceState(x).key)).length,tasks:tasks.length,announcements:announcements.length};
+  const counts={schedule:allSchedules.length,attendance:attendance.length,tasks:tasks.length,announcements:announcements.length};
   const tabs = [['schedule','calendar_month','Jadwal'],['attendance','done_all','Absensi'],['tasks','checklist','Tugas'],['announcements','campaign','Info']];
   return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas','Lihat jadwal terdekat, absensi yang perlu diisi, tugas, dan informasi kelas.')}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span>${counts[key]?`<b class="public-tab-signal">${counts[key]>9?'9+':counts[key]}</b>`:''}</button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
@@ -628,6 +643,23 @@ function bindInteractions(){
     const panel=btn.closest('[data-public-room-panel]')||btn.parentElement?.parentElement;
     const extra=panel?.querySelector('.public-schedule-extra');
     const expand=panel?.querySelector('[data-public-schedule-expand]');
+    if(extra)extra.hidden=true;
+    btn.hidden=true;
+    if(expand)expand.hidden=false;
+  }));
+
+  document.querySelectorAll('[data-public-attendance-expand]').forEach(btn=>btn.addEventListener('click',()=>{
+    const panel=btn.closest('[data-public-room-panel]')||btn.parentElement?.parentElement;
+    const extra=panel?.querySelector('.public-attendance-extra');
+    const collapse=panel?.querySelector('[data-public-attendance-collapse]');
+    if(extra)extra.hidden=false;
+    btn.hidden=true;
+    if(collapse)collapse.hidden=false;
+  }));
+  document.querySelectorAll('[data-public-attendance-collapse]').forEach(btn=>btn.addEventListener('click',()=>{
+    const panel=btn.closest('[data-public-room-panel]')||btn.parentElement?.parentElement;
+    const extra=panel?.querySelector('.public-attendance-extra');
+    const expand=panel?.querySelector('[data-public-attendance-expand]');
     if(extra)extra.hidden=true;
     btn.hidden=true;
     if(expand)expand.hidden=false;
