@@ -4,7 +4,7 @@ import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, bindAttendanceHub, resetAttendancePages } from './attendanceHub.js?v=6739r52c7';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c71';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
@@ -37,6 +37,7 @@ export function renderAnnouncements() {
 }
 
 export function renderAttendance() {
+  resetAttendanceFolders();
   activeAcademicScreen = 'attendance';
   renderAcademicShell('Absensi', 'Riwayat kehadiran dari seluruh kelas dalam satu tempat.', 'attendance', 'i-check');
 }
@@ -143,7 +144,7 @@ function drawAcademicScreen(data) {
   else if (activeAcademicScreen === 'attendance') {
     const items = filteredAttendanceItems(data);
     const overview = document.getElementById('attendance-overview');
-    if (overview) overview.innerHTML = attendanceOverviewHtml(items, attendanceOverviewContext(data));
+    if (overview) overview.innerHTML = attendanceOverviewHtml(items);
     slot.innerHTML = attendanceContentHtml(items);
   }
   else slot.innerHTML = schedulesHtml(filterItems(data.schedules || []), filterItems(data.tasks || []));
@@ -151,20 +152,12 @@ function drawAcademicScreen(data) {
   bindAcademicRows();
 }
 
-function attendanceOverviewContext(data) {
-  const selected = String(document.getElementById('academic-class-filter')?.value || 'ALL');
-  const ids = [...new Set((data?.attendance || []).map(item => String(item.class_id || '')))];
-  const classId = selected !== 'ALL' ? selected : ids.length === 1 ? ids[0] : '';
-  const detail = state.classDetails?.[classId] || {};
-  const classes = [...(state.myClasses || []), ...(Array.isArray(data?.classes) ? data.classes : [])];
-  const classInfo = { ...(classes.find(item => String(item.class_id) === classId) || {}), ...(detail.class || {}) };
-  if (classId && !classInfo.name) classInfo.name = (data.attendance || []).find(item => String(item.class_id) === classId)?.class_name || 'KelasKu';
-  const active = detail.appearance?.active || {};
-  let remembered = {};
-  try { remembered = JSON.parse(localStorage.getItem(`kelasku_class_hero_cache_v6733_${classId}`) || '{}') || {}; } catch {}
-  const heroDesktop = active.HERO_DESKTOP?.url || active.ROOM_DESKTOP?.url || remembered.desktop || '';
-  const heroMobile = active.HERO_MOBILE?.url || active.ROOM_MOBILE?.url || remembered.mobile || heroDesktop || '';
-  return { classInfo, heroDesktop, heroMobile };
+function redrawAttendanceContent() {
+  if (activeAcademicScreen !== 'attendance') return;
+  const slot = document.getElementById('academic-slot');
+  if (!slot || !state.academicHub) return;
+  slot.innerHTML = attendanceContentHtml(filteredAttendanceItems(state.academicHub));
+  bindAcademicRows();
 }
 
 function hydrateClassFilter(data) {
@@ -463,7 +456,7 @@ function bindAcademicRows() {
   document.querySelectorAll('[data-academic-page-kind]').forEach(btn=>btn.onclick=()=>{const page=Number(btn.dataset.academicPage)||1;const kind=btn.dataset.academicPageKind;if(kind==='schedule')scheduleListPage=page;if(kind==='tasks')taskListPage=page;if(kind==='materials')materialListPage=page;if(kind==='announcements')announcementListPage=page;drawAcademicScreen(state.academicHub);window.scrollTo({top:0,behavior:'smooth'});});
   bindFilePreviewButtons(document);
   if (activeAcademicScreen === 'attendance') bindAttendanceHub({
-    redraw: () => drawAcademicScreen(state.academicHub),
+    redraw: redrawAttendanceContent,
     details: id => {
       const item = filteredAttendanceItems(state.academicHub).find(row => String(row.attendance_id || row.public_token || '') === String(id));
       if (item) showModal(attendanceDetailsHtml(item));

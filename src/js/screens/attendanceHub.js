@@ -12,6 +12,7 @@ const STATUS_LABELS = { PRESENT:'Hadir', SICK:'Sakit', PERMIT:'Izin', ABSENT:'Al
 let activeView = 'sessions';
 const pages = new Map();
 const expanded = new Map();
+const expandedCourses = new Map();
 
 function icon(name) {
   const paths = {
@@ -87,38 +88,24 @@ export function attendanceSummary(items = [], now = Date.now()) {
 }
 
 export function resetAttendancePages() { pages.clear(); }
+export function resetAttendanceFolders() { pages.clear(); expanded.clear(); expandedCourses.clear(); }
 
 export function attendanceTabsHtml() {
   return `<nav id="attendance-tabs" class="att-tabs" role="tablist" aria-label="Tampilan absensi">${VIEWS.map(([key, symbol, label, short]) => `<button type="button" id="att-tab-${key}" role="tab" aria-selected="${activeView === key}" aria-controls="academic-slot" tabindex="${activeView === key ? '0' : '-1'}" data-att-view="${key}" class="att-tab ${activeView === key ? 'active' : ''}">${icon(symbol)}<span class="att-tab-long">${label}</span><span class="att-tab-short">${short}</span></button>`).join('')}</nav>`;
 }
 
-function semesterLabel(value) {
-  const text = String(value || '').trim();
-  if (!text) return '';
-  return /^\d+$/.test(text) ? `Semester ${text.padStart(2, '0')}` : text;
-}
-
-export function attendanceOverviewHtml(items, context = {}) {
+export function attendanceOverviewHtml(items) {
   const summary = attendanceSummary(items);
-  const c = context.classInfo || {};
   const totalClasses = new Set(items.map(x => String(x.class_id))).size;
-  const totalCourses = new Set(items.map(x => x.attendance_course_key)).size;
-  const title = c.name || (totalClasses === 1 ? items[0]?.class_name : '') || 'Absensi Kelas';
-  const semester = semesterLabel(c.semester);
-  const desktop = context.heroDesktop || 'assets/classroom/hero-room-default-desktop.jpg?v=6739';
-  const mobile = context.heroMobile || 'assets/classroom/hero-room-default-mobile.jpg?v=6739';
   const cards = [
     ['green','users',summary.done,'Sudah Presensi',summary.done ? 'Kehadiran sudah dicatat' : 'Belum ada presensi tercatat'],
     ['amber','clock',summary.pending,'Belum Presensi',summary.closed ? `${summary.closed} sesi sudah ditutup` : 'Sesi yang perlu diisi'],
     ['gold','book',summary.upcoming,'Belum Dibuka','Sesi mendatang'],
-    ['cyan','calendar',summary.total,'Total Sesi',semester || `${totalClasses} kelas`]
+    ['cyan','calendar',summary.total,'Total Sesi',`${totalClasses} kelas`]
   ];
-  return `<header class="att-hero">
-    <picture class="att-hero-picture" aria-hidden="true"><source media="(max-width:600px)" srcset="${esc(mobile)}"><img src="${esc(desktop)}" alt="" decoding="async" fetchpriority="low"></picture>
-    <div class="att-hero-shade" aria-hidden="true"></div>
-    ${c.cover_url ? `<div class="att-identity"><img src="${esc(c.cover_url)}" alt="Identitas ${esc(title)}" decoding="async"></div>` : `<span class="att-identity att-identity-default">${icon('school')}</span>`}
-    <div class="att-hero-copy"><span class="att-eyebrow">ABSENSI KELAS</span><h1>${esc(title)}</h1><p class="att-hero-meta">${totalCourses} mata pelajaran/kegiatan${semester ? ` · ${esc(semester)}` : totalClasses > 1 ? ` · ${totalClasses} kelas` : ''}</p><p class="att-hero-description">Kelola dan lakukan presensi untuk setiap sesi pembelajaran.</p></div>
-    ${semester ? `<span class="att-semester">${esc(semester)}</span>` : ''}
+  return `<header class="att-hero att-hero-default">
+    <div class="att-hero-copy"><span class="att-eyebrow">ABSENSI KELAS</span><h1>Hadir hari ini.<br><em>Bertumbuh setiap hari.</em></h1><p class="att-hero-description">Setiap pertemuan adalah langkah kecil menuju ilmu yang lebih berarti.</p><div class="att-hero-values"><span>${icon('check')}Konsisten</span><span>${icon('book')}Terus belajar</span><span>${icon('chart')}Terus bertumbuh</span></div></div>
+    <div class="att-hero-art" aria-hidden="true"><div class="att-hero-orbit"></div><div class="att-hero-note"><span class="att-hero-note-icon">${icon('calendar')}</span><div class="att-hero-note-dots"><i></i><i></i><i></i></div><div class="att-hero-note-line"><span></span>${icon('check')}</div><div class="att-hero-note-line"><span></span>${icon('check')}</div><div class="att-hero-note-line"><span></span>${icon('check')}</div></div><span class="att-hero-stamp">${icon('check')}Satu langkah lebih baik</span></div>
   </header>
   <div class="att-metrics" aria-label="Komposisi sesi pada filter aktif">${cards.map(([tone, symbol, count, label, help]) => {
     const percent = summary.total ? Math.round(count / summary.total * 100) : 0;
@@ -147,28 +134,43 @@ export function attendanceContentHtml(items) {
   if (activeView === 'analytics') return analyticsHtml(items);
   return `<div class="att-class-list">${grouped(items).map((group, index) => {
     const summary = attendanceSummary(group.items);
-    const courses = new Set(group.items.map(x => x.attendance_course_key)).size;
-    const isOpen = expanded.has(group.key) ? expanded.get(group.key) : true;
-    const pageCount = Math.max(1, Math.ceil(group.items.length / PAGE_SIZE));
-    const page = Math.min(pages.get(group.key) || 1, pageCount);
-    const ordered = [...group.items].sort((a,b) => {
-      const rank = item => { const ui = attendanceState(item); return ui.canCheckIn ? 0 : ui.group === 'done' ? 1 : ui.group === 'upcoming' ? 2 : 3; };
-      const byRank = rank(a) - rank(b);
-      return byRank || (attendanceState(a).group === 'upcoming' ? ms(startOf(a)) - ms(startOf(b)) : ms(startOf(b)) - ms(startOf(a)));
-    });
-    const visible = ordered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    return `<section class="att-class ${isOpen ? 'is-open' : ''}"><button type="button" class="att-class-head" data-att-class="${esc(group.key)}" aria-expanded="${isOpen}" aria-controls="att-class-panel-${index}"><span class="att-class-icon">${icon('school')}</span><span><strong>${esc(group.name)}</strong><small>${courses} mata pelajaran/kegiatan · ${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka</small></span>${icon('chevron')}</button><div id="att-class-panel-${index}" class="att-class-body" ${isOpen ? '' : 'hidden'}>
-      <div class="att-table-scroll"><table class="att-session-table"><caption class="att-sr-only">Daftar sesi ${esc(group.name)}. Zona waktu WIB.</caption><thead><tr><th scope="col">#</th><th scope="col">Tanggal</th><th scope="col">Sesi</th><th scope="col">Waktu</th><th scope="col">Topik / Kegiatan</th><th scope="col">Ruang / Link</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead><tbody>${visible.map(sessionRow).join('')}</tbody></table></div>
-      ${pageCount > 1 ? `<div class="att-pagination"><span>${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, group.items.length)} dari ${group.items.length} sesi</span><div><button type="button" data-att-page="${page - 1}" data-att-page-class="${esc(group.key)}" aria-label="Halaman sesi sebelumnya" ${page === 1 ? 'disabled' : ''}>‹</button><span>${page} / ${pageCount}</span><button type="button" data-att-page="${page + 1}" data-att-page-class="${esc(group.key)}" aria-label="Halaman sesi berikutnya" ${page === pageCount ? 'disabled' : ''}>›</button></div></div>` : ''}
-    </div></section>`;
+    const courses = grouped(group.items, true);
+    const isOpen = expanded.get(group.key) === true;
+    return `<section class="att-class ${isOpen ? 'is-open' : ''}"><button type="button" class="att-class-head" data-att-class="${esc(group.key)}" aria-expanded="${isOpen}" aria-controls="att-class-panel-${index}"><span class="att-class-icon">${icon('school')}</span><span><strong>${esc(group.name)}</strong><small>${courses.length} mata pelajaran/kegiatan · ${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka</small></span>${icon('chevron')}</button><div id="att-class-panel-${index}" class="att-class-body" ${isOpen ? '' : 'hidden'}>${isOpen ? `<div class="att-course-list">${courses.map((course, courseIndex) => attendanceCourseHtml(course, index, courseIndex)).join('')}</div>` : ''}</div></section>`;
   }).join('')}</div>`;
 }
 
+function attendanceCourseHtml(course, classIndex, courseIndex) {
+  const summary = attendanceSummary(course.items);
+  const isOpen = expandedCourses.get(course.key) === true;
+  const panelId = `att-course-panel-${classIndex}-${courseIndex}`;
+  // Collapsed courses contain no session rows. Opening a category only uses memory.
+  return `<section class="att-course ${isOpen ? 'is-open' : ''}"><button type="button" class="att-course-head" data-att-course="${esc(course.key)}" aria-expanded="${isOpen}" aria-controls="${panelId}"><span class="att-course-icon">${icon('book')}</span><span class="att-course-copy"><small class="att-course-label">MATA KULIAH / KEGIATAN</small><strong>${esc(course.name)}</strong><small>${summary.total} sesi · ${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka</small></span>${icon('chevron')}</button><div id="${panelId}" class="att-course-body" ${isOpen ? '' : 'hidden'}>${isOpen ? attendanceCourseSessionsHtml(course) : ''}</div></section>`;
+}
+
+function attendanceCourseSessionsHtml(course) {
+  const pageCount = Math.max(1, Math.ceil(course.items.length / PAGE_SIZE));
+  const page = Math.min(Math.max(1, pages.get(course.key) || 1), pageCount);
+  const ordered = sortAttendanceSessions(course.items);
+  const visible = ordered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  return `<div class="att-table-scroll"><table class="att-session-table"><caption class="att-sr-only">Daftar sesi ${esc(course.name)} — ${esc(course.className)}. Zona waktu WIB.</caption><thead><tr><th scope="col">#</th><th scope="col">Tanggal</th><th scope="col">Sesi</th><th scope="col">Waktu</th><th scope="col">Topik / Kegiatan</th><th scope="col">Ruang / Link</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead><tbody>${visible.map(sessionRow).join('')}</tbody></table></div>${pageCount > 1 ? `<div class="att-pagination"><span>${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, course.items.length)} dari ${course.items.length} sesi</span><div><button type="button" data-att-page="${page - 1}" data-att-page-class="${esc(course.key)}" aria-label="Halaman sesi sebelumnya" ${page === 1 ? 'disabled' : ''}>‹</button><span>${page} / ${pageCount}</span><button type="button" data-att-page="${page + 1}" data-att-page-class="${esc(course.key)}" aria-label="Halaman sesi berikutnya" ${page === pageCount ? 'disabled' : ''}>›</button></div></div>` : ''}`;
+}
+
+export function sortAttendanceSessions(items, now = Date.now()) {
+  // Decorate once so sorting does not repeatedly parse dates/statuses.
+  return items.map((item, index) => {
+    const phase = phaseOf(item, now)[0];
+    const canCheckIn = attendanceState(item, now).canCheckIn;
+    const rank = phase === 'finished' ? 2 : (canCheckIn || phase === 'ongoing') ? 0 : 1;
+    return { item, rank, start:ms(startOf(item)), index };
+  }).sort((a,b) => a.rank - b.rank || (a.rank === 2 ? b.start - a.start : a.start - b.start) || a.index - b.index).map(entry => entry.item);
+}
+
 function channelLabel(value) { return ({ ZOOM:'Zoom', YOUTUBE:'YouTube', OFFLINE:'Offline', OTHER:'Lainnya' })[String(value).toUpperCase()] || String(value); }
-function phaseOf(item) {
-  const now = Date.now(), start = ms(startOf(item)), end = ms(item.schedule_end_at || item.end_at || item.close_at);
+function phaseOf(item, now = Date.now()) {
+  const start = ms(startOf(item)), end = ms(item.schedule_end_at || item.end_at || item.close_at);
   if (start > now) return ['upcoming','Akan Datang'];
-  if ((end && now < end) || (!end && ['OPEN','LATE'].includes(attendanceWindow(item)))) return ['ongoing','Berlangsung'];
+  if ((end && now < end) || (!end && ['OPEN','LATE'].includes(attendanceWindow(item, now)))) return ['ongoing','Berlangsung'];
   return ['finished','Selesai'];
 }
 function timeRange(item) {
@@ -197,7 +199,7 @@ function sessionRow(item) {
   const action = ui.canCheckIn ? `<button type="button" class="att-action att-action-primary" data-global-attendance-token="${esc(item.public_token)}">${icon('check')}<span>Isi Absensi</span></button>`
     : ui.group === 'done' ? `<button type="button" class="att-action" data-att-details="${esc(detailKey)}"><span>Lihat Detail</span>${icon('arrow')}</button>`
     : `<button type="button" class="att-action att-action-locked" disabled>${icon('lock')}<span>${ui.group === 'upcoming' ? 'Belum Aktif' : ['OPEN','LATE'].includes(ui.window) ? 'Dicatat Pengajar' : 'Ditutup'}</span></button>`;
-  return `<tr class="att-session-row att-tone-${ui.tone}" data-attendance-row="${esc(detailKey)}"><td class="att-date-cell"><span class="att-date-tile"><strong>${dateText(date,{day:'2-digit'})}</strong><span>${dateText(date,{month:'short'}).toUpperCase()}</span></span></td><td class="att-full-date"><strong>${dateText(date,{weekday:'long'})}</strong><small>${dateText(date,{day:'2-digit',month:'short',year:'numeric'})}</small></td><td class="att-session-number">${label}</td><td class="att-time">${icon('clock')}<span>${timeRange(item)}</span></td><td class="att-topic"><span class="att-mobile-session">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></span><strong>${esc(topic)}</strong>${description ? `<small>${esc(description)}</small>` : ''}</td><td class="att-location">${locationHtml(item)}</td><td class="att-status"><span class="att-status-icon">${icon(ui.icon)}</span><span><strong>${ui.label}</strong><small>${esc(ui.detail)}</small></span></td><td class="att-actions">${action}</td></tr>`;
+  return `<tr class="att-session-row att-tone-${ui.tone}" data-attendance-row="${esc(detailKey)}"><td class="att-date-cell"><span class="att-date-tile"><strong>${dateText(date,{day:'2-digit'})}</strong><span>${dateText(date,{month:'short'}).toUpperCase()}</span></span></td><td class="att-full-date"><strong>${dateText(date,{weekday:'long'})}</strong><small>${dateText(date,{day:'2-digit',month:'short',year:'numeric'})}</small></td><td class="att-session-number">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></td><td class="att-time">${icon('clock')}<span>${timeRange(item)}</span></td><td class="att-topic"><span class="att-mobile-session">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></span><strong>${esc(topic)}</strong>${description ? `<small>${esc(description)}</small>` : ''}</td><td class="att-location">${locationHtml(item)}</td><td class="att-status"><span class="att-status-icon">${icon(ui.icon)}</span><span><strong>${ui.label}</strong><small>${esc(ui.detail)}</small></span></td><td class="att-actions">${action}</td></tr>`;
 }
 
 function rateText(summary) { return summary.progressed ? `${summary.rate}%` : '—'; }
@@ -209,7 +211,7 @@ function recapHtml(items, byCourse) {
 function analyticsHtml(items) {
   const s = attendanceSummary(items);
   const bars = [['PRESENT','Hadir','green'],['SICK','Sakit','amber'],['PERMIT','Izin','cyan'],['ABSENT','Alpa','red'],['UNMARKED','Belum Mengisi','muted']];
-  return `<section class="att-analytics"><div class="att-section-head"><div><h2>Analitik Kehadiran Saya</h2><p>Persentase berdasarkan ${s.progressed} sesi yang sudah dimulai.</p></div><span class="att-scope-chip">Data pribadi</span></div><div class="att-analytics-grid"><article class="att-rate-card"><div class="att-rate-ring" style="--att-rate:${s.rate}%" role="img" aria-label="Persentase hadir ${rateText(s)}"><div><strong>${rateText(s)}</strong><span>Kehadiran</span></div></div><p><strong>${s.PRESENT}</strong> hadir dari <strong>${s.progressed}</strong> sesi</p><small>${s.upcoming} sesi mendatang belum dihitung</small></article><article class="att-distribution"><h3>Rincian Kehadiran</h3>${bars.map(([key,label,tone]) => `<div class="att-distribution-row att-tone-${tone}"><span>${label}</span><div class="att-progress-track"><i style="width:${s.progressed ? s[key] / s.progressed * 100 : 0}%"></i></div><strong>${s[key]}</strong></div>`).join('')}</article></div><p class="att-explanation">${icon('info')}Belum mengisi pada sesi yang sudah dimulai tetap masuk perhitungan. Sakit, izin, dan alpa ditampilkan sesuai catatan yang tersimpan.</p></section>`;
+  return `<section class="att-analytics"><div class="att-section-head"><div><h2>Analitik Kehadiran Saya</h2><p>${s.progressed} dari ${s.total} sesi sudah dimulai · ${s.upcoming} sesi mendatang.</p></div><span class="att-scope-chip">Data pribadi</span></div><div class="att-analytics-grid"><article class="att-rate-card"><div class="att-rate-ring" style="--att-rate:${s.rate}%" role="img" aria-label="Persentase hadir ${rateText(s)}"><div><strong>${rateText(s)}</strong><span>Kehadiran</span></div></div><p><strong>${s.PRESENT}</strong> hadir dari <strong>${s.progressed}</strong> sesi</p><small>${s.upcoming} sesi mendatang belum dihitung</small></article><article class="att-distribution"><h3>Rincian Kehadiran</h3>${bars.map(([key,label,tone]) => `<div class="att-distribution-row att-tone-${tone}"><span>${label}</span><div class="att-progress-track"><i style="width:${s.progressed ? s[key] / s.progressed * 100 : 0}%"></i></div><strong>${s[key]}</strong></div>`).join('')}</article></div><p class="att-explanation">${icon('info')}Belum mengisi pada sesi yang sudah dimulai tetap masuk perhitungan. Sakit, izin, dan alpa ditampilkan sesuai catatan yang tersimpan.</p></section>`;
 }
 
 export function attendanceDetailsHtml(item) {
@@ -241,12 +243,19 @@ export function bindAttendanceHub({ redraw, details }) {
   document.querySelectorAll('[data-att-class]').forEach(button => button.onclick=()=>{
     const panel=document.getElementById(button.getAttribute('aria-controls'));
     if (!panel) return;
-    const open=panel.hidden; panel.hidden=!open;
-    button.setAttribute('aria-expanded',String(open));
-    button.closest('.att-class')?.classList.toggle('is-open',open);
-    expanded.set(button.dataset.attClass,open);
+    expanded.set(button.dataset.attClass,button.getAttribute('aria-expanded') !== 'true');
+    redraw();
+    focusAttendanceControl('[data-att-class]', 'attClass', button.dataset.attClass);
   });
-  document.querySelectorAll('[data-att-page]').forEach(button=>button.onclick=()=>{ pages.set(button.dataset.attPageClass,Number(button.dataset.attPage)); redraw(); });
+  document.querySelectorAll('[data-att-course]').forEach(button=>button.onclick=()=>{
+    expandedCourses.set(button.dataset.attCourse,button.getAttribute('aria-expanded') !== 'true');
+    redraw();
+    focusAttendanceControl('[data-att-course]', 'attCourse', button.dataset.attCourse);
+  });
+  document.querySelectorAll('[data-att-page]').forEach(button=>button.onclick=()=>{
+    pages.set(button.dataset.attPageClass,Number(button.dataset.attPage)); redraw();
+    focusAttendanceControl('[data-att-course]', 'attCourse', button.dataset.attPageClass);
+  });
   document.querySelectorAll('[data-att-details]').forEach(button=>button.onclick=()=>details(button.dataset.attDetails));
   const filterButton=document.getElementById('attendance-filter-toggle');
   if (filterButton) filterButton.onclick=()=>{
@@ -254,4 +263,8 @@ export function bindAttendanceHub({ redraw, details }) {
     const open=toolbar.classList.toggle('filters-open');
     filterButton.setAttribute('aria-expanded',String(open));
   };
+}
+
+function focusAttendanceControl(selector, key, value) {
+  [...document.querySelectorAll(selector)].find(button => button.dataset[key] === value)?.focus({ preventScroll:true });
 }
