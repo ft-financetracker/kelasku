@@ -1,4 +1,4 @@
-/* R5.2 C7 — personal attendance hub. All rules are scoped to this screen. */
+/* R5.2 C7.1 — personal attendance hub. All rules are scoped to this screen. */
 .attendance-v2{--att-panel:rgba(4,28,54,.76);--att-border:rgba(26,169,213,.3);--att-muted:var(--muted,#aec6df);--att-green:#00dfb1;--att-cyan:#00cbe6;display:flex;flex-direction:column;gap:16px;min-width:0}
 .attendance-v2 [hidden]{display:none!important}
 .attendance-v2 button,.attendance-v2 a,.attendance-v2 input,.attendance-v2 select{touch-action:manipulation}
@@ -7,20 +7,31 @@
 .attendance-v2 .att-page-context{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--att-muted);font-size:11px}
 .attendance-v2 .att-page-context strong{color:var(--tosca);font-size:12px;font-weight:600;letter-spacing:.08em}
 .attendance-v2 #attendance-overview{order:1;min-width:0}
-.attendance-v2 .att-hero{isolation:isolate;position:relative;overflow:hidden;display:flex;align-items:center;gap:22px;min-height:190px;padding:28px 30px;border:1px solid var(--att-border);border-radius:20px;background:#05213c;color:#f5fbff}
-.attendance-v2 .att-hero-picture,.attendance-v2 .att-hero-shade{position:absolute;inset:0;z-index:-1}
-.attendance-v2 .att-hero-picture img{width:100%;height:100%;object-fit:cover;object-position:center right}
-.attendance-v2 .att-hero-shade{background:linear-gradient(90deg,rgba(0,20,39,.94),rgba(0,27,47,.84) 40%,rgba(0,24,44,.3) 75%,rgba(0,24,44,.1))}
-.attendance-v2 .att-identity{flex:none;display:grid;place-items:center;width:106px;height:106px;border:1px solid rgba(0,222,185,.24);border-radius:22px;background:rgba(2,32,51,.62);overflow:hidden}
-.attendance-v2 .att-identity img{width:100%;height:100%;object-fit:contain}
-.attendance-v2 .att-identity-default .att-icon{width:58px;height:58px;color:var(--att-green)}
-.attendance-v2 .att-hero-copy{min-width:0;max-width:70%}
-.attendance-v2 .att-eyebrow{font-size:12px;letter-spacing:.08em;font-weight:700;color:#00efc3}
-.attendance-v2 .att-hero h1{font-size:clamp(24px,2.7vw,38px);line-height:1.2;letter-spacing:-.035em;margin:7px 0 8px;color:#f5fbff;overflow-wrap:anywhere}
-.attendance-v2 .att-hero p{margin:0;color:#c6dbf1;line-height:1.5}
-.attendance-v2 .att-hero-meta{font-size:15px}
-.attendance-v2 .att-hero-description{font-size:12px;margin-top:8px!important}
-.attendance-v2 .att-semester{margin-left:auto;align-self:flex-end;white-space:nowrap;padding:8px 12px;border:1px solid rgba(0,201,235,.35);border-radius:10px;background:rgba(0,25,48,.75);font-size:11px;color:#b7d7ed}
+.attendance-v2 .att-hero{isolation:isolate;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:26px;min-height:210px;padding:28px 34px;border:1px solid var(--att-border);border-radius:20px;color:#f5fbff;background:radial-gradient(ellipse at 89% 15%,rgba(0,229,191,.15),transparent 43%),linear-gradient(115deg,#07172d 0%,#07304a 60%,#07474c 100%)}
+.attendance-v2 .att-hero:before{content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;background:repeating-linear-gradient(125deg,transparent 0 56px,rgba(95,224,229,.035) 57px 58px,transparent 59px 118px)}
+.attendance-v2 .att-hero-copy{min-width:0;flex:1;position:relative}
+.attendance-v2 .att-eyebrow{font-size:10px;letter-spacing:.16em;font-weight:700;color:#75f7dc}
+.attendance-v2 .att-hero h1{font-size:clamp(26px,2.7vw,38px);line-height:1.23;letter-spacing:-.035em;margin:9px 0 11px;color:#f5fbff;overflow-wrap:anywhere}
+.attendance-v2 .att-hero h1 em{font-style:normal;color:#71f7d6}
+.attendance-v2 .att-hero p{margin:0;color:#bfd7e7;line-height:1.65}
+.attendance-v2 .att-hero-description{font-size:12px;max-width:490px}
+.attendance-v2 .att-hero-values{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin-top:17px;color:#c1e9e6;font-size:10px}
+.attendance-v2 .att-hero-values>span{display:inline-flex;align-items:center;gap:5px}
+.attendance-v2 .att-hero-values .att-icon{width:14px;height:14px;color:#71f7d6}
+.attendance-v2 .att-hero-art{position:relative;flex:none;width:220px;height:176px;margin-right:15px}
+.attendance-v2 .att-hero-orbit{position:absolute;inset:-14px 12px -14px -12px;border:1px solid rgba(102,251,224,.15);border-radius:50%;transform:rotate(-20deg)}
+.attendance-v2 .att-hero-orbit:after{content:"";position:absolute;inset:15px -18px;border:1px dashed rgba(102,251,224,.1);border-radius:50%}
+.attendance-v2 .att-hero-note{position:absolute;left:36px;top:4px;width:140px;height:158px;border:1px solid rgba(122,244,230,.35);border-radius:16px;padding:17px;background:linear-gradient(140deg,#144d67,#07314c);box-shadow:0 15px 30px rgba(0,10,29,.2);transform:rotate(-7deg)}
+.attendance-v2 .att-hero-note-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(106,248,211,.13);color:#71f7d6;margin-bottom:12px}
+.attendance-v2 .att-hero-note-icon .att-icon{width:23px;height:23px}
+.attendance-v2 .att-hero-note-dots{display:flex;gap:4px;position:absolute;right:16px;top:19px}
+.attendance-v2 .att-hero-note-dots i{width:4px;height:4px;border-radius:50%;background:rgba(147,220,235,.5)}
+.attendance-v2 .att-hero-note-line{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:9px 0;color:#71f7d6}
+.attendance-v2 .att-hero-note-line>span{display:block;height:5px;flex:1;border-radius:9px;background:rgba(166,217,234,.3)}
+.attendance-v2 .att-hero-note-line:nth-last-child(2)>span{max-width:60%}
+.attendance-v2 .att-hero-note-line>.att-icon{width:16px;height:16px}
+.attendance-v2 .att-hero-stamp{position:absolute;bottom:1px;right:-2px;display:flex;align-items:center;gap:7px;padding:10px 12px;border:1px solid rgba(113,247,214,.3);border-radius:11px;background:#0d3d4b;color:#a5ffe6;font-size:9px;font-weight:600;box-shadow:0 9px 16px rgba(0,10,29,.12)}
+.attendance-v2 .att-hero-stamp>.att-icon{width:18px;height:18px}
 .attendance-v2 .att-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}
 .attendance-v2 .att-tone-green{--att-tone:var(--att-green);--att-tone-bg:rgba(0,223,177,.12)}
 .attendance-v2 .att-tone-amber,.attendance-v2 .att-tone-gold{--att-tone:#ffc14b;--att-tone-bg:rgba(255,193,75,.13)}
@@ -60,6 +71,19 @@
 .attendance-v2 .att-class-head>.att-icon{color:#9ec8e9;transition:transform .15s}
 .attendance-v2 .att-class.is-open .att-class-head>.att-icon{transform:rotate(180deg)}
 .attendance-v2 .att-class-body{padding:0 10px 10px}
+.attendance-v2 .att-course-list{display:grid;gap:10px}
+.attendance-v2 .att-course{border:1px solid rgba(26,169,213,.18);border-radius:13px;overflow:hidden;background:rgba(9,45,76,.16)}
+.attendance-v2 .att-course-head{width:100%;display:grid;grid-template-columns:32px minmax(0,1fr) 20px;align-items:center;gap:12px;padding:13px 14px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.attendance-v2 .att-course-icon{display:grid;place-items:center;width:32px;height:36px;border-radius:9px;background:rgba(0,203,230,.08);color:var(--att-cyan)}
+.attendance-v2 .att-course-icon .att-icon{width:21px;height:21px}
+.attendance-v2 .att-course-copy{min-width:0}
+.attendance-v2 .att-course-copy>strong{display:block;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.attendance-v2 .att-course-copy>small{display:block;font-size:10px;line-height:1.5;color:var(--att-muted);margin-top:3px}
+.attendance-v2 .att-course-copy>.att-course-label{font-size:8px;letter-spacing:.1em;color:var(--att-cyan);margin:0 0 4px}
+.attendance-v2 .att-course-head>.att-icon{width:18px;height:18px;color:var(--att-muted);transition:transform .15s}
+.attendance-v2 .att-course.is-open>.att-course-head>.att-icon{transform:rotate(180deg)}
+.attendance-v2 .att-course-body{padding:0 8px 8px}
+
 .attendance-v2 .att-table-scroll{max-width:100%;overflow:auto;overscroll-behavior-inline:contain}
 .attendance-v2 table{border-collapse:separate;border-spacing:0;width:100%;font-size:11px;color:var(--text);text-align:left}
 .attendance-v2 .att-session-table{table-layout:auto}
@@ -77,6 +101,7 @@
 .attendance-v2 .att-full-date strong{display:block;font-weight:600}
 .attendance-v2 td small{display:block;color:var(--att-muted);font-size:10px;line-height:1.5;margin-top:3px}
 .attendance-v2 .att-session-number{white-space:nowrap;font-weight:600}
+.attendance-v2 .att-session-number .att-phase{display:table;width:max-content;margin-top:5px}
 .attendance-v2 .att-time{white-space:nowrap;font-size:10px;color:var(--att-muted)}
 .attendance-v2 .att-time>.att-icon{display:none}
 .attendance-v2 .att-topic{min-width:140px;width:27%}
@@ -104,6 +129,7 @@
 .attendance-v2 .att-mobile-session{display:none}
 .attendance-v2 .att-phase{font-size:9px;padding:2px 6px;border:1px solid rgba(0,223,177,.2);border-radius:99px;color:var(--att-green);font-weight:500;white-space:nowrap}
 .attendance-v2 .att-phase.phase-ongoing{color:#ffc14b;border-color:rgba(255,193,75,.3)}
+.attendance-v2 .att-phase.phase-finished{color:var(--att-muted);border-color:rgba(145,174,205,.24);background:rgba(145,174,205,.05)}
 .attendance-v2 .att-phase.phase-upcoming{color:#83c8f4;border-color:rgba(131,200,244,.25)}
 .attendance-v2 .att-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 7px 2px;color:var(--att-muted);font-size:10px}
 .attendance-v2 .att-pagination>div{display:flex;gap:12px;align-items:center}
@@ -193,17 +219,19 @@
   .attendance-v2{gap:12px}
   .attendance-v2 .att-page-context{font-size:9px}
   .attendance-v2 .att-page-context strong{font-size:10px}
-  .attendance-v2 .att-hero{min-height:225px;padding:20px;align-items:flex-start;flex-wrap:wrap;gap:12px;border-radius:17px}
+  .attendance-v2 .att-hero{min-height:205px;padding:22px 20px;gap:0;border-radius:17px}
   .attendance-v2 .att-hero-copy{max-width:100%;width:100%}
-  .attendance-v2 .att-identity{width:66px;height:66px;border-radius:15px}
-  .attendance-v2 .att-identity-default .att-icon{width:38px;height:38px}
-  .attendance-v2 .att-hero-picture img{object-position:65% center}
-  .attendance-v2 .att-hero-shade{background:linear-gradient(90deg,rgba(0,20,39,.86),rgba(0,24,44,.3)),linear-gradient(0deg,rgba(0,20,39,.95),transparent)}
   .attendance-v2 .att-eyebrow{font-size:10px}
   .attendance-v2 .att-hero h1{font-size:26px;margin:5px 0 7px}
-  .attendance-v2 .att-hero-meta{font-size:12px}
-  .attendance-v2 .att-hero-description{font-size:10px;max-width:90%}
-  .attendance-v2 .att-semester{position:absolute;right:16px;top:20px;font-size:10px;padding:6px 9px}
+  .attendance-v2 .att-hero-description{font-size:11px;max-width:100%}
+  .attendance-v2 .att-hero-art{display:none}
+  .attendance-v2 .att-hero-values{font-size:9px;gap:7px 12px;margin-top:14px}
+  .attendance-v2 .att-course-head{grid-template-columns:26px minmax(0,1fr) 16px;gap:8px;padding:12px 10px}
+  .attendance-v2 .att-course-icon{width:26px;height:32px}
+  .attendance-v2 .att-course-copy>strong{font-size:11px}
+  .attendance-v2 .att-course-copy>small{font-size:9px}
+  .attendance-v2 .att-course-copy>.att-course-label{font-size:7px}
+  .attendance-v2 .att-course-body{padding:0 6px 6px}
   .attendance-v2 .att-metrics{gap:7px;margin-top:10px}
   .attendance-v2 .att-metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;min-height:130px;padding:10px 8px;border-radius:12px;gap:7px}
   .attendance-v2 .att-metric-icon{width:28px;height:28px;border-radius:9px}
