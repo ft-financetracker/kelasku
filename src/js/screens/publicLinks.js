@@ -195,7 +195,7 @@ function mergeLandingMemberAcademic(publicAcademic={},context={}){
     attendance_sessions:Array.isArray(context.attendance_sessions)?context.attendance_sessions:[]
   };
 }
-async function fetchLandingMemberContext(data={}){
+async function fetchLandingMemberContext(data={}, {force=false}={}){
   if(!state.sessionToken || !state.user || !data.class?.class_id)return null;
   const classId=String(data.class.class_id);
   const requestKey=`${classId}|${landingAcademicSignature(data)}`;
@@ -203,7 +203,7 @@ async function fetchLandingMemberContext(data={}){
   const attemptKey=`${landingMemberCacheKey(classId)}_attempt`;
   try{
     const lastAttempt=Number(sessionStorage.getItem(attemptKey)||0);
-    if(lastAttempt && Date.now()-lastAttempt<30000)return null;
+    if(!force && lastAttempt && Date.now()-lastAttempt<30000)return null;
     sessionStorage.setItem(attemptKey,String(Date.now()));
   }catch{}
   const academic=data.public_academic||{};
@@ -217,40 +217,46 @@ async function fetchLandingMemberContext(data={}){
     .finally(()=>{memberContextInFlight=null;memberContextInFlightKey='';});
   return memberContextInFlight;
 }
-async function upgradeLandingMember(data={}){
+async function upgradeLandingMember(data={}, {force=false}={}){
   if(!state.sessionToken || !state.user || !data.class?.class_id)return;
-  const cachedContext=readLandingMemberContext(data);
+  const classId=String(data.class.class_id);
+  const cachedContext=force?null:readLandingMemberContext(data);
   if(cachedContext){
-    render(data,cachedContext,mergeLandingMemberAcademic(data.public_academic||{},cachedContext),{membershipLoading:false});
+    render(data,cachedContext,mergeLandingMemberAcademic(data.public_academic||{},cachedContext),{membershipLoading:false,membershipError:false});
     return;
   }
 
-  // Fast-path UX: konten publik langsung siap, sedangkan konteks anggota diperiksa
-  // di belakang. Selama proses ini jangan arahkan user ke Ruang Kelas seolah-olah
-  // quick attendance Landing tidak tersedia.
-  const localMember=localMemberShell(data.class.class_id);
-  render(data,localMember,null,{membershipLoading:true});
+  // Fast-path UX: session login tetap menjadi sumber deteksi awal. Konten publik
+  // tidak ditahan, sedangkan data personal diperiksa di belakang.
+  const localMember=localMemberShell(classId);
+  render(data,localMember,null,{membershipLoading:true,membershipError:false});
 
   try{
-    const context=await fetchLandingMemberContext(data);
-    if(!context)return;
-    writeLandingMemberContext(data,context);
-    const latest=currentPublicData?.class?.class_id===data.class.class_id?currentPublicData:data;
-    render(latest,context,mergeLandingMemberAcademic(latest.public_academic||{},context),{membershipLoading:false});
+    const context=await fetchLandingMemberContext(data,{force});
+    const latest=currentPublicData?.class?.class_id===classId?currentPublicData:data;
+    if(!context){
+      render(latest,localMemberShell(classId),null,{membershipLoading:false,membershipError:true});
+      return;
+    }
+    writeLandingMemberContext(latest,context);
+    render(latest,context,mergeLandingMemberAcademic(latest.public_academic||{},context),{membershipLoading:false,membershipError:false});
   }catch(err){
-    // Landing publik tidak boleh ikut macet hanya karena konteks anggota lambat.
-    // AUTH_EXPIRED dibersihkan oleh api.js. Bila server secara eksplisit menolak
-    // membership, metadata lokal kelas ikut dibersihkan agar UI tidak menyesatkan.
-    if(!state.sessionToken){
+    const latest=currentPublicData?.class?.class_id===classId?currentPublicData:data;
+    // Bila api.js membersihkan session karena AUTH_EXPIRED, segera kembali ke state
+    // guest yang jujur. Jangan meninggalkan spinner tanpa akhir.
+    if(!state.sessionToken || !state.user){
       clearLandingMemberContext(data);
+      render(latest,null,null,{membershipLoading:false,membershipError:false});
     }else if(String(err?.code||'')==='FORBIDDEN'){
       clearLandingMemberContext(data);
-      const classId=String(data.class?.class_id||'');
       state.myClasses=(state.myClasses||[]).filter(x=>String(x.class_id||'')!==classId);
       state.myClassesAt=Date.now();
       try{localStorage.setItem('kelasku_classes_cache',JSON.stringify(state.myClasses));localStorage.setItem('kelasku_classes_cache_at',String(state.myClassesAt));}catch{}
-      const latest=currentPublicData?.class?.class_id===classId?currentPublicData:data;
-      render(latest,null,null,{membershipLoading:false});
+      render(latest,null,null,{membershipLoading:false,membershipError:false});
+    }else{
+      // Error sementara (timeout/cold start) tidak boleh diarahkan ke Ruang Kelas.
+      // Tampilkan retry kecil hanya pada konteks personal.
+      render(latest,localMemberShell(classId),null,{membershipLoading:false,membershipError:true});
     }
   }
 }
@@ -445,49 +451,62 @@ function academicLoading() {
   return `<section class="public-room-hub public-room-loading" aria-live="polite"><div class="public-inline-loader"><span class="public-loader"></span><div><strong>Menyiapkan informasi kelas…</strong><small>Link publik sudah dapat digunakan sambil data anggota dimuat.</small></div></div></section>`;
 }
 
-function guestAcademicHub(loggedIn,academic={}, {membershipLoading=false, memberConfirmed=false, classId=''}={}) {
+function guestAcademicHub(loggedIn,academic={}, {membershipLoading=false, membershipError=false, memberConfirmed=false, classId=''}={}) {
   const allSchedules=(academic.schedules||[]).filter(scheduleStillActive).filter(scheduleWithinLandingWeek).sort(scheduleSort);
   const tasks=(academic.tasks||[]).filter(taskStillActive).slice(0,4),attendance=(academic.attendance_sessions||academic.attendance||[]).filter(x=>String(x.window_status||'').toUpperCase()==='OPEN').slice(0,3),announcements=(academic.announcements||[]).slice(0,4);
   const activeAttendance=attendance[0];
   const memberPending=Boolean(loggedIn&&membershipLoading);
+  const memberFailed=Boolean(loggedIn&&!memberPending&&membershipError);
   const pendingButton='<button type="button" class="public-primary-action" disabled aria-busy="true"><span class="public-loader" style="width:16px;height:16px;border-width:2px" aria-hidden="true"></span><span>Memeriksa absensi…</span></button>';
+  const retryButton='<button type="button" class="public-primary-action" data-public-member-retry><span class="material-symbols-rounded">refresh</span><span>Coba Lagi</span></button>';
   const pendingAttendance=`<div class="public-room-row public-room-row-action" aria-live="polite"><span class="public-room-row-icon material-symbols-rounded">how_to_reg</span><div><strong>Memeriksa absensi aktif…</strong><small>Landing tetap bisa digunakan sambil data akun disinkronkan.</small></div>${pendingButton}</div>`;
+  const failedAttendance=`<div class="public-room-row public-room-row-action" role="status"><span class="public-room-row-icon material-symbols-rounded">sync_problem</span><div><strong>Absensi belum sempat diperiksa</strong><small>Koneksi/server sedang lambat. Coba lagi tanpa keluar dari Landing.</small></div>${retryButton}</div>`;
   const accessText=!loggedIn
     ? 'Login sebagai anggota kelas untuk mengisi absensi.'
     : memberPending
       ? 'Absensi personal sedang diperiksa. Landing tetap bisa digunakan.'
-      : memberConfirmed
-        ? 'Akun aktif. Fitur anggota siap digunakan.'
-        : 'Akun KelasKu aktif. Landing publik tetap siap digunakan.';
-  const roomAttendance=!memberPending&&memberConfirmed&&classId?`<a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-primary-action">Buka Absensi</a>`:'';
+      : memberFailed
+        ? 'Pemeriksaan absensi belum selesai. Coba lagi tanpa membuka Ruang Kelas.'
+        : memberConfirmed
+          ? 'Akun aktif. Fitur anggota siap digunakan.'
+          : 'Akun KelasKu aktif. Landing publik tetap siap digunakan.';
+  const roomAttendance=!memberPending&&!memberFailed&&memberConfirmed&&classId?`<a href="/ruang-kelas" data-open-class-tab="attendance" data-class-id="${esc(classId)}" class="public-primary-action">Buka Absensi</a>`:'';
   const accessButton=!loggedIn
     ? '<button type="button" data-locked-action="Absensi" class="public-primary-action">Masuk untuk Absensi</button>'
     : memberPending
       ? pendingButton
-      : (roomAttendance||'<span class="public-access-ready">Akun aktif</span>');
+      : memberFailed
+        ? retryButton
+        : (roomAttendance||'<span class="public-access-ready">Akun aktif</span>');
   const rowAccessButton=!loggedIn
     ? '<button type="button" data-locked-action="Absensi" class="public-primary-action">Login</button>'
     : memberPending
       ? pendingButton
-      : (roomAttendance||'<span class="public-access-ready compact">Akun aktif</span>');
+      : memberFailed
+        ? retryButton
+        : (roomAttendance||'<span class="public-access-ready compact">Akun aktif</span>');
   const activeBanner=memberPending
     ? `<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI</span><strong>Memeriksa absensi aktif…</strong><small>${esc(accessText)}</small></div>${pendingButton}</div>`
-    : activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI AKTIF</span><strong>${esc(activeAttendance.title||'Absensi Kelas')}</strong><small>${esc(accessText)}</small></div>${accessButton}</div>`:'';
+    : memberFailed
+      ? `<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">sync_problem</span> ABSENSI</span><strong>Absensi belum sempat diperiksa</strong><small>${esc(accessText)}</small></div>${retryButton}</div>`
+      : activeAttendance?`<div class="public-active-attendance locked"><div><span class="public-active-kicker"><span class="material-symbols-rounded">how_to_reg</span> ABSENSI AKTIF</span><strong>${esc(activeAttendance.title||'Absensi Kelas')}</strong><small>${esc(accessText)}</small></div>${accessButton}</div>`:'';
   const panels={
-    schedule:`${activeBanner}${publicScheduleBlock(allSchedules,memberPending?null:activeAttendance,{guest:true})}`,
-    attendance:memberPending?pendingAttendance:roomList(attendance,'Belum ada absensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-guest-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title)}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi aktif'}</small></div></button>${rowAccessButton}</div>`),
+    schedule:`${activeBanner}${publicScheduleBlock(allSchedules,(memberPending||memberFailed)?null:activeAttendance,{guest:true})}`,
+    attendance:memberPending?pendingAttendance:memberFailed?failedAttendance:roomList(attendance,'Belum ada absensi aktif.',x=>`<div class="public-room-row public-room-row-action"><button type="button" data-guest-detail="attendance" data-public-item-id="${esc(x.attendance_id)}" class="public-room-inline-link"><span class="public-room-row-icon material-symbols-rounded">done_all</span><div><strong>${esc(x.title)}</strong><small>${x.start_at?esc(fmtDate(x.start_at)):'Sesi aktif'}</small></div></button>${rowAccessButton}</div>`),
     tasks:roomList(tasks,'Belum ada tugas publik.',x=>`<button type="button" data-guest-detail="task" data-public-item-id="${esc(x.task_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">checklist</span><div><strong>${esc(x.title)}</strong><small>${x.deadline?`Deadline ${esc(fmtDate(x.deadline))}`:'Tanpa deadline'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`),
     announcements:roomList(announcements,'Belum ada informasi publik.',x=>`<button type="button" data-guest-detail="announcement" data-public-item-id="${esc(x.announcement_id)}" class="public-room-row public-room-clickable"><span class="public-room-row-icon material-symbols-rounded">campaign</span><div><strong>${esc(x.title)}</strong><small>${x.published_at?esc(fmtDate(x.published_at)):'Informasi kelas'}</small></div><span class="material-symbols-rounded public-row-arrow">chevron_right</span></button>`)
   };
-  const counts={schedule:allSchedules.length,attendance:memberPending?0:attendance.length,tasks:tasks.length,announcements:announcements.length};
+  const counts={schedule:allSchedules.length,attendance:(memberPending||memberFailed)?0:attendance.length,tasks:tasks.length,announcements:announcements.length};
   const tabs=[['schedule','calendar_month','Jadwal'],['attendance','done_all','Absensi'],['tasks','checklist','Tugas'],['announcements','campaign','Info']];
   const sectionCopy=!loggedIn
     ? 'Jadwal publik dapat dilihat. Absensi internal memerlukan login sebagai anggota kelas.'
     : memberPending
       ? 'Konten publik langsung siap; absensi personal diperiksa di belakang tanpa menahan Landing.'
-      : memberConfirmed
-        ? 'Akun aktif. Landing tetap dapat digunakan tanpa menunggu proses lain.'
-        : 'Akun KelasKu aktif. Konten publik langsung tersedia.';
+      : memberFailed
+        ? 'Konten publik tetap siap. Pemeriksaan absensi dapat dicoba lagi tanpa pindah halaman.'
+        : memberConfirmed
+          ? 'Akun aktif. Landing tetap dapat digunakan tanpa menunggu proses lain.'
+          : 'Akun KelasKu aktif. Konten publik langsung tersedia.';
   return `<section class="public-room-hub">${imageSectionHead('access','INFORMASI KELAS','Jadwal & aktivitas kelas',sectionCopy)}<nav class="public-room-tabs" aria-label="Informasi kelas">${tabs.map(([key,icon,label],index)=>`<button type="button" class="public-room-tab ${index===0?'active':''}" data-public-room="${key}" aria-selected="${index===0?'true':'false'}"><span class="material-symbols-rounded">${icon}</span><span>${label}</span>${counts[key]?`<b class="public-tab-signal">${counts[key]>9?'9+':counts[key]}</b>`:''}</button>`).join('')}</nav><div class="public-room-panels">${tabs.map(([key],index)=>`<div class="public-room-panel" data-public-room-panel="${key}" ${index?'hidden':''}>${panels[key]}</div>`).join('')}</div></section>`;
 }
 
@@ -510,7 +529,7 @@ function syncPublicReleaseFooter(){
   if(updated)updated.textContent=window.KELASKU_CONFIG?.RELEASED_AT_WIB||'28 Sep 2026, 11:13 WIB';
 }
 
-function render(data, memberData=null, academic=null, { membershipLoading=false }={}) {
+function render(data, memberData=null, academic=null, { membershipLoading=false, membershipError=false }={}) {
   const cls = data.class || {};
   document.title = `${cls.name || 'Link Kelas'} — KelasKu`;
   syncPublicMetadata(cls);
@@ -531,7 +550,7 @@ function render(data, memberData=null, academic=null, { membershipLoading=false 
   // No second full-width "Menyiapkan informasi kelas" state.
   const infoSection = (isMember && academic)
     ? memberAcademicHub(academic,cls.class_id||'')
-    : guestAcademicHub(loggedIn,data.public_academic||{}, {membershipLoading:false, memberConfirmed:isMember, classId:cls.class_id||''});
+    : guestAcademicHub(loggedIn,data.public_academic||{}, {membershipLoading, membershipError, memberConfirmed:isMember, classId:cls.class_id||''});
 
   content.innerHTML = `${publicHero(cls,data.appearance||{},memberData)}
     ${infoSection}
@@ -580,7 +599,11 @@ function showQuickAttendance(attendanceId){
   document.body.appendChild(overlay);overlay.querySelector('[data-public-detail-close]')?.addEventListener('click',closePublicDetail);overlay.addEventListener('click',e=>{if(e.target===overlay)closePublicDetail();});
   overlay.querySelectorAll('[data-quick-status]').forEach(btn=>btn.onclick=()=>{selected=btn.dataset.quickStatus;overlay.querySelectorAll('[data-quick-status]').forEach(x=>{const active=x===btn;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));});overlay.querySelector('[data-quick-channels]')?.classList.toggle('hidden',selected!=='PRESENT');});
   overlay.querySelectorAll('[data-quick-channel]').forEach(btn=>btn.onclick=()=>{channel=btn.dataset.quickChannel;overlay.querySelectorAll('[data-quick-channel]').forEach(x=>{const active=x===btn;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));});});
-  overlay.querySelector('#public-quick-att-submit')?.addEventListener('click',async()=>{const btn=overlay.querySelector('#public-quick-att-submit'),status=overlay.querySelector('#public-quick-att-status');if(btn.disabled)return;btn.disabled=true;status.textContent='Menyimpan absensi…';try{const result=await api('selfCheckInAttendance',{token:item.public_token,attendance_status:selected,attendance_channel:selected==='PRESENT'?channel:'',note:overlay.querySelector('#public-quick-att-note')?.value||''});item.my_status=result.attendance_status||selected;item.my_channel=result.attendance_channel||'';item.my_punctuality=result.punctuality||'';status.textContent=`Tersimpan: ${publicAttendanceLabel(item.my_status)}${item.my_channel?` • ${publicChannelLabel(item.my_channel)}`:''}`;showPublicNotice('Absensi berhasil disimpan.');setTimeout(()=>{closePublicDetail();if(currentPublicData)render(currentPublicData,currentPublicMemberData,currentPublicAcademic);},450);}catch(err){status.textContent=err.message;btn.disabled=false;}});
+  overlay.querySelector('#public-quick-att-submit')?.addEventListener('click',async()=>{const btn=overlay.querySelector('#public-quick-att-submit'),status=overlay.querySelector('#public-quick-att-status');if(btn.disabled)return;btn.disabled=true;status.textContent='Menyimpan absensi…';try{const result=await api('selfCheckInAttendance',{token:item.public_token,attendance_status:selected,attendance_channel:selected==='PRESENT'?channel:'',note:overlay.querySelector('#public-quick-att-note')?.value||''});item.my_status=result.attendance_status||selected;item.my_channel=result.attendance_channel||'';item.my_punctuality=result.punctuality||'';
+      const cachedItem=(currentPublicMemberData?.attendance_sessions||[]).find(x=>String(x.attendance_id)===String(item.attendance_id));
+      if(cachedItem){cachedItem.my_status=item.my_status;cachedItem.my_channel=item.my_channel;cachedItem.my_punctuality=item.my_punctuality;}
+      if(currentPublicData&&currentPublicMemberData)writeLandingMemberContext(currentPublicData,currentPublicMemberData);
+      status.textContent=`Tersimpan: ${publicAttendanceLabel(item.my_status)}${item.my_channel?` • ${publicChannelLabel(item.my_channel)}`:''}`;showPublicNotice('Absensi berhasil disimpan.');setTimeout(()=>{closePublicDetail();if(currentPublicData)render(currentPublicData,currentPublicMemberData,currentPublicAcademic);},450);}catch(err){status.textContent=err.message;btn.disabled=false;}});
 }
 
 function closePublicDetail(){document.getElementById('public-detail-overlay')?.remove();}
@@ -610,6 +633,14 @@ function bindInteractions(){
 
   document.querySelectorAll('[data-public-open-detail]').forEach(btn=>btn.addEventListener('click',()=>showPublicAcademicDetail(btn.dataset.publicOpenDetail,btn.dataset.publicItemId)));
   document.querySelectorAll('[data-public-quick-attendance]').forEach(btn=>btn.addEventListener('click',()=>showQuickAttendance(btn.dataset.publicQuickAttendance)));
+  document.querySelectorAll('[data-public-member-retry]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(!state.sessionToken || !state.user)return loginAndReturnToPublic();
+    if(!currentPublicData)return;
+    btn.disabled=true;
+    btn.setAttribute('aria-busy','true');
+    btn.innerHTML='<span class="public-loader" style="width:16px;height:16px;border-width:2px" aria-hidden="true"></span><span>Memeriksa…</span>';
+    upgradeLandingMember(currentPublicData,{force:true}).catch(()=>{});
+  }));
   document.querySelectorAll('[data-guest-detail]').forEach(btn=>btn.addEventListener('click',()=>showPublicAcademicDetail(btn.dataset.guestDetail,btn.dataset.publicItemId)));
   document.querySelectorAll('[data-locked-action]').forEach(btn=>btn.addEventListener('click',()=>{
     if(Boolean(state.sessionToken&&state.user)) return showPublicNotice(`${btn.dataset.lockedAction} hanya tersedia untuk anggota kelas ini.`);
