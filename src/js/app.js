@@ -24,7 +24,7 @@ import { renderSettings } from './screens/settings.js?v=6739r51';
 import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6739';
 import { renderClassRoom } from './screens/classRoom.js?v=6739r52c6';
 import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
-import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6739r52c1';
+import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6739r52c7';
 import { renderAppInfo } from './screens/appInfo.js';
 import { renderAttendanceLanding } from './screens/attendanceLanding.js';
 import { renderMessages, prefetchMessageRooms } from './screens/messages.js';
@@ -237,3 +237,4 @@ function forceUpdateRequired() {
 const initialUrlRoute = startRouter();
 boot();
 window.setTimeout(() => consumeUpdateResult(), 900);
+
