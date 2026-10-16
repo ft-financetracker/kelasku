@@ -1,12 +1,12 @@
-import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6739r52c74';
-import { loadClassAcademicData } from './classAcademicData.js?v=6739r52c74';
+import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6739r52c75';
+import { loadClassAcademicData, loadAttendanceClassData, rememberAttendanceSessionDetail, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c75';
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c74';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c75';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
@@ -367,7 +367,7 @@ function switchTab(tab, data) {
 async function loadClassAcademic(background = false, force = false) {
   const classId = String(state.selectedClassId || '');
   const cached = state.classAcademic[classId], owner = state.sessionToken;
-  const key = `${owner || ''}::${classId}`, source = loadClassAcademicData(classId,{ force });
+  const key = `${owner || ''}::${classId}`, source = activeTab==='attendance' ? loadAttendanceClassData(classId,{ force }) : loadClassAcademicData(classId,{ force });
   const pending = classAcademicInFlight.get(key);
   if(pending?.source === source)return pending.request;
   const request = (async()=>{
@@ -908,8 +908,9 @@ function nl2br(text){return esc(String(text||'')).replace(/\n/g,'<br>');}
 function scheduleStateBadge(x){const st=String(x?.schedule_state||'NORMAL').toUpperCase();if(st==='CANCELLED')return '<span class="schedule-state-badge cancelled">Dibatalkan</span>';if(st==='CHANGED')return '<span class="schedule-state-badge changed">Diubah</span>';return '';}
 
 async function openAttendance(attendanceId){
+  const owner=state.sessionToken,classId=String(state.selectedClassId || '');
   showModal(`<div class="modal-head"><div><div class="eyebrow">Absensi</div><h2>Memuat sesi…</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="search-loading"><span class="status-dot"></span>Memuat data anggota…</div>`);
-  try{const data=await api('getAttendanceSessionDetail',{attendance_id:attendanceId});attendanceModalState={data,draft:{}};attendanceModalPage=1;(data.records||[]).forEach(r=>attendanceModalState.draft[String(r.user_id)]={attendance_status:r.attendance_status||'UNMARKED',note:r.note||''});drawAttendanceModal(data);}catch(err){showModal(`<div class="modal-head"><h2>Absensi</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert danger">${esc(err.message)}</div>`);}
+  try{const data=await api('getAttendanceSessionDetail',{attendance_id:attendanceId});if(state.sessionToken!==owner||String(state.selectedClassId)!==classId)return;rememberAttendanceSessionDetail({attendance_id:attendanceId,class_id:classId},data);attendanceModalState={data,draft:{}};attendanceModalPage=1;(data.records||[]).forEach(r=>attendanceModalState.draft[String(r.user_id)]={attendance_status:r.attendance_status||'UNMARKED',note:r.note||''});drawAttendanceModal(data);}catch(err){if(state.sessionToken!==owner)return;showModal(`<div class="modal-head"><h2>Absensi</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert danger">${esc(err.message)}</div>`);}
 }
 function attendanceLateMinutes(session={}){
   if(!session.lateness_enabled||!session.late_after_at||!session.start_at)return 15;
@@ -958,7 +959,8 @@ function bindAttendanceSelfCheck(session={}){
   });
   submit.onclick=async()=>{
     if(submit.disabled)return;
-    const statusEl=document.getElementById('room-self-status'),old=submit.innerHTML;
+    const statusEl=document.getElementById('room-self-status');
+    const owner=state.sessionToken,userId=String(state.user?.user_id||''),note=document.getElementById('room-self-note')?.value||'';
     submit.disabled=true;submit.innerHTML='<span class="btn-spinner"></span><span>Mencatat…</span>';
     if(statusEl){statusEl.className='request-status progress';statusEl.textContent='Mencatat absensi…';}
     try{
@@ -966,14 +968,19 @@ function bindAttendanceSelfCheck(session={}){
         token:String(session.public_token||''),
         attendance_status:selectedStatus,
         attendance_channel:selectedStatus==='PRESENT'?selectedChannel:'',
-        note:document.getElementById('room-self-note')?.value||''
+        note
       },{onSlow:()=>{if(statusEl)statusEl.textContent='Server masih memproses. Jangan klik dua kali.';}});
+      if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId)return;
+      applyAttendanceCheckIn(session,result,{status:selectedStatus,channel:selectedStatus==='PRESENT'?selectedChannel:'',note});
+      invalidateAcademicClientCache(session.class_id||'');
       toast(`Absensi tersimpan: ${attendanceStatusLabel(result.attendance_status)}.`);
       refreshAcademicSilently();
       await openAttendance(session.attendance_id);
     }catch(err){
-      if(statusEl){statusEl.className='request-status error';statusEl.textContent=err.message;}
-      submit.disabled=false;submit.innerHTML=old;
+      if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId)return;
+      toast(err.message);
+      await openAttendance(session.attendance_id);
+      refreshAcademicSilently();
     }
   };
 }

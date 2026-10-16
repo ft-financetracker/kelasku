@@ -5,12 +5,37 @@ import { api } from '../core/api.js';
 const TTL_MS = 60000;
 const inFlight = new Map();
 const revisions = new Map();
+const requestTimes = new WeakMap();
+const confirmedRecords = new Map();
+let confirmedOwner = '';
 const requestKey = classId => `${state.sessionToken || ''}::${classId}`;
+
+function confirmedContext() {
+  const owner=`${state.sessionToken || ''}::${state.user?.user_id || ''}`;
+  if(confirmedOwner!==owner){confirmedOwner=owner;confirmedRecords.clear();}
+  return String(state.user?.user_id || '');
+}
+export function attendanceAnalyticsRequestedAt(data) { return requestTimes.get(data) || 0; }
+function patchConfirmedRecord(data,record) {
+  const activity=(data.activities || []).find(row=>String(row.attendance_id || '')===String(record.attendance_id));
+  if(!activity)return;
+  const existing=(data.activity_records || []).find(row=>String(row.attendance_id || '')===String(record.attendance_id) && String(row.user_id || '')===String(record.user_id));
+  if(existing)Object.assign(existing,record);
+  else data.activity_records.push({...activity,...record});
+}
+export function rememberAttendanceAnalyticsRecord(classId,record) {
+  const userId=confirmedContext(),id=String(classId || ''),attendanceId=String(record?.attendance_id || '');
+  if(!id || !attendanceId || !userId || String(record.user_id || '')!==userId)return;
+  confirmedRecords.set(`${id}::${attendanceId}`,{classId:id,at:Date.now(),record:{...record}});
+  const cached=state.classAnalytics?.[id];
+  if(cached)patchConfirmedRecord(cached,record);
+}
 
 export function invalidateAttendanceAnalytics(classId) {
   const id = String(classId || '');
   if (!id) return;
   const key = requestKey(id);
+  confirmedContext();
   revisions.set(key, (revisions.get(key) || 0) + 1);
   inFlight.delete(key);
   state.classAnalyticsAt ||= {};
@@ -23,16 +48,20 @@ export function loadAttendanceAnalytics(classId, { force = false } = {}) {
   const owner = state.sessionToken;
   const userId = String(state.user?.user_id || '');
   if (!owner || !userId) return Promise.reject(new Error('Masuk kembali untuk memuat rekap.'));
+  confirmedContext();
   const key = requestKey(id);
   const cached = state.classAnalytics?.[id];
   if (!force && cached && Date.now() - Number(state.classAnalyticsAt?.[id] || 0) < TTL_MS) return Promise.resolve(cached);
   if (inFlight.has(key)) return inFlight.get(key);
   const revision = revisions.get(key) || 0;
+  const startedAt = Date.now();
   const request = (async () => {
     const data = await api('getAttendanceAnalytics', { class_id:id });
     if (state.sessionToken !== owner || String(state.user?.user_id || '') !== userId) throw new Error('Sesi akun telah berubah.');
-    if ((revisions.get(key) || 0) !== revision) throw new Error('Data presensi berubah. Muat ulang rekap.');
+    if ((revisions.get(key) || 0) !== revision) { const error=new Error('Data presensi berubah. Muat ulang rekap.');error.code='ATTENDANCE_DATA_CHANGED';throw error; }
     if (String(data?.class_id || '') !== id || !Array.isArray(data?.activities) || !Array.isArray(data?.activity_records)) throw new Error('Data rekap kelas belum lengkap. Coba Refresh.');
+    confirmedRecords.forEach(value=>{if(value.classId===id && value.at>=startedAt)patchConfirmedRecord(data,value.record);});
+    requestTimes.set(data,startedAt);
     state.classAnalytics ||= {};
     state.classAnalyticsAt ||= {};
     state.classAnalytics[id] = data;

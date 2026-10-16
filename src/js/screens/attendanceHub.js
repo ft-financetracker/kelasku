@@ -1,6 +1,6 @@
 /** Attendance presentation. Data loading and cache are owned by the controller. */
 import { esc } from '../core/utils.js';
-import { attendanceReportData } from './attendanceAnalytics.js?v=6739r52c74';
+import { attendanceReportData } from './attendanceAnalytics.js?v=6739r52c75';
 
 const PAGE_SIZE = 12;
 const VIEWS = [
@@ -58,6 +58,7 @@ export function attendanceWindow(item, now = Date.now()) {
 export function attendanceState(item, now = Date.now()) {
   const status = statusOf(item);
   const window = attendanceWindow(item, now);
+  if(item.my_status_confirmed===false)return {group:'verifying',status,window,tone:'cyan',label:'Periksa Status',detail:'Kehadiran belum terverifikasi',icon:'info',canCheckIn:false};
   if (status !== 'UNMARKED') return {
     group:'done', status, window,
     tone:status === 'PRESENT' ? 'green' : status === 'ABSENT' ? 'red' : 'amber',
@@ -74,10 +75,11 @@ export function attendanceState(item, now = Date.now()) {
 
 /** Same C6 rule: future unmarked sessions are excluded from the denominator. */
 export function attendanceSummary(items = [], now = Date.now()) {
-  const out = { total:items.length, done:0, pending:0, upcoming:0, closed:0, progressed:0, PRESENT:0, SICK:0, PERMIT:0, ABSENT:0, UNMARKED:0, rate:0 };
+  const out = { total:items.length, done:0, pending:0, upcoming:0, verifying:0, closed:0, progressed:0, PRESENT:0, SICK:0, PERMIT:0, ABSENT:0, UNMARKED:0, rate:0 };
   items.forEach(item => {
     const ui = attendanceState(item, now);
     out[ui.group]++;
+    if(ui.group==='verifying')return;
     if (ui.group === 'pending' && !['OPEN','LATE'].includes(ui.window)) out.closed++;
     const start = ms(startOf(item));
     if (ui.status !== 'UNMARKED' || (start ? start <= now : ui.window !== 'UPCOMING')) {
@@ -111,8 +113,9 @@ export function attendanceOverviewHtml(items) {
     <div class="att-hero-art" aria-hidden="true"><div class="att-hero-orbit"></div><div class="att-hero-note"><span class="att-hero-note-icon">${icon('calendar')}</span><div class="att-hero-note-dots"><i></i><i></i><i></i></div><div class="att-hero-note-line"><span></span>${icon('check')}</div><div class="att-hero-note-line"><span></span>${icon('check')}</div><div class="att-hero-note-line"><span></span>${icon('check')}</div></div><span class="att-hero-stamp">${icon('check')}Satu langkah lebih baik</span></div>
   </header>
   <div class="att-metrics" aria-label="Komposisi sesi pada filter aktif">${cards.map(([tone, symbol, count, label, help]) => {
+    const checking = summary.verifying > 0 && tone !== 'cyan';
     const percent = summary.total ? Math.round(count / summary.total * 100) : 0;
-    return `<article class="att-metric att-tone-${tone}" title="${esc(help)}"><span class="att-metric-icon">${icon(symbol)}</span><div class="att-metric-copy"><strong>${count}</strong><span>${label}</span></div><div class="att-metric-progress"><span class="att-progress-track"><i style="width:${percent}%"></i></span><small>${percent}%</small></div></article>`;
+    return `<article class="att-metric att-tone-${tone}" title="${esc(checking ? 'Status kehadiran sedang diperiksa' : help)}"><span class="att-metric-icon">${icon(symbol)}</span><div class="att-metric-copy"><strong>${checking ? '…' : count}</strong><span>${label}</span></div><div class="att-metric-progress"><span class="att-progress-track"><i style="width:${checking ? 0 : percent}%"></i></span><small>${checking ? '—' : `${percent}%`}</small></div></article>`;
   }).join('')}</div><p class="att-scope-note">Data kehadiran pribadi · Sesi mengikuti data Ruang Kelas pada filter aktif.</p>`;
 }
 
@@ -143,16 +146,19 @@ export function attendanceContentHtml(items, report = null) {
     const summary = attendanceSummary(group.items);
     const courses = grouped(group.items, true, true);
     const isOpen = expanded.get(group.key) === true;
-    return `<section class="att-class ${isOpen ? 'is-open' : ''}"><button type="button" class="att-class-head" data-att-class="${esc(group.key)}" aria-expanded="${isOpen}" aria-controls="att-class-panel-${index}"><span class="att-class-icon">${icon('school')}</span><span><strong>${esc(group.name)}</strong><small>${courses.length} mata pelajaran/kegiatan · ${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka</small></span>${icon('chevron')}</button><div id="att-class-panel-${index}" class="att-class-body" ${isOpen ? '' : 'hidden'}>${isOpen ? `<div class="att-course-list">${courses.map((course, courseIndex) => attendanceCourseHtml(course, index, courseIndex)).join('')}</div>` : ''}</div></section>`;
+    return `<section class="att-class ${isOpen ? 'is-open' : ''}"><button type="button" class="att-class-head" data-att-class="${esc(group.key)}" aria-expanded="${isOpen}" aria-controls="att-class-panel-${index}"><span class="att-class-icon">${icon('school')}</span><span><strong>${esc(group.name)}</strong><small>${courses.length} mata pelajaran/kegiatan · ${attendanceCountsText(summary)}</small></span>${icon('chevron')}</button><div id="att-class-panel-${index}" class="att-class-body" ${isOpen ? '' : 'hidden'}>${isOpen ? `<div class="att-course-list">${courses.map((course, courseIndex) => attendanceCourseHtml(course, index, courseIndex)).join('')}</div>` : ''}</div></section>`;
   }).join('')}</div>`;
 }
 
+function attendanceCountsText(summary) {
+  return summary.verifying ? 'Status kehadiran sedang diperiksa' : `${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka`;
+}
 function attendanceCourseHtml(course, classIndex, courseIndex) {
   const summary = attendanceSummary(course.items);
   const isOpen = expandedCourses.get(course.key) === true;
   const panelId = `att-course-panel-${classIndex}-${courseIndex}`;
   // Collapsed courses contain no session rows. Opening a category only uses memory.
-  return `<section class="att-course ${isOpen ? 'is-open' : ''}"><button type="button" class="att-course-head" data-att-course="${esc(course.key)}" aria-expanded="${isOpen}" aria-controls="${panelId}"><span class="att-course-icon">${icon('book')}</span><span class="att-course-copy"><small class="att-course-label">MATA KULIAH / KEGIATAN</small><strong>${esc(course.name)}</strong><small>${summary.total} sesi · ${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka</small></span>${icon('chevron')}</button><div id="${panelId}" class="att-course-body" ${isOpen ? '' : 'hidden'}>${isOpen ? attendanceCourseSessionsHtml(course) : ''}</div></section>`;
+  return `<section class="att-course ${isOpen ? 'is-open' : ''}"><button type="button" class="att-course-head" data-att-course="${esc(course.key)}" aria-expanded="${isOpen}" aria-controls="${panelId}"><span class="att-course-icon">${icon('book')}</span><span class="att-course-copy"><small class="att-course-label">MATA KULIAH / KEGIATAN</small><strong>${esc(course.name)}</strong><small>${summary.total} sesi · ${attendanceCountsText(summary)}</small></span>${icon('chevron')}</button><div id="${panelId}" class="att-course-body" ${isOpen ? '' : 'hidden'}>${isOpen ? attendanceCourseSessionsHtml(course) : ''}</div></section>`;
 }
 
 function attendanceCourseSessionsHtml(course) {
@@ -212,6 +218,7 @@ function sessionRow(item) {
   const topic = item.attendance_course_title || item.schedule_title || item.title || 'Kegiatan';
   const description = item.schedule_description || item.description || '';
   const action = ui.canCheckIn ? `<button type="button" class="att-action att-action-primary" data-global-attendance-token="${esc(item.public_token)}">${icon('check')}<span>Isi Absensi</span></button>`
+    : ui.group === 'verifying' && item.public_token ? `<button type="button" class="att-action" data-global-attendance-token="${esc(item.public_token)}">${icon('info')}<span>Periksa Status</span></button>`
     : ui.group === 'done' ? `<button type="button" class="att-action" data-att-details="${esc(detailKey)}" aria-label="Lihat detail ${esc(label)}"><span>Lihat Detail</span>${icon('arrow')}</button>`
     : `<button type="button" class="att-action att-action-locked" disabled>${icon('lock')}<span>${ui.group === 'upcoming' ? 'Belum Aktif' : ['OPEN','LATE'].includes(ui.window) ? 'Dicatat Pengajar' : 'Ditutup'}</span></button>`;
   return `<tr class="att-session-row att-tone-${ui.tone}" data-attendance-row="${esc(detailKey)}"><td class="att-date-cell"><span class="att-date-tile"><strong>${dateText(date,{day:'2-digit'})}</strong><span>${dateText(date,{month:'short'}).toUpperCase()}</span></span></td><td class="att-full-date"><strong>${dateText(date,{weekday:'long'})}</strong><small>${dateText(date,{day:'2-digit',month:'short',year:'numeric'})}</small></td><td class="att-session-number">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></td><td class="att-time">${icon('clock')}<span>${timeRange(item)}</span></td><td class="att-topic"><span class="att-mobile-session">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></span><strong>${esc(topic)}</strong>${description ? `<small>${esc(description)}</small>` : ''}</td><td class="att-location">${locationHtml(item)}</td><td class="att-status"><span class="att-status-icon">${icon(ui.icon)}</span><span><strong>${ui.label}</strong><small>${esc(ui.detail)}</small></span></td><td class="att-actions">${action}</td></tr>`;
@@ -253,6 +260,28 @@ function analyticsHtml(items) {
   const s = attendanceSummary(items);
   const bars = [['PRESENT','Hadir','green'],['SICK','Sakit','amber'],['PERMIT','Izin','cyan'],['ABSENT','Alpa','red'],['UNMARKED','Belum Mengisi','muted']];
   return `<section class="att-analytics"><div class="att-section-head"><div><h2>Analitik Kehadiran Saya</h2><p>${s.progressed} dari ${s.total} sesi sudah dimulai · ${s.upcoming} sesi mendatang.</p></div><span class="att-scope-chip">Data pribadi</span></div><div class="att-analytics-grid"><article class="att-rate-card"><div class="att-rate-ring" style="--att-rate:${s.rate}%" role="img" aria-label="Persentase hadir ${rateText(s)}"><div><strong>${rateText(s)}</strong><span>Kehadiran</span></div></div><p><strong>${s.PRESENT}</strong> hadir dari <strong>${s.progressed}</strong> sesi</p><small>${s.upcoming} sesi mendatang belum dihitung</small></article><article class="att-distribution"><h3>Rincian Kehadiran</h3>${bars.map(([key,label,tone]) => `<div class="att-distribution-row att-tone-${tone}"><span>${label}</span><div class="att-progress-track"><i style="width:${s.progressed ? s[key] / s.progressed * 100 : 0}%"></i></div><strong>${s[key]}</strong></div>`).join('')}</article></div><p class="att-explanation">${icon('info')}Belum mengisi pada sesi yang sudah dimulai tetap masuk perhitungan. Sakit, izin, dan alpa ditampilkan sesuai catatan yang tersimpan.</p></section>`;
+}
+
+function attendanceEntryHead(item) {
+  const label=item.attendance_session_no ? `Sesi ${String(item.attendance_session_no).padStart(2,'0')}` : 'Sesi';
+  return `<div class="att-detail-head"><span class="att-detail-kicker">PRESENSI SAYA</span><button type="button" class="att-detail-close" data-close-modal aria-label="Tutup form presensi">×</button></div><div class="att-detail-heading"><div class="att-detail-session"><strong>${esc(label)}</strong><span class="att-phase phase-${phaseOf(item)[0]}">${phaseOf(item)[1]}</span></div><h2 id="att-entry-title">${esc(item.attendance_course_title || item.schedule_title || item.title || 'Presensi Kelas')}</h2><p>${icon('school')}${esc(item.class_name || 'KelasKu')}</p><p>${icon('clock')}${dateText(startOf(item),{day:'2-digit',month:'short',year:'numeric'})} · ${timeRange(item)} WIB</p></div>`;
+}
+export function attendanceEntryMessageHtml(item,{loading=false,message=''}={}) {
+  return `<section class="attendance-v2"><div class="att-detail att-tone-cyan">${attendanceEntryHead(item)}<div class="att-form-message" role="status">${loading ? '<span class="btn-spinner"></span>' : icon('info')}<span>${esc(message || 'Memeriksa status presensi terbaru…')}</span></div>${loading ? '' : '<button type="button" class="att-form-submit" data-global-att-retry>Periksa Lagi</button>'}</div></section>`;
+}
+export function attendanceEntryHtml(item,{draft={},error=''}={}) {
+  const choices=[['PRESENT','Hadir','check'],...(item.sick_enabled!==false?[['SICK','Sakit','info']]:[]),...(item.permit_enabled!==false?[['PERMIT','Izin','book']]:[])];
+  const raw=Array.isArray(item.channels) && item.channels.length ? item.channels : ['ZOOM','YOUTUBE','OFFLINE','OTHER'];
+  const channels=[...new Set(raw.map(value=>String(value).toUpperCase()).filter(value=>['ZOOM','YOUTUBE','OFFLINE','OTHER'].includes(value)))];
+  const status=choices.some(([value])=>value===draft.status)?draft.status:'PRESENT';
+  const channel=channels.includes(draft.channel)?draft.channel:channels[0] || '';
+  return `<section class="attendance-v2"><div class="att-detail att-tone-cyan">${attendanceEntryHead(item)}<form id="global-attendance-form" class="att-entry-form">
+    <fieldset><legend>Status kehadiran</legend><div class="att-form-choices">${choices.map(([value,label,symbol])=>`<button type="button" class="att-form-choice" data-global-att-status="${value}" aria-pressed="${value===status}">${icon(symbol)}<span>${label}</span><span class="att-form-selected" aria-hidden="true">✓</span></button>`).join('')}</div></fieldset>
+    <fieldset id="global-attendance-channel-choice" ${status==='PRESENT'?'':'hidden'}><legend>Mengikuti melalui</legend><div class="att-form-channels">${channels.map(value=>`<button type="button" class="att-form-channel" data-global-att-channel="${value}" aria-pressed="${value===channel}">${esc(channelLabel(value))}<span class="att-form-selected" aria-hidden="true">✓</span></button>`).join('')}</div></fieldset>
+    <label class="att-form-note" for="global-attendance-note"><span>Catatan <small>(opsional)</small></span><input id="global-attendance-note" name="note" maxlength="240" placeholder="Catatan singkat" value="${esc(draft.note || '')}"></label>
+    <div id="global-attendance-status" class="att-form-message${error?' is-error':''}" role="status" ${error?'':'hidden'}>${esc(error)}</div>
+    <button type="submit" id="global-attendance-submit" class="att-form-submit">${icon('check')}Kirim Presensi</button><p class="att-form-help">Pastikan pilihanmu sesuai kehadiran yang sebenarnya.</p>
+  </form></div></section>`;
 }
 
 export function attendanceDetailsHtml(item) {

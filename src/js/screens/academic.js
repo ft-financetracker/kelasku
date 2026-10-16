@@ -4,9 +4,9 @@ import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c74';
-import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c74';
-import { loadClassAcademicData, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c74';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c75';
+import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c75';
+import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c75';
 import { prefetchMyClasses } from './classes.js?v=6739';
 
 const HUB_TTL_MS = 45000;
@@ -189,12 +189,12 @@ function attendanceSessionNoticeHtml() {
   const scope = String(document.getElementById('academic-class-filter')?.value || 'ALL');
   const keys = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).map(c => `${state.sessionToken || ''}::${c.id}`);
   const running = attendanceSessionRuns.has(`${state.sessionToken || ''}::${scope}`);
-  const pending = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).some(c => !attendanceSessionErrors.has(`${state.sessionToken || ''}::${c.id}`) && (!state.classAcademic?.[c.id] || Date.now() - Number(state.classAcademicAt?.[c.id] || 0) >= 90000));
+  const pending = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).some(c => !attendanceSessionErrors.has(`${state.sessionToken || ''}::${c.id}`) && !attendanceClassDataFresh(c.id));
   const loading = keys.some(key => attendanceSessionRequests.has(key)) || (running && (pending || !keys.length));
   const errors = keys.filter(key => attendanceSessionErrors.has(key));
-  if (loading) return '<div class="att-source-notice" role="status"><span class="btn-spinner"></span><span>Melengkapi sesi dari kelas…</span></div>';
+  if (loading) return '<div class="att-source-notice" role="status"><span class="btn-spinner"></span><span>Menyamakan sesi dan status kehadiran…</span></div>';
   if (!errors.length) return '';
-  return `<div class="att-source-notice att-source-error" role="status"><span>Beberapa sesi belum dapat diperbarui. Daftar terakhir tetap ditampilkan.</span><button type="button" data-att-sessions-retry>Coba Lagi</button></div>`;
+  return `<div class="att-source-notice att-source-error" role="status"><span>Status terbaru belum dapat diperiksa. Data terakhir tetap tersedia; gunakan Periksa Status pada sesi.</span><button type="button" data-att-sessions-retry>Coba Lagi</button></div>`;
 }
 
 function refreshAttendanceSessions(force = false) {
@@ -207,7 +207,7 @@ function refreshAttendanceSessions(force = false) {
   const current = () => state.sessionToken === owner && String(state.user?.user_id || '') === userId;
   const visible = () => current() && activeAcademicScreen === 'attendance' && String(document.getElementById('academic-class-filter')?.value || 'ALL') === scope;
   const beforeClasses = JSON.stringify(attendanceClasses(state.academicHub));
-  const pending = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).some(c => force || (!attendanceSessionErrors.has(`${owner}::${c.id}`) && (!state.classAcademic?.[c.id] || Date.now() - Number(state.classAcademicAt?.[c.id] || 0) >= 90000)));
+  const pending = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).some(c => force || (!attendanceSessionErrors.has(`${owner}::${c.id}`) && !attendanceClassDataFresh(c.id)));
   let didWork = false, catalogChanged = false;
   const run = (async () => {
     // Reuse the core warmup's class list and its in-flight request; paint cached rows first.
@@ -221,11 +221,11 @@ function refreshAttendanceSessions(force = false) {
       while (index < classes.length && visible()) {
         const { id } = classes[index++], key = `${owner}::${id}`;
         if (attendanceSessionRequests.has(key)) { await attendanceSessionRequests.get(key); continue; }
-        if (!force && (attendanceSessionErrors.has(key) || (state.classAcademic?.[id] && Date.now() - Number(state.classAcademicAt?.[id] || 0) < 90000))) continue;
+        if (!force && (attendanceSessionErrors.has(key) || attendanceClassDataFresh(id))) continue;
         didWork = true;
         attendanceSessionErrors.delete(key);
-        const request = loadClassAcademicData(id,{ force }).catch(err => {
-          if (current() && err.code !== 'CLASS_DATA_CHANGED') attendanceSessionErrors.set(key,err.message);
+        const request = loadAttendanceClassData(id,{ force }).catch(err => {
+          if (current() && !['CLASS_DATA_CHANGED','ATTENDANCE_DATA_CHANGED'].includes(err.code)) attendanceSessionErrors.set(key,err.message);
           return null;
         }).finally(() => {
           if (attendanceSessionRequests.get(key) === request) attendanceSessionRequests.delete(key);
@@ -289,7 +289,7 @@ function refreshAttendanceReport(force = false) {
     if (state.sessionToken === owner) attendanceReportErrors.delete(key);
     return data;
   }).catch(err => {
-    if (state.sessionToken === owner) attendanceReportErrors.set(key, err.message);
+    if (state.sessionToken === owner && err.code !== 'ATTENDANCE_DATA_CHANGED') attendanceReportErrors.set(key, err.message);
     return null;
   }).finally(() => {
     if (attendanceReportRequests.get(key) === request) attendanceReportRequests.delete(key);
@@ -615,7 +615,7 @@ function bindAcademicRows() {
     reportRefresh: () => refreshAttendanceReport(true),
     details: id => {
       const item = filteredAttendanceItems(state.academicHub).find(row => String(row.attendance_id || row.public_token || '') === String(id));
-      if (item) showModal(attendanceDetailsHtml(item), { attendanceDetail:true });
+      if (item) return openGlobalAttendanceItem(item);
     }
   });
   document.querySelectorAll('[data-global-attendance-token]').forEach(btn => btn.onclick = () => openGlobalAttendance(btn.dataset.globalAttendanceToken));
@@ -633,87 +633,93 @@ function attendanceStatusLabel(value){
 
 function openGlobalAttendance(token=''){
   const clean=String(token||'').trim();
-  if(!clean)return;
+  if(!clean)return Promise.resolve(null);
   const item=attendanceSourceData(state.academicHub).attendance.find(x=>String(x.public_token||'')===clean);
-  if(!item){toast('Sesi presensi tidak ditemukan pada data terbaru. Tekan Refresh lalu coba lagi.');return;}
-  openGlobalAttendanceForm(item);
+  if(!item){toast('Sesi presensi tidak ditemukan pada data terbaru. Tekan Refresh lalu coba lagi.');return Promise.resolve(null);}
+  return openGlobalAttendanceItem(item);
 }
 
-function openGlobalAttendanceForm(item){
-  const status=attendanceWindow(item);
-  const marked=String(item.my_status||'UNMARKED').toUpperCase()!=='UNMARKED';
-  const rawChannels=Array.isArray(item.channels)?item.channels.filter(Boolean):[];
-  const channels=rawChannels.length?rawChannels:['ZOOM','YOUTUBE','OFFLINE'];
-  const choices=[
-    ['PRESENT','Hadir','check_circle'],
-    ...(item.sick_enabled!==false?[['SICK','Sakit','sick']]:[]),
-    ...(item.permit_enabled!==false?[['PERMIT','Izin','assignment']]:[])
-  ];
-  if(marked){
-    const detail=filteredAttendanceItems(state.academicHub).find(row=>String(row.attendance_id)===String(item.attendance_id))||item;
-    showModal(attendanceDetailsHtml(detail), { attendanceDetail:true });
+async function openGlobalAttendanceItem(item,{draft={},error=''}={}){
+  const owner=state.sessionToken,userId=String(state.user?.user_id||'');
+  const prepared=filteredAttendanceItems(state.academicHub).find(row=>String(row.attendance_id)===String(item.attendance_id))||item;
+  showModal(attendanceEntryMessageHtml(prepared,{loading:true}),{attendanceEntry:true});
+  const mount=document.getElementById('phase-modal');
+  try{
+    const fresh=await loadAttendanceSessionState(prepared);
+    if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId)return;
+    if(activeAcademicScreen!=='attendance'){if(document.getElementById('phase-modal')===mount)closeModal();return fresh;}
+    renderAttendanceSlot({updateOverview:true});
+    if(document.getElementById('phase-modal')!==mount)return fresh;
+    openGlobalAttendanceForm(fresh,{draft,error});
+    return fresh;
+  }catch(err){
+    if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId||document.getElementById('phase-modal')!==mount)return;
+    const message=error&&/presensi sudah tercatat/i.test(error)?'Presensi sudah tercatat di server. Status lengkap belum dapat dimuat. Tekan Periksa Lagi.':err.message;
+    showModal(attendanceEntryMessageHtml(prepared,{message}),{attendanceEntry:true});
+    document.querySelectorAll('[data-global-att-retry]').forEach(btn=>btn.onclick=()=>openGlobalAttendanceItem(prepared,{draft,error}));
+    return null;
+  }
+}
+
+function openGlobalAttendanceForm(item,{draft={},error=''}={}){
+  const window=attendanceWindow(item),marked=String(item.my_status||'UNMARKED').toUpperCase()!=='UNMARKED';
+  if(marked&&item.my_status_confirmed===true){showModal(attendanceDetailsHtml(item),{attendanceDetail:true});return;}
+  const manual=item.self_checkin_enabled===false||String(item.entry_mode||'').toUpperCase()==='MANUAL';
+  if(item.my_status_confirmed!==true||item.can_self_checkin!==true||manual||!['OPEN','LATE'].includes(window)||!item.public_token){
+    const message=window==='UPCOMING'?'Presensi belum dibuka.':!['OPEN','LATE'].includes(window)?'Waktu presensi sudah ditutup.':manual?'Presensi sesi ini dicatat oleh pengajar.':'Presensi mandiri belum tersedia untuk akunmu pada sesi ini.';
+    showModal(attendanceEntryMessageHtml(item,{message}),{attendanceEntry:true});
+    document.querySelectorAll('[data-global-att-retry]').forEach(btn=>btn.onclick=()=>openGlobalAttendanceItem(item,{draft}));
     return;
   }
-  if(!['OPEN','LATE'].includes(status)){
-    showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert">${status==='UPCOMING'?'Presensi belum dibuka.':'Waktu presensi sudah ditutup.'}</div>`);
-    return;
-  }
-  if(item.self_checkin_enabled===false||String(item.entry_mode||'').toUpperCase()==='MANUAL'){
-    showModal(`<div class="modal-head"><h2>Presensi dicatat pengajar</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert">Sesi ini memakai pencatatan oleh pengajar.</div>`);
-    return;
-  }
-    showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2><p class="compact-copy">${esc(attendanceSessionLabel(item))} • ${esc(shortDateTime(item.start_at||item.schedule_start_at))}</p></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
-    <div class="attendance-inline-form">
-      <div class="attendance-form-label">Status kehadiran</div>
-      <div class="attendance-status-choice">${choices.map(([v,l,i])=>`<button type="button" data-global-att-status="${v}" class="attendance-choice ${v==='PRESENT'?'active':''}"><span class="material-symbols-rounded">${i}</span><span>${l}</span></button>`).join('')}</div>
-      <div id="global-attendance-channel-choice" class="attendance-channel-choice">
-        <div class="attendance-form-label">Mengikuti melalui</div>
-        <div class="attendance-channel-row">${channels.map((ch,i)=>`<button type="button" data-global-att-channel="${esc(ch)}" class="attendance-channel ${i===0?'active':''}">${esc(attendanceChannelLabel(ch))}</button>`).join('')}</div>
-      </div>
-      <label class="field attendance-note-field"><span>Catatan <small>(opsional)</small></span><input id="global-attendance-note" class="control" placeholder="Catatan singkat"></label>
-      <div id="global-attendance-status" class="request-status"></div>
-      <button type="button" id="global-attendance-submit" class="btn btn-primary btn-block">Kirim Presensi</button>
-    </div>`);
-  let selectedStatus='PRESENT',selectedChannel=String(channels[0]||'ZOOM');
+  showModal(attendanceEntryHtml(item,{draft,error}),{attendanceEntry:true});
+  const formMount=document.getElementById('phase-modal');
+  let selectedStatus=[...document.querySelectorAll('[data-global-att-status]')].find(btn=>btn.getAttribute('aria-pressed')==='true')?.dataset.globalAttStatus||'PRESENT';
+  let selectedChannel=[...document.querySelectorAll('[data-global-att-channel]')].find(btn=>btn.getAttribute('aria-pressed')==='true')?.dataset.globalAttChannel||'';
   document.querySelectorAll('[data-global-att-status]').forEach(btn=>btn.onclick=()=>{
     selectedStatus=btn.dataset.globalAttStatus;
-    document.querySelectorAll('[data-global-att-status]').forEach(x=>x.classList.toggle('active',x===btn));
-    document.getElementById('global-attendance-channel-choice')?.classList.toggle('hidden',selectedStatus!=='PRESENT');
+    document.querySelectorAll('[data-global-att-status]').forEach(x=>x.setAttribute('aria-pressed',String(x===btn)));
+    const group=document.getElementById('global-attendance-channel-choice');if(group)group.hidden=selectedStatus!=='PRESENT';
   });
   document.querySelectorAll('[data-global-att-channel]').forEach(btn=>btn.onclick=()=>{
     selectedChannel=btn.dataset.globalAttChannel;
-    document.querySelectorAll('[data-global-att-channel]').forEach(x=>x.classList.toggle('active',x===btn));
+    document.querySelectorAll('[data-global-att-channel]').forEach(x=>x.setAttribute('aria-pressed',String(x===btn)));
   });
-  document.getElementById('global-attendance-submit')?.addEventListener('click',async()=>{
+  const submit=async event=>{
+    event?.preventDefault();
     const btn=document.getElementById('global-attendance-submit'),statusEl=document.getElementById('global-attendance-status');
     if(!btn||btn.disabled)return;
-    if(!['OPEN','LATE'].includes(attendanceWindow(item))){
-      statusEl.className='request-status error';statusEl.textContent='Waktu presensi sudah ditutup. Tekan Refresh untuk memperbarui sesi.';btn.disabled=true;return;
-    }
-    const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mencatat…</span>';
     const owner=state.sessionToken,userId=String(state.user?.user_id||''),note=document.getElementById('global-attendance-note')?.value||'';
-    statusEl.className='request-status progress';statusEl.textContent='Mencatat presensi…';
+    if(!['OPEN','LATE'].includes(attendanceWindow(item))){
+      btn.disabled=true;await openGlobalAttendanceItem(item,{draft:{status:selectedStatus,channel:selectedChannel,note}});return;
+    }
+    btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mencatat…</span>';
+    statusEl.hidden=false;statusEl.className='att-form-message';statusEl.textContent='Mencatat presensi…';
     try{
       const result=await api('selfCheckInAttendance',{
-        token:String(item.public_token||''),
-        attendance_status:selectedStatus,
-        attendance_channel:selectedStatus==='PRESENT'?selectedChannel:'',
-        note
-      },{onSlow:()=>statusEl.textContent='Server masih memproses. Jangan klik dua kali.'});
+        token:String(item.public_token||''),attendance_status:selectedStatus,
+        attendance_channel:selectedStatus==='PRESENT'?selectedChannel:'',note
+      },{onSlow:()=>{statusEl.textContent='Server masih memproses. Jangan klik dua kali.';}});
       if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId)return;
       applyAttendanceCheckIn(item,result,{status:selectedStatus,channel:selectedStatus==='PRESENT'?selectedChannel:'',note});
-      closeModal();
+      if(document.getElementById('phase-modal')===formMount)closeModal();
+      invalidateAcademicClientCache(item.class_id||'');
       drawAcademicScreen(state.academicHub);
       toast(`Presensi tersimpan: ${attendanceStatusLabel(item.my_status)}.`);
-      invalidateAcademicClientCache(item.class_id||'');
-      loadClassAcademicData(item.class_id,{force:true}).then(()=>{
+      loadAttendanceClassData(item.class_id,{force:true}).then(()=>{
         attendanceSessionErrors.delete(`${owner}::${item.class_id}`);
         if(state.sessionToken===owner&&activeAcademicScreen==='attendance')drawAcademicScreen(state.academicHub);
       }).catch(()=>{});
     }catch(err){
-      statusEl.className='request-status error';statusEl.textContent=err.message;btn.disabled=false;btn.innerHTML=old;
+      if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId)return;
+      markAttendanceUnverified(item);
+      renderAttendanceSlot({updateOverview:true});
+      if(document.getElementById('phase-modal')!==formMount)return;
+      // A rejection or timeout is reconciled with a read; never guess PRESENT or resend.
+      await openGlobalAttendanceItem(item,{draft:{status:selectedStatus,channel:selectedChannel,note},error:err.message});
     }
-  });
+  };
+  document.getElementById('global-attendance-submit')?.addEventListener('click',submit);
+  document.getElementById('global-attendance-form')?.addEventListener('submit',submit);
 }
 
 function academicAttachmentLinks(items=[]){if(!items.length)return '';return `<div class="task-supporting-list"><strong>Lampiran Pendukung</strong>${items.map(academicAttachmentButton).join('')}</div>`;}
@@ -791,18 +797,19 @@ function academicSkeleton() {
 
 function errorPanel(message) { return `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(message)}</p></div>`; }
 
-function showModal(html, { attendanceDetail = false } = {}) {
+function showModal(html, { attendanceDetail = false, attendanceEntry = false } = {}) {
   closeModal();
-  const el = document.createElement('div'); el.id = 'phase-modal'; el.className = `overlay${attendanceDetail ? ' att-detail-overlay' : ''}`;
-  if(attendanceDetail)el.returnFocus=document.activeElement;
-  el.innerHTML = `<div class="modal phase-modal-card ${attendanceDetail ? 'att-detail-modal' : 'glass'}"${attendanceDetail ? ' role="dialog" aria-modal="true" aria-labelledby="att-detail-title" tabindex="-1"' : ''}>${html}</div>`; document.body.appendChild(el);
+  const solid=attendanceDetail||attendanceEntry;
+  const el = document.createElement('div'); el.id = 'phase-modal'; el.className = `overlay${solid ? ' att-detail-overlay' : ''}`;
+  if(solid){el.returnFocus=document.activeElement;el.returnAttendanceId=document.activeElement?.closest?.('[data-attendance-row]')?.dataset.attendanceRow;}
+  el.innerHTML = `<div class="modal phase-modal-card ${solid ? `att-detail-modal${attendanceEntry?' att-entry-modal':''}` : 'glass'}"${solid ? ` role="dialog" aria-modal="true" aria-labelledby="${attendanceEntry?'att-entry-title':'att-detail-title'}" tabindex="-1"` : ''}>${html}</div>`; document.body.appendChild(el);
   el.querySelectorAll('[data-close-modal]').forEach(x => x.onclick = closeModal);
   el.onclick = e => { if (e.target === el) closeModal(); };
-  if(attendanceDetail){
+  if(solid){
     el.addEventListener('keydown',event=>{
       if(event.key==='Escape'){event.preventDefault();closeModal();}
       if(event.key==='Tab'){
-        const controls=[...el.querySelectorAll('button:not(:disabled), a[href], [tabindex="0"]')];
+        const controls=[...el.querySelectorAll('button:not(:disabled), a[href], input, textarea, [tabindex="0"]')].filter(node=>!node.closest('[hidden]'));
         const first=controls[0],last=controls[controls.length-1];
         if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
         else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
@@ -811,7 +818,7 @@ function showModal(html, { attendanceDetail = false } = {}) {
     el.querySelectorAll('[data-close-modal]')[0]?.focus();
   }
 }
-function closeModal(){ const el=document.getElementById('phase-modal'),previous=el?.returnFocus;el?.remove();if(previous?.isConnected)previous.focus({preventScroll:true}); }
+function closeModal(){ const el=document.getElementById('phase-modal'),previous=el?.returnFocus,id=el?.returnAttendanceId;el?.remove();if(previous?.isConnected)previous.focus({preventScroll:true});else if(id)[...document.querySelectorAll('[data-attendance-row]')].find(row=>row.dataset.attendanceRow===id)?.querySelector?.('button')?.focus({preventScroll:true}); }
 
 function openExternal(url) {
   if (!/^https?:\/\//i.test(String(url || ''))) return toast('Tautan materi tidak valid.');
