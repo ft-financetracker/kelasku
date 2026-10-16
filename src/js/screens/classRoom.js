@@ -1,11 +1,12 @@
-import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6739r52c73';
+import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6739r52c74';
+import { loadClassAcademicData } from './classAcademicData.js?v=6739r52c74';
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c73';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c74';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
@@ -27,7 +28,6 @@ const CLASS_ATTENDANCE_PAGE_SIZE = 10;
 const ATTENDANCE_MEMBER_PAGE_SIZE = 20;
 const CLASS_MEMBERS_PAGE_SIZE = 8;
 const CLASS_DETAIL_TTL_MS = 2 * 60 * 1000;
-const CLASS_ACADEMIC_TTL_MS = 90 * 1000;
 const classDetailInFlight = new Map();
 const classAcademicInFlight = new Map();
 const classTimelineInFlight = new Map();
@@ -366,31 +366,29 @@ function switchTab(tab, data) {
 
 async function loadClassAcademic(background = false, force = false) {
   const classId = String(state.selectedClassId || '');
-  const cached = state.classAcademic[classId];
-  if (!force && cached && cacheFresh(state.classAcademicAt, classId, CLASS_ACADEMIC_TTL_MS)) return cached;
-  if (classAcademicInFlight.has(classId)) return classAcademicInFlight.get(classId);
-
-  const request = (async () => {
+  const cached = state.classAcademic[classId], owner = state.sessionToken;
+  const key = `${owner || ''}::${classId}`, source = loadClassAcademicData(classId,{ force });
+  const pending = classAcademicInFlight.get(key);
+  if(pending?.source === source)return pending.request;
+  const request = (async()=>{
     try {
-      const data = await api('getClassAcademic', { class_id: classId });
-      const previous = state.classAcademic[classId];
-      const changed = !sameData(previous, data);
-      persistClassCache('classAcademic','classAcademicAt','kelasku_class_academic_cache','kelasku_class_academic_cache_at',classId,data);
+      const data = await source;
+      if(state.sessionToken!==owner)return null;
+      const changed = !sameData(cached, data);
       if(String(state.selectedClassId)===classId&&currentClassData)refreshRoomNavigation(activeTab,currentClassData);
       if (String(state.selectedClassId) === classId && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && (changed || !background)) {
         drawAcademicTab(activeTab, data);
       }
       return data;
     } catch (err) {
-      if (!background && !cached && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && String(state.selectedClassId) === classId) {
+      if (err.code !== 'CLASS_DATA_CHANGED' && state.sessionToken===owner && !background && !cached && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && String(state.selectedClassId) === classId) {
         document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
       }
-      return cached || null;
-    } finally {
-      classAcademicInFlight.delete(classId);
+      return state.sessionToken===owner ? cached || null : null;
     }
   })();
-  classAcademicInFlight.set(classId, request);
+  classAcademicInFlight.set(key,{source,request});
+  request.finally(()=>{if(classAcademicInFlight.get(key)?.request===request)classAcademicInFlight.delete(key);}).catch(()=>{});
   return request;
 }
 

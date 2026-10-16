@@ -1,6 +1,6 @@
-/** Personal attendance presentation. Reuses getAcademicHub; no network requests. */
+/** Attendance presentation. Data loading and cache are owned by the controller. */
 import { esc } from '../core/utils.js';
-import { attendanceReportData } from './attendanceAnalytics.js?v=6739r52c73';
+import { attendanceReportData } from './attendanceAnalytics.js?v=6739r52c74';
 
 const PAGE_SIZE = 12;
 const VIEWS = [
@@ -104,7 +104,7 @@ export function attendanceOverviewHtml(items) {
     ['green','users',summary.done,'Sudah Presensi',summary.done ? 'Kehadiran sudah dicatat' : 'Belum ada presensi tercatat'],
     ['amber','clock',summary.pending,'Belum Presensi',summary.closed ? `${summary.closed} sesi sudah ditutup` : 'Sesi yang perlu diisi'],
     ['gold','book',summary.upcoming,'Belum Dibuka','Sesi mendatang'],
-    ['cyan','calendar',summary.total,'Sesi Termuat',`${totalClasses} kelas`]
+    ['cyan','calendar',summary.total,'Total Sesi',`${totalClasses} kelas`]
   ];
   return `<header class="att-hero att-hero-default">
     <div class="att-hero-copy"><span class="att-eyebrow">ABSENSI KELAS</span><h1>Hadir hari ini.<br><em>Bertumbuh setiap hari.</em></h1><p class="att-hero-description">Setiap pertemuan adalah langkah kecil menuju ilmu yang lebih berarti.</p><div class="att-hero-values"><span>${icon('check')}Konsisten</span><span>${icon('book')}Terus belajar</span><span>${icon('chart')}Terus bertumbuh</span></div></div>
@@ -113,7 +113,7 @@ export function attendanceOverviewHtml(items) {
   <div class="att-metrics" aria-label="Komposisi sesi pada filter aktif">${cards.map(([tone, symbol, count, label, help]) => {
     const percent = summary.total ? Math.round(count / summary.total * 100) : 0;
     return `<article class="att-metric att-tone-${tone}" title="${esc(help)}"><span class="att-metric-icon">${icon(symbol)}</span><div class="att-metric-copy"><strong>${count}</strong><span>${label}</span></div><div class="att-metric-progress"><span class="att-progress-track"><i style="width:${percent}%"></i></span><small>${percent}%</small></div></article>`;
-  }).join('')}</div><p class="att-scope-note">Kartu merangkum daftar sesi yang termuat. Rekap memakai data Analitik Ruang Kelas.</p>`;
+  }).join('')}</div><p class="att-scope-note">Data kehadiran pribadi · Sesi mengikuti data Ruang Kelas pada filter aktif.</p>`;
 }
 
 function grouped(items, byCourse = false, activeFirst = false) {
@@ -257,8 +257,30 @@ function analyticsHtml(items) {
 
 export function attendanceDetailsHtml(item) {
   const ui = attendanceState(item);
-  const rows = [['Kelas',item.class_name || 'KelasKu'],['Mata pelajaran / kegiatan',item.attendance_course_title || item.title],['Jadwal',`${dateText(startOf(item),{dateStyle:'full'})} · ${timeRange(item)} WIB`],['Status',STATUS_LABELS[statusOf(item)]],['Mengikuti melalui',item.my_channel ? channelLabel(item.my_channel) : '—'],['Ketepatan waktu',item.my_punctuality ? (String(item.my_punctuality).toUpperCase() === 'LATE' ? 'Terlambat' : 'Tepat waktu') : '—'],['Catatan',item.my_note || '—']];
-  return `<div class="modal-head"><div><div class="eyebrow">DETAIL PRESENSI</div><h2>${esc(item.attendance_course_title || 'Sesi Presensi')}</h2></div><button type="button" class="icon-btn mini" data-close-modal aria-label="Tutup detail">×</button></div><div class="attendance-v2 att-detail att-tone-${ui.tone}"><div class="att-detail-status">${icon(ui.icon)}<strong>${ui.label}</strong></div><dl>${rows.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value || '—')}</dd></div>`).join('')}</dl></div>`;
+  const [phase,phaseLabel] = phaseOf(item);
+  const label = item.attendance_session_no ? `Sesi ${String(item.attendance_session_no).padStart(2,'0')}` : 'Sesi';
+  const lesson = { start_at:item.schedule_start_at || startOf(item), end_at:item.schedule_end_at || endOf(item) };
+  const note = String(item.my_note || '').trim();
+  const hasLocation = String(item.schedule_location || item.location || '').trim();
+  const personal = ui.group === 'done';
+  const statusCopy = personal ? 'Kehadiranmu sudah tercatat.' : ui.detail;
+  const checkInWindow = { ...item, start_at:item.open_at || startOf(item) };
+  const attendanceTime = `${dateText(startOf(checkInWindow),{day:'2-digit',month:'short',year:'numeric'})} · ${timeRange(checkInWindow)} WIB`;
+  const rows = [
+    ['Mengikuti melalui',item.my_channel ? channelLabel(item.my_channel) : 'Belum tercatat','video'],
+    ['Ketepatan waktu',item.my_punctuality ? (String(item.my_punctuality).toUpperCase() === 'LATE' ? 'Terlambat' : 'Tepat waktu') : 'Belum tercatat','clock']
+  ];
+  return `<section class="attendance-v2"><div class="att-detail att-tone-${ui.tone}">
+    <div class="att-detail-head"><span class="att-detail-kicker">DETAIL PRESENSI</span><button type="button" class="att-detail-close" data-close-modal aria-label="Tutup detail">×</button></div>
+    <div class="att-detail-heading"><div class="att-detail-session"><strong>${esc(label)}</strong><span class="att-phase phase-${phase}">${phaseLabel}</span></div><h2 id="att-detail-title">${esc(item.attendance_course_title || item.schedule_title || item.title || 'Sesi Presensi')}</h2><p>${icon('school')}${esc(item.class_name || 'KelasKu')}</p></div>
+    <div class="att-detail-status"><span class="att-detail-status-icon">${icon(ui.icon)}</span><div><strong>${ui.label}</strong><small>${esc(statusCopy)}</small></div>${personal ? `<span class="att-detail-status-label">${STATUS_LABELS[statusOf(item)]}</span>` : ''}</div>
+    <div class="att-detail-schedule"><span class="att-detail-calendar">${icon('calendar')}</span><div><span>Jadwal pertemuan</span><strong>${dateText(startOf(lesson),{dateStyle:'full'})}</strong><small>${timeRange(lesson)} WIB</small></div></div>
+    <div class="att-detail-window">${icon('clock')}<div><span>Waktu pengisian presensi</span><strong>${esc(attendanceTime)}</strong></div></div>
+    <dl class="att-detail-grid">${rows.map(([title,value,symbol])=>`<div><dt>${icon(symbol)}${title}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
+    ${note ? `<div class="att-detail-note"><span>Catatanmu</span><p>${esc(note)}</p></div>` : ''}
+    ${hasLocation ? `<div class="att-detail-location">${locationHtml(item)}</div>` : ''}
+    <p class="att-detail-foot">${personal ? `${icon('check')}Tersimpan untuk akunmu` : 'Detail sesi kelas'}</p>
+  </div></section>`;
 }
 
 export function bindAttendanceHub({ redraw, details, reportClass, reportScope, reportRefresh }) {

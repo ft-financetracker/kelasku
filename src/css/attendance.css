@@ -1,4 +1,4 @@
-/* R5.2 C7.2 mobile — personal attendance hub. All rules are scoped to this screen. */
+/* R5.2 C7.4 — compact attendance hub and detail. Rules stay scoped to attendance. */
 .attendance-v2{--att-panel:rgba(4,28,54,.76);--att-border:rgba(26,169,213,.3);--att-muted:var(--muted,#aec6df);--att-green:#00dfb1;--att-cyan:#00cbe6;display:flex;flex-direction:column;gap:16px;min-width:0}
 .attendance-v2 [hidden]{display:none!important}
 .attendance-v2 button,.attendance-v2 a,.attendance-v2 input,.attendance-v2 select{touch-action:manipulation}
@@ -163,7 +163,6 @@
 .attendance-v2 .att-distribution h3{font-size:14px;margin:0 0 24px}
 .attendance-v2 .att-distribution-row{display:grid;grid-template-columns:100px 1fr 30px;gap:12px;align-items:center;margin:20px 0;font-size:11px;color:var(--att-muted)}
 .attendance-v2 .att-distribution-row strong{text-align:right;color:var(--att-tone)}
-.attendance-v2 .att-detail-status{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--att-tone-bg);color:var(--att-tone)}
 .attendance-v2 .att-report-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-bottom:14px}
 .attendance-v2 .att-report-controls>label{display:grid;gap:5px;flex:1;min-width:150px;font-size:10px;color:var(--att-muted)}
 .attendance-v2 .att-report-controls select{width:100%;min-height:44px;font-size:11px}
@@ -174,10 +173,48 @@
 .attendance-v2 .att-report-note{display:grid;gap:4px;font-size:11px;line-height:1.6;margin:0 0 18px;color:var(--att-muted)}
 .attendance-v2 .att-report-note strong{color:var(--text)}
 .attendance-v2 .att-report-message{font-size:11px;line-height:1.7;color:var(--att-muted);margin:10px 0 16px}
-.attendance-v2.att-detail dl{margin:0;display:grid;gap:0}
-.attendance-v2.att-detail dl>div{padding:12px 0;border-bottom:1px solid var(--att-border)}
-.attendance-v2.att-detail dt{font-size:11px;color:var(--att-muted);margin-bottom:4px}
-.attendance-v2.att-detail dd{font-size:13px;margin:0;overflow-wrap:anywhere}
+.attendance-v2 .att-source-notice{display:flex;align-items:center;gap:9px;padding:10px 12px;margin-bottom:10px;border:1px solid var(--att-border);border-radius:10px;background:var(--att-panel);font-size:11px;line-height:1.5;color:var(--att-muted)}
+.attendance-v2 .att-source-error{justify-content:space-between;flex-wrap:wrap}
+.attendance-v2 .att-source-notice button{min-height:44px;border:1px solid var(--att-border);border-radius:8px;padding:6px 12px;background:transparent;color:var(--att-cyan);font:inherit;cursor:pointer}
+.att-detail-overlay.overlay{padding:16px;background:rgba(1,9,21,.86);z-index:10040}
+.att-detail-overlay .modal.att-detail-modal{width:min(540px,100%)!important;max-height:calc(100dvh - 32px)!important;padding:0!important;overflow:auto!important;border:1px solid #23506c;border-radius:20px;background:#071d34!important;color:#edf6ff;box-shadow:0 24px 80px rgba(0,0,0,.45);isolation:isolate}
+.att-detail-modal .attendance-v2{gap:0}
+.attendance-v2 .att-detail{padding:20px;min-width:0}
+.attendance-v2 .att-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-6px -6px 8px 0}
+.attendance-v2 .att-detail-kicker{font-size:10px;font-weight:700;letter-spacing:.15em;color:var(--att-cyan)}
+.attendance-v2 .att-detail-close{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--att-border);border-radius:12px;background:rgba(25,74,112,.15);color:var(--text);font:inherit;font-size:25px;cursor:pointer;line-height:1}
+.attendance-v2 .att-detail-heading{margin-bottom:16px}
+.attendance-v2 .att-detail-session{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--att-cyan);margin-bottom:6px}
+.attendance-v2 .att-detail-heading h2{margin:0;font-size:clamp(18px,3vw,23px);line-height:1.4;letter-spacing:-.02em;overflow-wrap:anywhere}
+.attendance-v2 .att-detail-heading p{display:flex;align-items:center;gap:6px;margin:7px 0 0;font-size:11px;color:var(--att-muted);line-height:1.5;overflow-wrap:anywhere}
+.attendance-v2 .att-detail-heading p .att-icon{width:17px;height:17px;color:var(--att-cyan)}
+.attendance-v2 .att-detail-status{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--att-tone);border-radius:13px;background:var(--att-tone-bg);color:var(--att-tone)}
+.attendance-v2 .att-detail-status-icon{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;background:var(--att-tone-bg)}
+.attendance-v2 .att-detail-status>div{flex:1;min-width:0}
+.attendance-v2 .att-detail-status strong{display:block;font-size:13px;line-height:1.5}
+.attendance-v2 .att-detail-status small{display:block;margin-top:2px;color:var(--att-muted);font-size:10px;line-height:1.5}
+.attendance-v2 .att-detail-status-label{padding:4px 8px;border:1px solid var(--att-tone);border-radius:7px;font-size:10px;font-weight:650}
+.attendance-v2 .att-detail-schedule{display:flex;align-items:center;gap:12px;padding:16px 0 12px}
+.attendance-v2 .att-detail-calendar{display:grid;place-items:center;width:40px;height:44px;border-radius:11px;flex:none;background:rgba(0,203,230,.1);color:var(--att-cyan)}
+.attendance-v2 .att-detail-schedule>div{min-width:0}
+.attendance-v2 .att-detail-schedule span:not(.att-detail-calendar),.attendance-v2 .att-detail-window span{font-size:10px;color:var(--att-muted)}
+.attendance-v2 .att-detail-schedule strong{display:block;margin:2px 0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.attendance-v2 .att-detail-schedule small{display:block;font-size:11px;color:var(--att-muted)}
+.attendance-v2 .att-detail-window{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(71,140,191,.08);border:1px solid var(--att-border)}
+.attendance-v2 .att-detail-window>.att-icon{width:16px;height:16px;margin-top:3px;color:var(--att-cyan)}
+.attendance-v2 .att-detail-window strong{display:block;font-size:11px;font-weight:500;line-height:1.65;margin-top:3px;overflow-wrap:anywhere}
+.attendance-v2 .att-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0;padding:0}
+.attendance-v2 .att-detail-grid>div{min-width:0}
+.attendance-v2 .att-detail-grid dt{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--att-muted)}
+.attendance-v2 .att-detail-grid dt .att-icon{width:14px;height:14px}
+.attendance-v2 .att-detail-grid dd{margin:5px 0 0;font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.attendance-v2 .att-detail-note{margin:14px 0;padding:11px 12px;border-left:2px solid var(--att-cyan);border-radius:0 9px 9px 0;background:rgba(0,203,230,.05)}
+.attendance-v2 .att-detail-note>span{color:var(--att-muted);font-size:10px}
+.attendance-v2 .att-detail-note p{margin:5px 0 0;font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.attendance-v2 .att-detail-location{margin:10px 0 14px}
+.attendance-v2 .att-detail-location .att-location-link{min-height:44px;padding:8px 12px;border:1px solid var(--att-border);border-radius:9px;font-size:11px}
+.attendance-v2 .att-detail-foot{display:flex;align-items:center;gap:6px;margin:0;padding-top:10px;border-top:1px solid var(--att-border);font-size:10px;color:var(--att-muted)}
+.attendance-v2 .att-detail-foot .att-icon{width:14px;height:14px;color:var(--att-tone)}
 .attendance-v2 .att-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:1200px){
   .attendance-v2 .att-toolbar{grid-template-columns:minmax(150px,1fr) 150px minmax(170px,230px) auto}
@@ -310,4 +347,16 @@ html[data-theme="light"] .attendance-v2 .att-toolbar .academic-search,html[data-
 html[data-theme="light"] .attendance-v2 .att-session-row,html[data-theme="light"] .attendance-v2 .att-rate-card,html[data-theme="light"] .attendance-v2 .att-distribution{background:rgba(225,241,249,.32)}
 html[data-theme="light"] .attendance-v2 .att-rate-ring>div{background:#f8fcff}
 html[data-theme="light"] .attendance-v2 .att-action-primary{color:#002c31}
+html[data-theme="light"] .att-detail-overlay .modal.att-detail-modal{background:#f8fcff!important;color:#102744;border-color:#b5d4e7}
+@media(max-width:600px){
+  .att-detail-overlay.overlay{padding:10px}
+  .att-detail-overlay .modal.att-detail-modal{max-height:calc(100dvh - 20px)!important;border-radius:16px}
+  .attendance-v2 .att-detail{padding:15px}
+  .attendance-v2 .att-detail-heading{margin-bottom:12px}
+  .attendance-v2 .att-detail-heading h2{font-size:18px}
+  .attendance-v2 .att-detail-grid{gap:10px}
+  .attendance-v2 .att-detail-status{padding:10px;gap:8px}
+  .attendance-v2 .att-detail-status strong{font-size:12px}
+  .attendance-v2 .att-detail-status-label{font-size:9px;padding:3px 6px}
+}
 @media(prefers-reduced-motion:reduce){.attendance-v2 *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}

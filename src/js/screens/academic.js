@@ -4,8 +4,10 @@ import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c73';
-import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c73';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c74';
+import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c74';
+import { loadClassAcademicData, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c74';
+import { prefetchMyClasses } from './classes.js?v=6739';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
@@ -20,6 +22,9 @@ let attendanceReportClassId = '';
 let attendanceReportScope = 'own';
 const attendanceReportRequests = new Map();
 const attendanceReportErrors = new Map();
+const attendanceSessionRuns = new Map();
+const attendanceSessionRequests = new Map();
+const attendanceSessionErrors = new Map();
 
 export function renderSchedule() {
   activeAcademicScreen = 'schedule';
@@ -46,6 +51,7 @@ export function renderAttendance() {
   attendanceReportClassId = '';
   attendanceReportScope = 'own';
   attendanceReportErrors.clear();
+  attendanceSessionErrors.clear();
   activeAcademicScreen = 'attendance';
   renderAcademicShell('Absensi', 'Riwayat kehadiran dari seluruh kelas dalam satu tempat.', 'attendance', 'i-check');
 }
@@ -83,7 +89,7 @@ function bindAcademicToolbar() {
     drawAcademicScreen(state.academicHub);
   });
   document.getElementById('academic-attendance-filter')?.addEventListener('change', () => { resetAttendancePages(); drawAcademicScreen(state.academicHub); });
-  document.getElementById('academic-refresh')?.addEventListener('click', () => activeAcademicScreen === 'attendance' && attendanceIsReportView() ? refreshAttendanceReport(true) : loadAcademicHub(true));
+  document.getElementById('academic-refresh')?.addEventListener('click', () => activeAcademicScreen === 'attendance' ? (attendanceIsReportView() ? refreshAttendanceReport(true) : refreshAttendanceSessions(true)) : loadAcademicHub(true));
 }
 
 export async function loadAcademicHub(force = false) {
@@ -132,9 +138,7 @@ export function invalidateAcademicClientCache(classId = '') {
   localStorage.setItem('kelasku_academic_cache_at', '0');
   if (classId) {
     invalidateAttendanceAnalytics(classId);
-    state.classAcademicAt ||= {};
-    state.classAcademicAt[classId] = 0;
-    try { localStorage.setItem('kelasku_class_academic_cache_at', JSON.stringify(state.classAcademicAt)); } catch {}
+    invalidateClassAcademicData(classId);
   }
   state.dashboardAt = 0;
   localStorage.setItem('kelasku_dashboard_cache_at', '0');
@@ -154,34 +158,104 @@ function drawAcademicScreen(data) {
     const items = filteredAttendanceItems(data);
     const overview = document.getElementById('attendance-overview');
     if (overview) overview.innerHTML = attendanceOverviewHtml(items);
-    slot.innerHTML = attendanceContentHtml(items, attendanceIsReportView() ? attendanceReportOptions(data) : null);
+    slot.innerHTML = attendanceSessionNoticeHtml() + attendanceContentHtml(items, attendanceIsReportView() ? attendanceReportOptions(data) : null);
   }
   else slot.innerHTML = schedulesHtml(filterItems(data.schedules || []), filterItems(data.tasks || []));
 
   bindAcademicRows();
-  if (activeAcademicScreen === 'attendance') refreshAttendanceReport();
+  if (activeAcademicScreen === 'attendance') { refreshAttendanceReport(); refreshAttendanceSessions(); }
 }
 
 function redrawAttendanceContent() {
   renderAttendanceSlot();
   refreshAttendanceReport();
+  refreshAttendanceSessions();
 }
 
-function renderAttendanceSlot() {
+function renderAttendanceSlot({ updateOverview = false } = {}) {
   if (activeAcademicScreen !== 'attendance') return;
   const slot = document.getElementById('academic-slot');
   if (!slot || !state.academicHub) return;
-  slot.innerHTML = attendanceContentHtml(filteredAttendanceItems(state.academicHub), attendanceIsReportView() ? attendanceReportOptions(state.academicHub) : null);
+  const items = filteredAttendanceItems(state.academicHub);
+  if(updateOverview){
+    const overview = document.getElementById('attendance-overview');
+    if (overview) overview.innerHTML = attendanceOverviewHtml(items);
+  }
+  slot.innerHTML = attendanceSessionNoticeHtml() + attendanceContentHtml(items, attendanceIsReportView() ? attendanceReportOptions(state.academicHub) : null);
   bindAcademicRows();
 }
 
+function attendanceSessionNoticeHtml() {
+  const scope = String(document.getElementById('academic-class-filter')?.value || 'ALL');
+  const keys = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).map(c => `${state.sessionToken || ''}::${c.id}`);
+  const running = attendanceSessionRuns.has(`${state.sessionToken || ''}::${scope}`);
+  const pending = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).some(c => !attendanceSessionErrors.has(`${state.sessionToken || ''}::${c.id}`) && (!state.classAcademic?.[c.id] || Date.now() - Number(state.classAcademicAt?.[c.id] || 0) >= 90000));
+  const loading = keys.some(key => attendanceSessionRequests.has(key)) || (running && (pending || !keys.length));
+  const errors = keys.filter(key => attendanceSessionErrors.has(key));
+  if (loading) return '<div class="att-source-notice" role="status"><span class="btn-spinner"></span><span>Melengkapi sesi dari kelas…</span></div>';
+  if (!errors.length) return '';
+  return `<div class="att-source-notice att-source-error" role="status"><span>Beberapa sesi belum dapat diperbarui. Daftar terakhir tetap ditampilkan.</span><button type="button" data-att-sessions-retry>Coba Lagi</button></div>`;
+}
+
+function refreshAttendanceSessions(force = false) {
+  if (activeAcademicScreen !== 'attendance' || !state.academicHub) return Promise.resolve(null);
+  const owner = state.sessionToken, userId = String(state.user?.user_id || '');
+  if (!owner || !userId) return Promise.resolve(null);
+  const scope = String(document.getElementById('academic-class-filter')?.value || 'ALL');
+  const runKey = `${owner}::${scope}`;
+  if (attendanceSessionRuns.has(runKey)) return attendanceSessionRuns.get(runKey);
+  const current = () => state.sessionToken === owner && String(state.user?.user_id || '') === userId;
+  const visible = () => current() && activeAcademicScreen === 'attendance' && String(document.getElementById('academic-class-filter')?.value || 'ALL') === scope;
+  const beforeClasses = JSON.stringify(attendanceClasses(state.academicHub));
+  const pending = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope).some(c => force || (!attendanceSessionErrors.has(`${owner}::${c.id}`) && (!state.classAcademic?.[c.id] || Date.now() - Number(state.classAcademicAt?.[c.id] || 0) >= 90000)));
+  let didWork = false, catalogChanged = false;
+  const run = (async () => {
+    // Reuse the core warmup's class list and its in-flight request; paint cached rows first.
+    await prefetchMyClasses().catch(() => {});
+    if (!visible()) return null;
+    catalogChanged = beforeClasses !== JSON.stringify(attendanceClasses(state.academicHub));
+    if(catalogChanged)hydrateClassFilter(state.academicHub);
+    const classes = attendanceClasses(state.academicHub).filter(c => scope === 'ALL' || c.id === scope);
+    let index = 0;
+    const worker = async () => {
+      while (index < classes.length && visible()) {
+        const { id } = classes[index++], key = `${owner}::${id}`;
+        if (attendanceSessionRequests.has(key)) { await attendanceSessionRequests.get(key); continue; }
+        if (!force && (attendanceSessionErrors.has(key) || (state.classAcademic?.[id] && Date.now() - Number(state.classAcademicAt?.[id] || 0) < 90000))) continue;
+        didWork = true;
+        attendanceSessionErrors.delete(key);
+        const request = loadClassAcademicData(id,{ force }).catch(err => {
+          if (current() && err.code !== 'CLASS_DATA_CHANGED') attendanceSessionErrors.set(key,err.message);
+          return null;
+        }).finally(() => {
+          if (attendanceSessionRequests.get(key) === request) attendanceSessionRequests.delete(key);
+          if (current() && activeAcademicScreen === 'attendance') {
+            hydrateClassFilter(state.academicHub);
+            hydrateAttendanceFilter(state.academicHub);
+            renderAttendanceSlot({updateOverview:true});
+          }
+        });
+        attendanceSessionRequests.set(key,request);
+        renderAttendanceSlot();
+        await request;
+      }
+    };
+    await Promise.all([worker(),worker()]);
+    if (visible() && (didWork || catalogChanged)) { hydrateAttendanceFilter(state.academicHub); renderAttendanceSlot({updateOverview:true}); }
+    return attendanceSourceData(state.academicHub);
+  })();
+  attendanceSessionRuns.set(runKey,run);
+  if(pending)renderAttendanceSlot();
+  run.finally(() => {
+    if (attendanceSessionRuns.get(runKey) === run) attendanceSessionRuns.delete(runKey);
+    if(visible() && pending && !didWork && !catalogChanged)renderAttendanceSlot();
+  }).catch(() => {});
+  return run;
+}
+
 function attendanceReportOptions(data) {
-  const byClass = new Map();
-  ['attendance','schedules','tasks','materials','announcements'].forEach(key => (data?.[key] || []).forEach(item => {
-    const id = String(item.class_id || '');
-    if (id) byClass.set(id, item.class_name || 'KelasKu');
-  }));
-  const classes = [...byClass.entries()].map(([id,name]) => ({ id,name })).sort((a,b) => a.name.localeCompare(b.name));
+  const classes = attendanceClasses(data);
+  const byClass = new Map(classes.map(c => [c.id,c.name]));
   const filter = String(document.getElementById('academic-class-filter')?.value || 'ALL');
   let classId = filter !== 'ALL' ? filter : attendanceReportClassId;
   if (!byClass.has(classId)) classId = classes.length === 1 ? classes[0].id : '';
@@ -190,9 +264,9 @@ function attendanceReportOptions(data) {
   const courseKey = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
   let courseTitle = '';
   if (courseKey !== 'ALL') {
-    const schedules = attendanceScheduleMap(data);
-    for (const item of data?.attendance || []) {
-      const meta = attendanceCourseMeta(data, item, schedules);
+    const source = attendanceSourceData(data), schedules = attendanceScheduleMap(source);
+    for (const item of source.attendance) {
+      const meta = attendanceCourseMeta(source, item, schedules);
       if (meta.key === courseKey) { courseTitle = meta.title; break; }
     }
   }
@@ -230,7 +304,8 @@ function hydrateClassFilter(data) {
   const select = document.getElementById('academic-class-filter');
   if (!select || (activeAcademicScreen !== 'attendance' && select.dataset.ready === '1')) return;
   const map = new Map();
-  ['tasks','schedules','materials','announcements','attendance'].forEach(key => {
+  if (activeAcademicScreen === 'attendance') attendanceClasses(data).forEach(c => map.set(c.id,c.name));
+  else ['tasks','schedules','materials','announcements','attendance'].forEach(key => {
     (data[key] || []).forEach(item => map.set(String(item.class_id), item.class_name || 'KelasKu'));
   });
   const options = [...map.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
@@ -293,6 +368,7 @@ function attendanceSessionNumber(item, schedule) {
 function hydrateAttendanceFilter(data, force = false) {
   const select = document.getElementById('academic-attendance-filter');
   if (!select || !data) return;
+  data = attendanceSourceData(data);
   const classId = String(document.getElementById('academic-class-filter')?.value || 'ALL');
   const scheduleMap = attendanceScheduleMap(data);
   const optionMap = new Map();
@@ -315,6 +391,7 @@ function hydrateAttendanceFilter(data, force = false) {
 }
 
 function filteredAttendanceItems(data) {
+  data = attendanceSourceData(data);
   const scheduleMap = attendanceScheduleMap(data);
   const selectedCourse = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
   const query = String(document.getElementById('academic-search')?.value || '').trim().toLowerCase();
@@ -503,7 +580,7 @@ function announcementCard(item) {
 }
 
 function attendanceSessionLabel(item) {
-  const schedule = (state.academicHub?.schedules || []).find(row => String(row.schedule_id || '') === String(item.source_schedule_id || ''));
+  const schedule = attendanceSourceData(state.academicHub).schedules.find(row => String(row.schedule_id || '') === String(item.source_schedule_id || ''));
   const no = attendanceSessionNumber(item, schedule);
   return no ? `Sesi ${String(no).padStart(2,'0')}` : 'Sesi';
 }
@@ -538,10 +615,11 @@ function bindAcademicRows() {
     reportRefresh: () => refreshAttendanceReport(true),
     details: id => {
       const item = filteredAttendanceItems(state.academicHub).find(row => String(row.attendance_id || row.public_token || '') === String(id));
-      if (item) showModal(attendanceDetailsHtml(item));
+      if (item) showModal(attendanceDetailsHtml(item), { attendanceDetail:true });
     }
   });
   document.querySelectorAll('[data-global-attendance-token]').forEach(btn => btn.onclick = () => openGlobalAttendance(btn.dataset.globalAttendanceToken));
+  document.querySelectorAll('[data-att-sessions-retry]').forEach(btn => btn.onclick = () => refreshAttendanceSessions(true));
   document.getElementById('academic-open-classes')?.addEventListener('click', () => go('classes'));
 }
 
@@ -556,7 +634,7 @@ function attendanceStatusLabel(value){
 function openGlobalAttendance(token=''){
   const clean=String(token||'').trim();
   if(!clean)return;
-  const item=(state.academicHub?.attendance||[]).find(x=>String(x.public_token||'')===clean);
+  const item=attendanceSourceData(state.academicHub).attendance.find(x=>String(x.public_token||'')===clean);
   if(!item){toast('Sesi presensi tidak ditemukan pada data terbaru. Tekan Refresh lalu coba lagi.');return;}
   openGlobalAttendanceForm(item);
 }
@@ -572,8 +650,8 @@ function openGlobalAttendanceForm(item){
     ...(item.permit_enabled!==false?[['PERMIT','Izin','assignment']]:[])
   ];
   if(marked){
-    showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
-      <div class="attendance-inline-success"><span class="material-symbols-rounded">check_circle</span><div><strong>Presensi sudah tercatat</strong><small>${esc(attendanceStatusLabel(item.my_status))}${item.my_channel?` • ${esc(attendanceChannelLabel(item.my_channel))}`:''}${item.my_punctuality?` • ${esc(String(item.my_punctuality)==='LATE'?'Terlambat':'Tepat waktu')}`:''}</small></div></div>`);
+    const detail=filteredAttendanceItems(state.academicHub).find(row=>String(row.attendance_id)===String(item.attendance_id))||item;
+    showModal(attendanceDetailsHtml(detail), { attendanceDetail:true });
     return;
   }
   if(!['OPEN','LATE'].includes(status)){
@@ -613,22 +691,25 @@ function openGlobalAttendanceForm(item){
       statusEl.className='request-status error';statusEl.textContent='Waktu presensi sudah ditutup. Tekan Refresh untuk memperbarui sesi.';btn.disabled=true;return;
     }
     const old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="btn-spinner"></span><span>Mencatat…</span>';
+    const owner=state.sessionToken,userId=String(state.user?.user_id||''),note=document.getElementById('global-attendance-note')?.value||'';
     statusEl.className='request-status progress';statusEl.textContent='Mencatat presensi…';
     try{
       const result=await api('selfCheckInAttendance',{
         token:String(item.public_token||''),
         attendance_status:selectedStatus,
         attendance_channel:selectedStatus==='PRESENT'?selectedChannel:'',
-        note:document.getElementById('global-attendance-note')?.value||''
+        note
       },{onSlow:()=>statusEl.textContent='Server masih memproses. Jangan klik dua kali.'});
-      item.my_status=result.attendance_status||selectedStatus;
-      item.my_channel=result.attendance_channel||'';
-      item.my_punctuality=result.punctuality||'';
+      if(state.sessionToken!==owner||String(state.user?.user_id||'')!==userId)return;
+      applyAttendanceCheckIn(item,result,{status:selectedStatus,channel:selectedStatus==='PRESENT'?selectedChannel:'',note});
       closeModal();
       drawAcademicScreen(state.academicHub);
       toast(`Presensi tersimpan: ${attendanceStatusLabel(item.my_status)}.`);
       invalidateAcademicClientCache(item.class_id||'');
-      loadAcademicHub(true).catch(()=>{});
+      loadClassAcademicData(item.class_id,{force:true}).then(()=>{
+        attendanceSessionErrors.delete(`${owner}::${item.class_id}`);
+        if(state.sessionToken===owner&&activeAcademicScreen==='attendance')drawAcademicScreen(state.academicHub);
+      }).catch(()=>{});
     }catch(err){
       statusEl.className='request-status error';statusEl.textContent=err.message;btn.disabled=false;btn.innerHTML=old;
     }
@@ -710,14 +791,27 @@ function academicSkeleton() {
 
 function errorPanel(message) { return `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(message)}</p></div>`; }
 
-function showModal(html) {
+function showModal(html, { attendanceDetail = false } = {}) {
   closeModal();
-  const el = document.createElement('div'); el.id = 'phase-modal'; el.className = 'overlay';
-  el.innerHTML = `<div class="modal glass phase-modal-card">${html}</div>`; document.body.appendChild(el);
+  const el = document.createElement('div'); el.id = 'phase-modal'; el.className = `overlay${attendanceDetail ? ' att-detail-overlay' : ''}`;
+  if(attendanceDetail)el.returnFocus=document.activeElement;
+  el.innerHTML = `<div class="modal phase-modal-card ${attendanceDetail ? 'att-detail-modal' : 'glass'}"${attendanceDetail ? ' role="dialog" aria-modal="true" aria-labelledby="att-detail-title" tabindex="-1"' : ''}>${html}</div>`; document.body.appendChild(el);
   el.querySelectorAll('[data-close-modal]').forEach(x => x.onclick = closeModal);
   el.onclick = e => { if (e.target === el) closeModal(); };
+  if(attendanceDetail){
+    el.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){event.preventDefault();closeModal();}
+      if(event.key==='Tab'){
+        const controls=[...el.querySelectorAll('button:not(:disabled), a[href], [tabindex="0"]')];
+        const first=controls[0],last=controls[controls.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+      }
+    });
+    el.querySelectorAll('[data-close-modal]')[0]?.focus();
+  }
 }
-function closeModal(){ document.getElementById('phase-modal')?.remove(); }
+function closeModal(){ const el=document.getElementById('phase-modal'),previous=el?.returnFocus;el?.remove();if(previous?.isConnected)previous.focus({preventScroll:true}); }
 
 function openExternal(url) {
   if (!/^https?:\/\//i.test(String(url || ''))) return toast('Tautan materi tidak valid.');
