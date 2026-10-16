@@ -40,7 +40,8 @@ function dateText(value, options) {
   if (!ms(value)) return '—';
   return new Intl.DateTimeFormat('id-ID', { timeZone:'Asia/Jakarta', ...options }).format(new Date(value));
 }
-function startOf(item) { return item.schedule_start_at || item.start_at; }
+function startOf(item) { return item.start_at || item.open_at || item.schedule_start_at; }
+function endOf(item) { return item.close_at || item.end_at || item.schedule_end_at; }
 function statusOf(item) {
   const key = String(item.my_status || 'UNMARKED').toUpperCase();
   return Object.hasOwn(STATUS_LABELS, key) ? key : 'UNMARKED';
@@ -113,14 +114,17 @@ export function attendanceOverviewHtml(items) {
   }).join('')}</div><p class="att-scope-note">Data kehadiran pribadi · Persentase kartu menunjukkan komposisi total sesi.</p>`;
 }
 
-function grouped(items, byCourse = false) {
+function grouped(items, byCourse = false, activeFirst = false) {
   const map = new Map();
+  const now = Date.now();
   items.forEach(item => {
     const key = String(byCourse ? item.attendance_course_key : item.class_id || 'UNKNOWN');
-    if (!map.has(key)) map.set(key, { key, name:byCourse ? item.attendance_course_title : item.class_name || 'KelasKu', className:item.class_name || 'KelasKu', items:[] });
-    map.get(key).items.push(item);
+    if (!map.has(key)) map.set(key, { key, name:byCourse ? item.attendance_course_title : item.class_name || 'KelasKu', className:item.class_name || 'KelasKu', items:[], rank:2 });
+    const group = map.get(key);
+    group.items.push(item);
+    if (activeFirst) group.rank = Math.min(group.rank, sessionRank(item, now));
   });
-  return [...map.values()].sort((a,b) => String(a.name).localeCompare(String(b.name), 'id'));
+  return [...map.values()].sort((a,b) => a.rank - b.rank || String(a.name).localeCompare(String(b.name), 'id'));
 }
 
 function emptyHtml() {
@@ -132,9 +136,9 @@ export function attendanceContentHtml(items) {
   if (activeView === 'recap') return recapHtml(items, false);
   if (activeView === 'courses') return recapHtml(items, true);
   if (activeView === 'analytics') return analyticsHtml(items);
-  return `<div class="att-class-list">${grouped(items).map((group, index) => {
+  return `<div class="att-class-list">${grouped(items, false, true).map((group, index) => {
     const summary = attendanceSummary(group.items);
-    const courses = grouped(group.items, true);
+    const courses = grouped(group.items, true, true);
     const isOpen = expanded.get(group.key) === true;
     return `<section class="att-class ${isOpen ? 'is-open' : ''}"><button type="button" class="att-class-head" data-att-class="${esc(group.key)}" aria-expanded="${isOpen}" aria-controls="att-class-panel-${index}"><span class="att-class-icon">${icon('school')}</span><span><strong>${esc(group.name)}</strong><small>${courses.length} mata pelajaran/kegiatan · ${summary.done} sudah presensi${summary.pending ? ` · ${summary.pending} belum presensi` : ''} · ${summary.upcoming} belum dibuka</small></span>${icon('chevron')}</button><div id="att-class-panel-${index}" class="att-class-body" ${isOpen ? '' : 'hidden'}>${isOpen ? `<div class="att-course-list">${courses.map((course, courseIndex) => attendanceCourseHtml(course, index, courseIndex)).join('')}</div>` : ''}</div></section>`;
   }).join('')}</div>`;
@@ -159,24 +163,32 @@ function attendanceCourseSessionsHtml(course) {
 export function sortAttendanceSessions(items, now = Date.now()) {
   // Decorate once so sorting does not repeatedly parse dates/statuses.
   return items.map((item, index) => {
-    const phase = phaseOf(item, now)[0];
-    const canCheckIn = attendanceState(item, now).canCheckIn;
-    const rank = phase === 'finished' ? 2 : (canCheckIn || phase === 'ongoing') ? 0 : 1;
+    const rank = sessionRank(item, now);
     return { item, rank, start:ms(startOf(item)), index };
   }).sort((a,b) => a.rank - b.rank || (a.rank === 2 ? b.start - a.start : a.start - b.start) || a.index - b.index).map(entry => entry.item);
 }
 
 function channelLabel(value) { return ({ ZOOM:'Zoom', YOUTUBE:'YouTube', OFFLINE:'Offline', OTHER:'Lainnya' })[String(value).toUpperCase()] || String(value); }
 function phaseOf(item, now = Date.now()) {
-  const start = ms(startOf(item)), end = ms(item.schedule_end_at || item.end_at || item.close_at);
+  const window = attendanceWindow(item, now);
+  // Window status belongs to the session, independently of personal check-in.
+  if (['OPEN','LATE'].includes(window)) return ['ongoing','Berlangsung'];
+  if (window === 'UPCOMING') return ['upcoming','Akan Datang'];
+  if (['CLOSED','OPEN','LATE'].includes(String(item.window_status || '').toUpperCase())) return ['finished','Selesai'];
+  const start = ms(startOf(item)), end = ms(endOf(item));
   if (start > now) return ['upcoming','Akan Datang'];
-  if ((end && now < end) || (!end && ['OPEN','LATE'].includes(attendanceWindow(item, now)))) return ['ongoing','Berlangsung'];
+  if (end && now < end) return ['ongoing','Berlangsung'];
   return ['finished','Selesai'];
 }
+function sessionRank(item, now) { return ({ ongoing:0, upcoming:1, finished:2 })[phaseOf(item, now)[0]]; }
 function timeRange(item) {
   const start = dateText(startOf(item), { hour:'2-digit', minute:'2-digit' });
-  const end = item.schedule_end_at || item.end_at;
-  return `${start}${end ? ` – ${dateText(end, { hour:'2-digit', minute:'2-digit' })}` : ''}`;
+  const end = endOf(item);
+  // WIB is UTC+7; comparing day boundaries avoids extra Intl formatters per row.
+  const day = value => Math.floor((ms(value) + 7 * 3600000) / 86400000);
+  const spansDays = end && day(startOf(item)) !== day(end);
+  const endOptions = { ...(spansDays ? { day:'2-digit', month:'short', year:'numeric' } : {}), hour:'2-digit', minute:'2-digit' };
+  return `${start}${end ? ` – ${dateText(end, endOptions)}` : ''}`;
 }
 function safeLink(value) {
   const text = String(value || '').trim();
@@ -197,7 +209,7 @@ function sessionRow(item) {
   const topic = item.attendance_course_title || item.schedule_title || item.title || 'Kegiatan';
   const description = item.schedule_description || item.description || '';
   const action = ui.canCheckIn ? `<button type="button" class="att-action att-action-primary" data-global-attendance-token="${esc(item.public_token)}">${icon('check')}<span>Isi Absensi</span></button>`
-    : ui.group === 'done' ? `<button type="button" class="att-action" data-att-details="${esc(detailKey)}"><span>Lihat Detail</span>${icon('arrow')}</button>`
+    : ui.group === 'done' ? `<button type="button" class="att-action" data-att-details="${esc(detailKey)}" aria-label="Lihat detail ${esc(label)}"><span>Lihat Detail</span>${icon('arrow')}</button>`
     : `<button type="button" class="att-action att-action-locked" disabled>${icon('lock')}<span>${ui.group === 'upcoming' ? 'Belum Aktif' : ['OPEN','LATE'].includes(ui.window) ? 'Dicatat Pengajar' : 'Ditutup'}</span></button>`;
   return `<tr class="att-session-row att-tone-${ui.tone}" data-attendance-row="${esc(detailKey)}"><td class="att-date-cell"><span class="att-date-tile"><strong>${dateText(date,{day:'2-digit'})}</strong><span>${dateText(date,{month:'short'}).toUpperCase()}</span></span></td><td class="att-full-date"><strong>${dateText(date,{weekday:'long'})}</strong><small>${dateText(date,{day:'2-digit',month:'short',year:'numeric'})}</small></td><td class="att-session-number">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></td><td class="att-time">${icon('clock')}<span>${timeRange(item)}</span></td><td class="att-topic"><span class="att-mobile-session">${label}<span class="att-phase phase-${phase}">${phaseLabel}</span></span><strong>${esc(topic)}</strong>${description ? `<small>${esc(description)}</small>` : ''}</td><td class="att-location">${locationHtml(item)}</td><td class="att-status"><span class="att-status-icon">${icon(ui.icon)}</span><span><strong>${ui.label}</strong><small>${esc(ui.detail)}</small></span></td><td class="att-actions">${action}</td></tr>`;
 }

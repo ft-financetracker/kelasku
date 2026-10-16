@@ -1,4 +1,4 @@
-/* R5.2 C7.1 — personal attendance hub. All rules are scoped to this screen. */
+/* R5.2 C7.2 mobile — personal attendance hub. All rules are scoped to this screen. */
 .attendance-v2{--att-panel:rgba(4,28,54,.76);--att-border:rgba(26,169,213,.3);--att-muted:var(--muted,#aec6df);--att-green:#00dfb1;--att-cyan:#00cbe6;display:flex;flex-direction:column;gap:16px;min-width:0}
 .attendance-v2 [hidden]{display:none!important}
 .attendance-v2 button,.attendance-v2 a,.attendance-v2 input,.attendance-v2 select{touch-action:manipulation}
@@ -102,7 +102,7 @@
 .attendance-v2 td small{display:block;color:var(--att-muted);font-size:10px;line-height:1.5;margin-top:3px}
 .attendance-v2 .att-session-number{white-space:nowrap;font-weight:600}
 .attendance-v2 .att-session-number .att-phase{display:table;width:max-content;margin-top:5px}
-.attendance-v2 .att-time{white-space:nowrap;font-size:10px;color:var(--att-muted)}
+.attendance-v2 .att-time{white-space:normal;min-width:90px;line-height:1.5;font-size:10px;color:var(--att-muted)}
 .attendance-v2 .att-time>.att-icon{display:none}
 .attendance-v2 .att-topic{min-width:140px;width:27%}
 .attendance-v2 .att-topic>strong{font-size:11px;line-height:1.5;display:block;overflow-wrap:anywhere}
@@ -216,7 +216,7 @@
   .attendance-v2 .att-action{min-height:40px;font-size:11px}
 }
 @media(max-width:600px){
-  .attendance-v2{gap:12px}
+  .attendance-v2{gap:10px}
   .attendance-v2 .att-page-context{font-size:9px}
   .attendance-v2 .att-page-context strong{font-size:10px}
   .attendance-v2 .att-hero{min-height:205px;padding:22px 20px;gap:0;border-radius:17px}
@@ -226,19 +226,20 @@
   .attendance-v2 .att-hero-description{font-size:11px;max-width:100%}
   .attendance-v2 .att-hero-art{display:none}
   .attendance-v2 .att-hero-values{font-size:9px;gap:7px 12px;margin-top:14px}
-  .attendance-v2 .att-course-head{grid-template-columns:26px minmax(0,1fr) 16px;gap:8px;padding:12px 10px}
-  .attendance-v2 .att-course-icon{width:26px;height:32px}
+  .attendance-v2 .att-course-head{grid-template-columns:26px minmax(0,1fr) 16px;gap:8px;padding:9px 8px}
+  .attendance-v2 .att-course-icon{width:26px;height:30px}
   .attendance-v2 .att-course-copy>strong{font-size:11px}
   .attendance-v2 .att-course-copy>small{font-size:9px}
   .attendance-v2 .att-course-copy>.att-course-label{font-size:7px}
-  .attendance-v2 .att-course-body{padding:0 6px 6px}
-  .attendance-v2 .att-metrics{gap:7px;margin-top:10px}
-  .attendance-v2 .att-metric{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;min-height:130px;padding:10px 8px;border-radius:12px;gap:7px}
-  .attendance-v2 .att-metric-icon{width:28px;height:28px;border-radius:9px}
-  .attendance-v2 .att-metric-icon .att-icon{width:19px;height:19px}
-  .attendance-v2 .att-metric-copy strong{font-size:23px}
-  .attendance-v2 .att-metric-copy>span{font-size:9px;line-height:1.35;min-height:25px}
-  .attendance-v2 .att-metric-progress{width:100%;gap:4px;margin-top:auto;padding:0}
+  .attendance-v2 .att-course-body{padding:0 5px 5px}
+  .attendance-v2 .att-metrics{gap:6px;margin-top:10px}
+  .attendance-v2 .att-metric{display:grid;grid-template-columns:24px minmax(0,1fr);align-content:center;min-height:78px;padding:8px 6px;border-radius:11px;gap:4px}
+  .attendance-v2 .att-metric-icon{width:24px;height:26px;border-radius:8px}
+  .attendance-v2 .att-metric-icon .att-icon{width:17px;height:17px}
+  .attendance-v2 .att-metric-copy{display:contents}
+  .attendance-v2 .att-metric-copy strong{grid-column:2;font-size:21px;line-height:1.1}
+  .attendance-v2 .att-metric-copy>span{grid-column:1/-1;font-size:8.5px;line-height:1.25;min-height:21px}
+  .attendance-v2 .att-metric-progress{width:100%;gap:4px;margin:0;padding:0}
   .attendance-v2 .att-metric-progress small{font-size:8px;min-width:23px}
   .attendance-v2 .att-progress-track{height:6px}
   .attendance-v2 .att-scope-note{font-size:8px}
@@ -247,21 +248,38 @@
   .attendance-v2 .att-toolbar .academic-search input{font-size:10px}
   .attendance-v2 .att-filter-toggle{font-size:10px}
   .attendance-v2 .att-filter-toggle .att-icon{width:17px;height:17px}
-  .attendance-v2 .att-tab{font-size:9px;padding:11px 4px}
-  .attendance-v2 .att-tab .att-icon{width:21px;height:21px}
-  .attendance-v2 .att-class-head{grid-template-columns:36px minmax(0,1fr) 18px;gap:10px;padding:13px 12px}
-  .attendance-v2 .att-class-icon{width:36px;height:36px;border-radius:10px}
+  .attendance-v2 .att-tab{flex-direction:row;gap:5px;font-size:9px;padding:8px 3px;min-height:44px}
+  .attendance-v2 .att-tab .att-icon{width:16px;height:16px}
+  .attendance-v2 .att-class-head{grid-template-columns:32px minmax(0,1fr) 18px;gap:8px;padding:10px}
+  .attendance-v2 .att-class-icon{width:32px;height:34px;border-radius:9px}
   .attendance-v2 .att-class-icon .att-icon{width:24px;height:24px}
   .attendance-v2 .att-class-head strong{font-size:12px}
   .attendance-v2 .att-class-head small{font-size:9px}
-  .attendance-v2 .att-session-row{grid-template-columns:47px minmax(0,1fr);grid-template-areas:"date topic" "date time" "date location" "status status" "action action";padding:12px;gap:6px 10px}
-  .attendance-v2 .att-date-tile{width:47px;min-height:70px}
-  .attendance-v2 .att-session-row .att-status{margin-top:5px;padding-top:9px!important;border-top:1px solid rgba(56,133,178,.16)}
-  .attendance-v2 .att-status small{max-width:none}
-  .attendance-v2 .att-status>span:last-child{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:2px 8px}
-  .attendance-v2 .att-status small{margin:0}
-  .attendance-v2 .att-session-row .att-actions{margin-top:3px}
-  .attendance-v2 .att-action{min-height:39px}
+  .attendance-v2 .att-class-body{padding:0 6px 6px}
+  .attendance-v2 .att-course-list,.attendance-v2 .att-session-table tbody{gap:6px}
+  .attendance-v2 .att-session-row{grid-template-columns:40px minmax(0,1fr) minmax(94px,32%);grid-template-areas:"date topic status" "date time action" "date location action";padding:9px 8px;column-gap:8px;row-gap:3px;border-radius:10px}
+  .attendance-v2 .att-date-tile{width:40px;min-width:0;min-height:60px;padding:8px 3px;border-radius:9px}
+  .attendance-v2 .att-date-tile strong{font-size:20px}
+  .attendance-v2 .att-date-tile>span{font-size:9px}
+  .attendance-v2 .att-mobile-session{font-size:10px;gap:4px;margin-bottom:2px}
+  .attendance-v2 .att-phase{font-size:8px;padding:1px 4px}
+  .attendance-v2 .att-topic>strong{font-size:10.5px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .attendance-v2 .att-session-row .att-time{font-size:9px;gap:4px;margin-top:0;line-height:1.4}
+  .attendance-v2 .att-time>.att-icon{width:12px;height:12px}
+  .attendance-v2 .att-location-link,.attendance-v2 .att-location-text{font-size:9px;gap:4px;line-height:1.4}
+  .attendance-v2 .att-location-link .att-icon{width:17px;height:17px}
+  .attendance-v2 .att-session-row .att-status{margin:0;padding:0!important;border:0;gap:4px;align-items:flex-start}
+  .attendance-v2 .att-status-icon{width:20px;height:23px;margin:0}
+  .attendance-v2 .att-status-icon .att-icon{width:15px;height:15px}
+  .attendance-v2 .att-status>span:last-child{display:block;min-width:0}
+  .attendance-v2 .att-status strong{font-size:9px;line-height:1.35}
+  .attendance-v2 .att-status small{max-width:none;font-size:8px;line-height:1.4;margin:2px 0 0;overflow-wrap:anywhere}
+  .attendance-v2 .att-session-row .att-actions{margin:0;align-self:center}
+  .attendance-v2 .att-action{min-height:44px;padding:6px 4px;font-size:9px;gap:4px}
+  .attendance-v2 .att-action .att-icon{width:15px;height:15px}
+  .attendance-v2 .att-action-locked{display:none}
+  .attendance-v2 .att-action[data-att-details]{width:44px;min-height:44px;margin-left:auto;padding:0;border:0;background:transparent}
+  .attendance-v2 .att-action[data-att-details]>span{display:none}
   .attendance-v2 .att-recap,.attendance-v2 .att-analytics{padding:15px}
   .attendance-v2 .att-section-head{align-items:flex-start;gap:10px}
   .attendance-v2 .att-section-head h2{font-size:15px}
