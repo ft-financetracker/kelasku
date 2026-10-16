@@ -4,7 +4,8 @@ import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c72m1';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c73';
+import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c73';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
@@ -15,6 +16,10 @@ let scheduleListPage = 1;
 let taskListPage = 1;
 let materialListPage = 1;
 let announcementListPage = 1;
+let attendanceReportClassId = '';
+let attendanceReportScope = 'own';
+const attendanceReportRequests = new Map();
+const attendanceReportErrors = new Map();
 
 export function renderSchedule() {
   activeAcademicScreen = 'schedule';
@@ -38,6 +43,9 @@ export function renderAnnouncements() {
 
 export function renderAttendance() {
   resetAttendanceFolders();
+  attendanceReportClassId = '';
+  attendanceReportScope = 'own';
+  attendanceReportErrors.clear();
   activeAcademicScreen = 'attendance';
   renderAcademicShell('Absensi', 'Riwayat kehadiran dari seluruh kelas dalam satu tempat.', 'attendance', 'i-check');
 }
@@ -71,11 +79,11 @@ function academicPager(kind,page,totalPages,total){if(totalPages<=1)return '';re
 function bindAcademicToolbar() {
   document.getElementById('academic-search')?.addEventListener('input', () => { resetAcademicPages(); drawAcademicScreen(state.academicHub); });
   document.getElementById('academic-class-filter')?.addEventListener('change', () => {
-    resetAcademicPages(); if (activeAcademicScreen === 'attendance') { hydrateAttendanceFilter(state.academicHub, true); }
+    resetAcademicPages(); if (activeAcademicScreen === 'attendance') { attendanceReportClassId = ''; hydrateAttendanceFilter(state.academicHub, true); }
     drawAcademicScreen(state.academicHub);
   });
   document.getElementById('academic-attendance-filter')?.addEventListener('change', () => { resetAttendancePages(); drawAcademicScreen(state.academicHub); });
-  document.getElementById('academic-refresh')?.addEventListener('click', () => loadAcademicHub(true));
+  document.getElementById('academic-refresh')?.addEventListener('click', () => activeAcademicScreen === 'attendance' && attendanceIsReportView() ? refreshAttendanceReport(true) : loadAcademicHub(true));
 }
 
 export async function loadAcademicHub(force = false) {
@@ -123,6 +131,7 @@ export function invalidateAcademicClientCache(classId = '') {
   state.academicHubAt = 0;
   localStorage.setItem('kelasku_academic_cache_at', '0');
   if (classId) {
+    invalidateAttendanceAnalytics(classId);
     state.classAcademicAt ||= {};
     state.classAcademicAt[classId] = 0;
     try { localStorage.setItem('kelasku_class_academic_cache_at', JSON.stringify(state.classAcademicAt)); } catch {}
@@ -145,19 +154,76 @@ function drawAcademicScreen(data) {
     const items = filteredAttendanceItems(data);
     const overview = document.getElementById('attendance-overview');
     if (overview) overview.innerHTML = attendanceOverviewHtml(items);
-    slot.innerHTML = attendanceContentHtml(items);
+    slot.innerHTML = attendanceContentHtml(items, attendanceIsReportView() ? attendanceReportOptions(data) : null);
   }
   else slot.innerHTML = schedulesHtml(filterItems(data.schedules || []), filterItems(data.tasks || []));
 
   bindAcademicRows();
+  if (activeAcademicScreen === 'attendance') refreshAttendanceReport();
 }
 
 function redrawAttendanceContent() {
+  renderAttendanceSlot();
+  refreshAttendanceReport();
+}
+
+function renderAttendanceSlot() {
   if (activeAcademicScreen !== 'attendance') return;
   const slot = document.getElementById('academic-slot');
   if (!slot || !state.academicHub) return;
-  slot.innerHTML = attendanceContentHtml(filteredAttendanceItems(state.academicHub));
+  slot.innerHTML = attendanceContentHtml(filteredAttendanceItems(state.academicHub), attendanceIsReportView() ? attendanceReportOptions(state.academicHub) : null);
   bindAcademicRows();
+}
+
+function attendanceReportOptions(data) {
+  const byClass = new Map();
+  ['attendance','schedules','tasks','materials','announcements'].forEach(key => (data?.[key] || []).forEach(item => {
+    const id = String(item.class_id || '');
+    if (id) byClass.set(id, item.class_name || 'KelasKu');
+  }));
+  const classes = [...byClass.entries()].map(([id,name]) => ({ id,name })).sort((a,b) => a.name.localeCompare(b.name));
+  const filter = String(document.getElementById('academic-class-filter')?.value || 'ALL');
+  let classId = filter !== 'ALL' ? filter : attendanceReportClassId;
+  if (!byClass.has(classId)) classId = classes.length === 1 ? classes[0].id : '';
+  attendanceReportClassId = classId;
+  const key = `${state.sessionToken || ''}::${classId}`;
+  const courseKey = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
+  let courseTitle = '';
+  if (courseKey !== 'ALL') {
+    const schedules = attendanceScheduleMap(data);
+    for (const item of data?.attendance || []) {
+      const meta = attendanceCourseMeta(data, item, schedules);
+      if (meta.key === courseKey) { courseTitle = meta.title; break; }
+    }
+  }
+  return { classes, classId, className:byClass.get(classId) || '', scope:attendanceReportScope,
+    userId:String(state.user?.user_id || ''), data:state.classAnalytics?.[classId] || null,
+    loading:attendanceReportRequests.has(key), error:attendanceReportErrors.get(key) || '', courseTitle,
+    query:String(document.getElementById('academic-search')?.value || '').trim() };
+}
+
+function refreshAttendanceReport(force = false) {
+  if (activeAcademicScreen !== 'attendance' || !attendanceIsReportView() || !state.academicHub) return Promise.resolve(null);
+  const options = attendanceReportOptions(state.academicHub);
+  const classId = options.classId, owner = state.sessionToken;
+  if (!classId) return Promise.resolve(null);
+  const key = `${owner || ''}::${classId}`;
+  if (attendanceReportRequests.has(key)) return attendanceReportRequests.get(key);
+  if (!force && (attendanceReportErrors.has(key) || (options.data && Date.now() - Number(state.classAnalyticsAt?.[classId] || 0) < 60000))) return Promise.resolve(options.data);
+  attendanceReportErrors.delete(key);
+  const request = loadAttendanceAnalytics(classId, { force }).then(data => {
+    if (state.sessionToken === owner) attendanceReportErrors.delete(key);
+    return data;
+  }).catch(err => {
+    if (state.sessionToken === owner) attendanceReportErrors.set(key, err.message);
+    return null;
+  }).finally(() => {
+    if (attendanceReportRequests.get(key) === request) attendanceReportRequests.delete(key);
+    if (state.sessionToken === owner && activeAcademicScreen === 'attendance' && attendanceReportClassId === classId) renderAttendanceSlot();
+  });
+  attendanceReportRequests.set(key, request);
+  renderAttendanceSlot();
+  return request;
 }
 
 function hydrateClassFilter(data) {
@@ -459,6 +525,17 @@ function bindAcademicRows() {
   bindFilePreviewButtons(document);
   if (activeAcademicScreen === 'attendance') bindAttendanceHub({
     redraw: redrawAttendanceContent,
+    reportClass: id => {
+      attendanceReportClassId = String(id || '');
+      const filter = document.getElementById('academic-class-filter');
+      if (filter) filter.value = attendanceReportClassId || 'ALL';
+      const course = document.getElementById('academic-attendance-filter');
+      if (course) course.value = 'ALL';
+      hydrateAttendanceFilter(state.academicHub, true);
+      drawAcademicScreen(state.academicHub);
+    },
+    reportScope: scope => { attendanceReportScope = scope === 'class' ? 'class' : 'own'; redrawAttendanceContent(); },
+    reportRefresh: () => refreshAttendanceReport(true),
     details: id => {
       const item = filteredAttendanceItems(state.academicHub).find(row => String(row.attendance_id || row.public_token || '') === String(id));
       if (item) showModal(attendanceDetailsHtml(item));
@@ -501,6 +578,10 @@ function openGlobalAttendanceForm(item){
   }
   if(!['OPEN','LATE'].includes(status)){
     showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert">${status==='UPCOMING'?'Presensi belum dibuka.':'Waktu presensi sudah ditutup.'}</div>`);
+    return;
+  }
+  if(item.self_checkin_enabled===false||String(item.entry_mode||'').toUpperCase()==='MANUAL'){
+    showModal(`<div class="modal-head"><h2>Presensi dicatat pengajar</h2><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert">Sesi ini memakai pencatatan oleh pengajar.</div>`);
     return;
   }
     showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2><p class="compact-copy">${esc(attendanceSessionLabel(item))} • ${esc(shortDateTime(item.start_at||item.schedule_start_at))}</p></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>

@@ -1,10 +1,11 @@
+import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6739r52c73';
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c73';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
@@ -1078,8 +1079,8 @@ function analyticsRate_(counter={}){
 function drawClassAnalyticsSummary(data){
   const slot=document.getElementById('room-content');if(!slot)return;
   const own=data.own||{},aggregate=data.aggregate||null;
-  const ownRate=Number(own.attendance_rate??analyticsRate_(own));
-  const classRate=aggregate?Number(aggregate.attendance_rate??analyticsRate_(aggregate)):null;
+  const ownRate=analyticsRate_(own);
+  const classRate=aggregate?analyticsRate_(aggregate):null;
   const primary=aggregate||own;
   const statusItems=[
     ['check_circle','Hadir',Number(primary.PRESENT||0),'present'],
@@ -1126,11 +1127,9 @@ async function loadClassAnalytics(background=false,force=false){
   if(classAnalyticsInFlight.has(classId))return classAnalyticsInFlight.get(classId);
   const request=(async()=>{
     try{
-      const data=await api('getAttendanceAnalytics',{class_id:classId});
       const previous=state.classAnalytics[classId];
+      const data=await loadAttendanceAnalytics(classId,{force});
       const changed=!sameData(previous,data);
-      state.classAnalytics[classId]=data;
-      state.classAnalyticsAt[classId]=Date.now();
       if(String(state.selectedClassId)===classId&&(changed||!background)&&activeTab==='analytics')drawClassAnalytics(data);
       return data;
     }catch(err){
@@ -1143,7 +1142,7 @@ async function loadClassAnalytics(background=false,force=false){
 }
 function drawClassAnalytics(data){
   const slot=document.getElementById('room-content');if(!slot)return;
-  const own=data.own||{},ag=data.aggregate||{},members=data.members||[],ranking=data.task_ranking||[],activities=data.activities||[];
+  const own=attendanceReportData(data,{userId:String(state.user?.user_id||''),scope:'own'}).summary,ag=data.aggregate||{},members=data.members||[],ranking=data.task_ranking||[],activities=data.activities||[];
   const allRecords=data.activity_records||[];
   const filtered=analyticsFilter==='ALL'?allRecords:allRecords.filter(r=>String(r.attendance_id)===String(analyticsFilter));
   const totalPages=Math.max(1,Math.ceil(filtered.length/ANALYTICS_PAGE_SIZE));analyticsPage=Math.min(Math.max(1,analyticsPage),totalPages);
@@ -1172,28 +1171,9 @@ function drawClassAnalytics(data){
 }
 function paginationHtml(page,totalPages,total){if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} record</span></div>`;const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-analytics-page="${i}" class="${i===page?'active':''}">${i}</button>`);return `<div class="table-pagination"><span>${total} record • Halaman ${page}/${totalPages}</span><div><button type="button" data-analytics-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-analytics-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
 function memberPaginationHtml(page,totalPages,total){if(totalPages<=1)return `<div class="table-pagination compact"><span>${total} anggota</span></div>`;const pages=[];for(let i=Math.max(1,page-2);i<=Math.min(totalPages,page+2);i++)pages.push(`<button type="button" data-analytics-member-page="${i}" class="${i===page?'active':''}">${i}</button>`);return `<div class="table-pagination"><span>${total} anggota • Halaman ${page}/${totalPages}</span><div><button type="button" data-analytics-member-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button>${pages.join('')}<button type="button" data-analytics-member-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
-function progressedAttendanceRecords(records,activities=[]){
-  const now=Date.now(),started=new Set();
-  (activities||[]).forEach(a=>{if(!a.start_at||dateMs(a.start_at)<=now)started.add(String(a.attendance_id||''));});
-  return (records||[]).filter(r=>started.has(String(r.attendance_id||''))||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED');
-}
-function canonicalAttendanceActivityName(item={}){
-  let name=String(item.activity_name||item.session_title||item.title||'Kegiatan').trim()||'Kegiatan';
-  // Attendance session titles may be stored as "Absensi — MAPEL • Sesi 03" when
-  // source_schedule_id is unavailable. Export/analytics must still group by MAPEL.
-  name=name
-    .replace(/^absensi\s*[—–-]\s*/i,'')
-    .replace(/\s*[•·]\s*sesi\s*0*\d+\s*$/i,'')
-    .replace(/\s*[—–-]\s*sesi\s*0*\d+\s*$/i,'')
-    .trim();
-  return name||'Kegiatan';
-}
-function buildActivitySummary(records,activities=[]){
-  const now=Date.now(),groups={},activityById={};
-  (activities||[]).forEach(a=>{activityById[String(a.attendance_id||'')]=a;const name=canonicalAttendanceActivityName(a),key=name.toLowerCase();if(!groups[key])groups[key]={name,plannedSessionIds:new Set(),progressedSessionIds:new Set(),studentNames:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,ZOOM:0,YOUTUBE:0,OFFLINE:0,OTHER:0,ON_TIME:0,LATE:0,total:0};groups[key].plannedSessionIds.add(String(a.attendance_id||''));if(!a.start_at||dateMs(a.start_at)<=now)groups[key].progressedSessionIds.add(String(a.attendance_id||''));});
-  (records||[]).forEach(r=>{const a=activityById[String(r.attendance_id||'')]||r,name=canonicalAttendanceActivityName({...a,...r}),key=name.toLowerCase();if(!groups[key])groups[key]={name,plannedSessionIds:new Set(),progressedSessionIds:new Set(),studentNames:new Set(),PRESENT:0,SICK:0,PERMIT:0,ABSENT:0,UNMARKED:0,ZOOM:0,YOUTUBE:0,OFFLINE:0,OTHER:0,ON_TIME:0,LATE:0,total:0};const g=groups[key],sessionId=String(r.attendance_id||'');g.plannedSessionIds.add(sessionId);const started=(!r.start_at||dateMs(r.start_at)<=now)||String(r.attendance_status||'UNMARKED').toUpperCase()!=='UNMARKED';if(!started)return;g.progressedSessionIds.add(sessionId);if(r.full_name||r.username)g.studentNames.add(String(r.full_name||r.username));const st=String(r.attendance_status||'UNMARKED').toUpperCase();g[st]=(g[st]||0)+1;const ch=String(r.attendance_channel||'').toUpperCase();if(ch)g[ch]=(g[ch]||0)+1;const pn=String(r.punctuality||'').toUpperCase();if(pn)g[pn]=(g[pn]||0)+1;g.total+=1;});
-  return Object.values(groups).map(g=>{const denominator=g.PRESENT+g.SICK+g.PERMIT+g.ABSENT+g.UNMARKED;return {...g,sessions:g.plannedSessionIds.size,progressed_sessions:g.progressedSessionIds.size,student_names:[...g.studentNames],attendance_rate:denominator?Math.round((g.PRESENT/denominator)*1000)/10:0};}).sort((a,b)=>a.name.localeCompare(b.name));
-}
+
+
+
 function activitySummaryHtml(items,records=[],activities=[],members=[]){
   if(!items.length)return '<div class="search-empty">Belum ada data kegiatan.</div>';
   const activityIdsByName={};
