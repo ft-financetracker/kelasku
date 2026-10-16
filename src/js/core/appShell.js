@@ -15,7 +15,7 @@ export function appShell(options = {}) {
   const sidebarCollapsed = localStorage.getItem('kelasku_sidebar_collapsed') === '1';
 
   return `
-    <div class="dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}">
+    <div class="dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}${active === 'class' ? ' room-shell' : ''}">
       <aside class="sidebar">
         <button type="button" class="sidebar-brand-toggle" id="sidebar-brand-toggle" aria-label="Ciutkan atau buka menu" title="Ciutkan / buka menu">${logo()}</button>
         <nav class="nav" aria-label="Navigasi utama">
@@ -76,7 +76,11 @@ export function bindAppShell(options = {}) {
   };
 
   const account = document.getElementById('shell-account');
-  if (account) account.onclick = () => go('account');
+  if (account) {
+    account.onclick = () => go('account');
+    const avatar=account.querySelector('.shell-avatar-img');
+    if(avatar){const fallback=()=>{if(account.contains(avatar))account.innerHTML=svg('i-user');};avatar.addEventListener('error',fallback,{once:true});if(avatar.complete&&!avatar.naturalWidth)fallback();}
+  }
 
   const settings = document.getElementById('shell-settings');
   if (settings) settings.onclick = () => go('settings');

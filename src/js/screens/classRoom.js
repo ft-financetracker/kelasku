@@ -3,10 +3,10 @@ import { loadClassAcademicData, loadAttendanceClassData, rememberAttendanceSessi
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c8';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c75';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c8';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
@@ -91,7 +91,7 @@ export function renderClassRoom() {
     <div id="class-room-slot">${cached ? '' : roomSkeleton()}</div>
   </div>`;
 
-  document.getElementById('app').innerHTML = appShell({ active: 'classes', content, hideSearch: true });
+  document.getElementById('app').innerHTML = appShell({ active: 'class', content, hideSearch: true });
   bindAppShell();
   document.getElementById('back-classes').onclick = () => go('classes');
   timelineCategory = 'ALL';
