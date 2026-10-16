@@ -6,7 +6,7 @@ import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.j
 import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c8';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c8';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c81';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
