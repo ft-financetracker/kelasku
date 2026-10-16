@@ -4,7 +4,7 @@ import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
 import { appShell, bindAppShell } from '../core/appShell.js';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c71';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceWindow, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c72m1';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
@@ -206,20 +206,22 @@ function attendanceCourseMeta(data, item, scheduleMap = attendanceScheduleMap(da
   return { schedule, title, key };
 }
 
-function attendanceSessionNoMap(data) {
-  const byCourse = new Map();
-  const scheduleMap = attendanceScheduleMap(data);
-  (data?.attendance || []).forEach(item => {
-    const meta = attendanceCourseMeta(data, item, scheduleMap);
-    if (!byCourse.has(meta.key)) byCourse.set(meta.key, []);
-    byCourse.get(meta.key).push({ item, schedule: meta.schedule });
-  });
-  const result = new Map();
-  byCourse.forEach(list => {
-    list.sort((a,b) => dateMs(a.schedule?.start_at || a.item.start_at, 0) - dateMs(b.schedule?.start_at || b.item.start_at, 0));
-    list.forEach((entry, index) => result.set(String(entry.item.attendance_id || ''), index + 1));
-  });
-  return result;
+function attendanceSessionNumber(item, schedule) {
+  let rule = schedule?.recurrence_rule;
+  if (!rule || typeof rule !== 'object') {
+    try { rule = JSON.parse(rule || '{}'); } catch { rule = {}; }
+  }
+  // Personal attendance can be a subset of a series; never renumber that subset.
+  for (const value of [rule?.session_no, schedule?._sessionNo, schedule?.session_no, item?.session_no, item?.attendance_session_no]) {
+    const no = Number(value);
+    if (Number.isSafeInteger(no) && no > 0) return no;
+  }
+  for (const title of [schedule?.title, item?.title]) {
+    const match = String(title || '').match(/\bsesi\s*(\d+)\b/i);
+    const no = Number(match?.[1]);
+    if (Number.isSafeInteger(no) && no > 0) return no;
+  }
+  return 0;
 }
 
 function hydrateAttendanceFilter(data, force = false) {
@@ -248,7 +250,6 @@ function hydrateAttendanceFilter(data, force = false) {
 
 function filteredAttendanceItems(data) {
   const scheduleMap = attendanceScheduleMap(data);
-  const sessionNoMap = attendanceSessionNoMap(data);
   const selectedCourse = String(document.getElementById('academic-attendance-filter')?.value || 'ALL');
   const query = String(document.getElementById('academic-search')?.value || '').trim().toLowerCase();
   const classId = String(document.getElementById('academic-class-filter')?.value || 'ALL');
@@ -264,13 +265,15 @@ function filteredAttendanceItems(data) {
       schedule_description: schedule?.description || '',
       attendance_course_key: meta.key,
       attendance_course_title: meta.title,
-      attendance_session_no: sessionNoMap.get(String(item.attendance_id || '')) || 0
+      attendance_session_no: attendanceSessionNumber(item, schedule)
     };
   }).filter(item => {
     if (classId !== 'ALL' && String(item.class_id) !== classId) return false;
     if (selectedCourse !== 'ALL' && String(item.attendance_course_key) !== selectedCourse) return false;
     if (!query) return true;
-    const hay = [item.title,item.attendance_course_title,item.description,item.schedule_description,item.body,item.location,item.schedule_location,item.class_name,item.my_note,item.schedule_start_at,shortDateTime(item.schedule_start_at),`Sesi ${String(item.attendance_session_no).padStart(2,'0')}`].join(' ').toLowerCase();
+    const start = item.start_at || item.schedule_start_at;
+    const label = item.attendance_session_no ? `Sesi ${String(item.attendance_session_no).padStart(2,'0')}` : 'Sesi';
+    const hay = [item.title,item.attendance_course_title,item.description,item.schedule_description,item.body,item.location,item.schedule_location,item.class_name,item.my_note,start,shortDateTime(start),label].join(' ').toLowerCase();
     return hay.includes(query);
   });
 }
@@ -434,10 +437,9 @@ function announcementCard(item) {
 }
 
 function attendanceSessionLabel(item) {
-  const no = Number(item.attendance_session_no || 0);
-  if (no) return `Sesi ${String(no).padStart(2,'0')}`;
-  const m = String(item.title || '').match(/sesi\s*(\d+)/i);
-  return m ? `Sesi ${String(Number(m[1])).padStart(2,'0')}` : 'Sesi';
+  const schedule = (state.academicHub?.schedules || []).find(row => String(row.schedule_id || '') === String(item.source_schedule_id || ''));
+  const no = attendanceSessionNumber(item, schedule);
+  return no ? `Sesi ${String(no).padStart(2,'0')}` : 'Sesi';
 }
 
 function attendanceStatusMeta(value) {
@@ -501,7 +503,7 @@ function openGlobalAttendanceForm(item){
     showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div><div class="alert">${status==='UPCOMING'?'Presensi belum dibuka.':'Waktu presensi sudah ditutup.'}</div>`);
     return;
   }
-  showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2><p class="compact-copy">${esc(attendanceSessionLabel(item))} • ${esc(shortDateTime(item.schedule_start_at||item.start_at))}</p></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
+    showModal(`<div class="modal-head"><div><div class="eyebrow">PRESENSI • ${esc(item.class_name||'KelasKu')}</div><h2>${esc(attendanceSubject(item))}</h2><p class="compact-copy">${esc(attendanceSessionLabel(item))} • ${esc(shortDateTime(item.start_at||item.schedule_start_at))}</p></div><button class="icon-btn mini" data-close-modal>${svg('i-close')}</button></div>
     <div class="attendance-inline-form">
       <div class="attendance-form-label">Status kehadiran</div>
       <div class="attendance-status-choice">${choices.map(([v,l,i])=>`<button type="button" data-global-att-status="${v}" class="attendance-choice ${v==='PRESENT'?'active':''}"><span class="material-symbols-rounded">${i}</span><span>${l}</span></button>`).join('')}</div>
