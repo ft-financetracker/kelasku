@@ -1,8 +1,9 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
-import { esc, svg, toast, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { esc, svg, toast } from '../core/utils.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c8';
 import { go } from '../core/router.js';
+import { directoryClasses, sortDirectoryClasses, directoryCardHtml, directoryTabsHtml, directoryEmptyHtml, DIRECTORY_VIEWS, isArchivedClass, isDemoClass, directoryVisibility } from './classDirectory.js?v=6739r52c8';
 
 let publicPage = 1;
 let publicQuery = '';
@@ -10,6 +11,18 @@ let myClassesInFlight = null;
 let classSearchTimer = null;
 let classSearchRequestSeq = 0;
 const MY_CLASSES_TTL_MS = 60 * 1000;
+let myClassesRequestOwner = '';
+let directoryOwner = '';
+let directoryView = 'mine';
+let directorySort = 'name';
+let publicClassesInFlight = null;
+let publicClassesAt = 0;
+let publicClassesKey = '';
+let publicRequestSeq = 0;
+const directoryLoading = {mine:false,public:false};
+const directoryErrors = {mine:'',public:''};
+const classAccountKey = () => `${state.sessionToken || ''}::${state.user?.user_id || ''}`;
+const directoryVisible = () => directoryOwner === classAccountKey() && Boolean(document.getElementById('class-directory-panel'));
 
 function publicLandingUrl(c={}) {
   const origin=String(window.KELASKU_CONFIG?.PRIMARY_ORIGIN || window.location.origin).replace(/\/$/,'');
@@ -19,27 +32,19 @@ function publicLandingUrl(c={}) {
 }
 
 export function renderClasses() {
+  if (directoryOwner !== classAccountKey()) { publicClassesAt=0;publicClassesKey='';directoryLoading.mine=false;directoryLoading.public=false; }
+  directoryOwner=classAccountKey();directoryView='mine';directorySort='name';
+  directoryErrors.mine='';directoryErrors.public='';
+  directoryLoading.mine=!(Number(state.myClassesAt || 0)>0);directoryLoading.public=!state.publicClasses;
+  publicPage=Number(state.publicClasses?.page || 1);publicQuery='';
   const content = `
-    <div class="classes-page">
-      <section class="classes-top-shell">
-        <div class="classes-title-block"><h1>Daftar Kelas</h1><p>Kelas yang kamu ikuti dan kelas umum yang dapat ditemukan langsung.</p></div>
-        <div class="classes-primary-actions"><button id="join-code-btn" class="btn btn-secondary">${svg('i-key')} <span>Masuk Kode</span></button><button id="create-class-btn" class="btn btn-primary">${svg('i-plus')} <span>Buat Kelas</span></button></div>
-        <div class="classes-search-panel">
-          <div class="class-search-box classes-search-row">${svg('i-search')}<input id="class-search-input" placeholder="Cari nama kelas, Class Code, institusi…" autocomplete="off" aria-autocomplete="list" aria-controls="class-search-results"><button type="button" id="class-search-clear" class="classes-search-clear hidden" aria-label="Bersihkan pencarian"><span class="material-symbols-rounded">close</span></button></div>
-          <div id="class-search-results" class="search-results hidden"></div>
-        </div>
-      </section>
-
-      <section class="class-list-section">
-        <div class="section-title-row class-section-head"><div><h2>Kelas Saya</h2><p id="class-count">Memuat kelas…</p></div><button type="button" id="my-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Saya"><span class="material-symbols-rounded">expand_less</span></button></div>
-        <div id="class-grid" class="class-table-shell class-card-stack">${classSkeleton()}</div>
-      </section>
-
-      <section class="class-list-section public-class-section">
-        <div class="section-title-row class-section-head"><div><h2>Kelas Umum</h2><p id="public-class-count">Kelas PUBLIC yang dapat dijelajahi.</p></div><div class="class-section-actions"><button id="public-class-refresh" class="btn btn-secondary small-btn">${svg('i-refresh')} Refresh</button><button type="button" id="public-class-toggle" class="class-section-toggle" aria-expanded="true" title="Ciutkan Kelas Umum"><span class="material-symbols-rounded">expand_less</span></button></div></div>
-        <div id="public-class-list" class="class-table-shell class-card-stack">${classSkeleton()}</div>
-        <div class="class-public-pager" id="public-class-pager"></div>
-      </section>
+    <div class="classes-v2">
+      <header class="cl-hero"><div class="cl-hero-copy"><span class="cl-eyebrow">RUANG BELAJARMU</span><h1>Daftar Kelas</h1><p>Temukan ruangmu. Mulai belajar dan bertumbuh bersama.</p></div><div class="cl-hero-art" aria-hidden="true">${svg('i-class')}</div></header>
+      <nav class="cl-categories" id="class-directory-tabs" role="tablist" aria-label="Kategori kelas"></nav>
+      <div class="cl-toolbar"><div class="classes-search-panel"><div class="cl-search">${svg('i-search')}<input id="class-search-input" placeholder="Cari kelas, kode, atau institusi…" aria-label="Cari kelas, kode, atau institusi" autocomplete="off" aria-autocomplete="list" aria-controls="class-search-results"><button type="button" id="class-search-clear" class="cl-search-clear hidden" aria-label="Bersihkan pencarian">${svg('i-close')}</button></div><div id="class-search-results" class="search-results hidden" aria-live="polite"></div></div><label class="cl-sort">Urutkan<select id="class-directory-sort" aria-label="Urutkan kelas"><option value="name">Nama A–Z</option><option value="name-desc">Nama Z–A</option></select></label></div>
+      <div class="cl-actions"><button id="join-code-btn" class="cl-button cl-button-primary">${svg('i-key')}Gabung dengan Kode</button><button id="create-class-btn" class="cl-button">${svg('i-plus')}Buat Kelas</button></div>
+      <p id="class-create-limit-note" class="cl-limit-note" hidden></p>
+      <section id="class-directory-panel" role="tabpanel" aria-labelledby="cl-tab-mine"></section>
     </div>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'classes', content, hideSearch: true });
@@ -47,6 +52,7 @@ export function renderClasses() {
 
   document.getElementById('create-class-btn').onclick = openCreateClass;
   document.getElementById('join-code-btn').onclick = openJoinCode;
+  document.getElementById('class-directory-sort').onchange = event => { directorySort=event.target.value;drawDirectory(); };
   const searchInput=document.getElementById('class-search-input');
   const searchClear=document.getElementById('class-search-clear');
   searchInput.oninput = () => scheduleLiveSearch();
@@ -57,37 +63,57 @@ export function renderClasses() {
   searchInput.onfocus = () => { if(searchInput.value.trim().length>=2) scheduleLiveSearch(true); };
   searchClear.onclick = () => { searchInput.value=''; searchClear.classList.add('hidden'); hideSearchResults(); searchInput.focus(); };
   document.addEventListener('pointerdown', classSearchOutsideHandler, { once:false });
-  document.getElementById('public-class-refresh').onclick = () => loadPublicClasses(true);
-  bindClassSectionToggle('my-class-toggle','class-grid','kelasku_classes_mine_collapsed');
-  bindClassSectionToggle('public-class-toggle','public-class-list','kelasku_classes_public_collapsed','public-class-pager');
-
-  if (Array.isArray(state.myClasses) && state.myClasses.length) drawMyClasses(state.myClasses);
+  drawDirectory();
   loadMyClasses();
   loadPublicClasses(false);
 }
 
-function bindClassSectionToggle(buttonId, contentId, storageKey, extraId='') {
-  const btn=document.getElementById(buttonId), content=document.getElementById(contentId), extra=extraId?document.getElementById(extraId):null;
-  if(!btn||!content)return;
-  const head=btn.closest('.class-section-head');
-  const apply=collapsed=>{
-    content.classList.toggle('class-section-collapsed',collapsed);
-    if(extra)extra.classList.toggle('class-section-collapsed',collapsed);
-    btn.setAttribute('aria-expanded',collapsed?'false':'true');
-    btn.title=collapsed?'Buka daftar kelas':'Ciutkan daftar kelas';
-    const icon=btn.querySelector('.material-symbols-rounded');
-    if(icon)icon.textContent=collapsed?'expand_more':'expand_less';
-    head?.classList.toggle('is-collapsed',collapsed);
-  };
-  let collapsed=localStorage.getItem(storageKey)==='1';
-  const toggle=()=>{collapsed=!collapsed;localStorage.setItem(storageKey,collapsed?'1':'0');apply(collapsed);};
-  apply(collapsed);
-  btn.onclick=e=>{e.preventDefault();e.stopPropagation();toggle();};
-  if(head) head.onclick=e=>{
-    if(e.target.closest('button:not(#'+buttonId+')'))return;
-    if(e.target.closest('a,input,select,textarea'))return;
-    toggle();
-  };
+function drawDirectory() {
+  if(!directoryVisible())return;
+  syncCreateClassLimit(state.myClasses || []);
+  const groups=directoryClasses(state.myClasses || [],state.publicClasses?.items || []);
+  if(directoryView==='archive'&&!groups.archive.length)directoryView='mine';
+  const tabs=document.getElementById('class-directory-tabs'),panel=document.getElementById('class-directory-panel');
+  const focusedTab=document.activeElement?.dataset?.directoryView;
+  tabs.classList.toggle('has-archive',Boolean(groups.archive.length));
+  tabs.innerHTML=directoryTabsHtml(groups,directoryView,{mineKnown:Number(state.myClassesAt || 0)>0,publicKnown:Boolean(state.publicClasses),publicTotal:state.publicClasses?.total});
+  tabs.querySelectorAll('[data-directory-view]').forEach(btn=>{
+    btn.onclick=()=>selectDirectoryView(btn.dataset.directoryView);
+    btn.onkeydown=event=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      event.preventDefault();const choices=[...tabs.querySelectorAll('[data-directory-view]')],at=choices.indexOf(btn);
+      const next=event.key==='Home'?0:event.key==='End'?choices.length-1:(at+(event.key==='ArrowRight'?1:-1)+choices.length)%choices.length;
+      selectDirectoryView(choices[next].dataset.directoryView,true);
+    };
+  });
+  if(focusedTab)document.getElementById('cl-tab-'+focusedTab)?.focus({preventScroll:true});
+  const [key,symbol,title]=DIRECTORY_VIEWS.find(([view])=>view===directoryView);
+  const rows=sortDirectoryClasses(groups[key],directorySort),isPublic=key==='public';
+  const loading=key==='demo'?(directoryLoading.mine||directoryLoading.public):directoryLoading[isPublic?'public':'mine'];
+  const error=key==='demo'?[directoryErrors.mine,directoryErrors.public].filter(Boolean).join(' '):directoryErrors[isPublic?'public':'mine'];
+  const description=isPublic?(state.publicClasses?`${Number(state.publicClasses.total || rows.length)} kelas umum · periksa informasi sebelum bergabung.`:'Temukan kelas umum dan lihat informasi sebelum bergabung.'):key==='demo'?'Ruang contoh yang tersedia untuk mengenal fitur KelasKu.':key==='archive'?'Informasi kelas yang sudah selesai.':Number(state.myClassesAt || 0)>0?`${rows.length} kelas belajar yang kamu ikuti.`:'Kelas belajar yang sudah kamu ikuti.';
+  panel.setAttribute('aria-labelledby','cl-tab-'+key);
+  panel.innerHTML=`<div class="cl-section-head"><div class="cl-section-title">${svg(symbol)}<div><h2>${title}</h2><p>${esc(description)}</p></div></div><button type="button" class="cl-button cl-refresh" data-directory-refresh aria-label="Perbarui ${title}">${svg('i-refresh')}<span>Perbarui</span></button></div>${error?`<div class="cl-source-message" role="status">${esc(error)} Data terakhir tetap tersedia.</div>`:loading?'<div class="cl-source-message" role="status"><span class="btn-spinner"></span><span>Memperbarui daftar kelas…</span></div>':''}${rows.length?`<div class="cl-grid">${rows.map(item=>directoryCardHtml(item,{mine:key==='mine',banner:directoryBanner(item)})).join('')}</div>`:loading?'':directoryEmptyHtml(key)}${isPublic&&state.publicClasses&&(state.publicClasses.has_more||Number(state.publicClasses.page || 1)>1)?`<div class="cl-pager"><button type="button" class="cl-button" data-directory-page="prev" ${Number(state.publicClasses.page || 1)<=1||loading?'disabled':''}>Sebelumnya</button><span>Halaman ${Number(state.publicClasses.page || 1)}</span><button type="button" class="cl-button" data-directory-page="next" ${!state.publicClasses.has_more||loading?'disabled':''}>Berikutnya</button></div>`:''}${key==='mine'&&groups.demo.length?'<div class="cl-demo-hint">Baru mengenal KelasKu?<button type="button" data-directory-demo>Coba Kelas Demo</button></div>':''}`;
+  bindClassRows(panel);
+  panel.querySelectorAll('[data-directory-refresh]').forEach(btn=>btn.onclick=()=>refreshDirectory());
+  panel.querySelectorAll('[data-directory-join]').forEach(btn=>btn.onclick=openJoinCode);
+  panel.querySelectorAll('[data-directory-demo]').forEach(btn=>btn.onclick=()=>selectDirectoryView('demo',true));
+  panel.querySelectorAll('[data-directory-page]').forEach(btn=>btn.onclick=()=>{publicPage=Math.max(1,Number(state.publicClasses?.page || 1)+(btn.dataset.directoryPage==='next'?1:-1));loadPublicClasses(true);});
+}
+function directoryBanner(item) {
+  const active=state.classDetails?.[item.class_id]?.appearance?.active;
+  return active?.HERO_DESKTOP?.url || active?.ROOM_DESKTOP?.url || '';
+}
+function selectDirectoryView(view,focus=false) {
+  if(!DIRECTORY_VIEWS.some(([key])=>key===view))return;
+  directoryView=view;drawDirectory();
+  if(focus)document.getElementById('cl-tab-'+view)?.focus({preventScroll:true});
+  if(view==='public'||view==='demo')loadPublicClasses(false);
+  if(view!=='public')loadMyClasses(true);
+}
+function refreshDirectory() {
+  if(directoryView==='demo')return Promise.allSettled([loadMyClasses(false,true),loadPublicClasses(true)]);
+  return directoryView==='public'?loadPublicClasses(true):loadMyClasses(false,true);
 }
 export async function prefetchMyClasses() {
   return loadMyClasses(true);
@@ -137,46 +163,27 @@ async function submitJoinLink(ref,c) {
 function drawJoinLinkError(message){const slot=document.getElementById('join-link-panel');if(slot)slot.innerHTML=`<div class="search-empty">${esc(message||'Link bergabung tidak tersedia.')}</div><div class="page-actions"><button type="button" id="join-link-back" class="btn btn-secondary">Kembali ke Daftar Kelas</button></div>`;document.getElementById('join-link-back')?.addEventListener('click',()=>go('classes'));}
 
 async function loadMyClasses(background = false, force = false) {
-  const hadCache = Array.isArray(state.myClasses) && state.myClasses.length > 0;
-  const fresh = hadCache && (Date.now() - Number(state.myClassesAt || 0) < MY_CLASSES_TTL_MS);
+  const owner=classAccountKey(),known=Array.isArray(state.myClasses)&&Number(state.myClassesAt || 0)>0;
+  const fresh = known && (Date.now() - Number(state.myClassesAt || 0) < MY_CLASSES_TTL_MS);
   if (!force && fresh) return state.myClasses;
-  if (myClassesInFlight) return myClassesInFlight;
-  myClassesInFlight = (async () => {
+  if (myClassesInFlight && myClassesRequestOwner===owner) return myClassesInFlight;
+  myClassesRequestOwner=owner;directoryLoading.mine=true;directoryErrors.mine='';drawDirectory();
+  const request = (async () => {
     try {
       const data = await api('getMyClasses');
+      if(owner!==classAccountKey())return [];
+      if(!Array.isArray(data?.items))throw new Error('Daftar kelas belum lengkap.');
       const next = data.items || [];
-      const changed = !sameData(state.myClasses, next);
       state.myClasses = next;
       state.myClassesAt = Date.now();
-      localStorage.setItem('kelasku_classes_cache', JSON.stringify(state.myClasses));
-      localStorage.setItem('kelasku_classes_cache_at', String(state.myClassesAt));
-      const grid = document.getElementById('class-grid');
-      if (grid && (changed || !grid.querySelector('.class-list-row'))) drawMyClasses(state.myClasses);
+      try{localStorage.setItem('kelasku_classes_cache', JSON.stringify(state.myClasses));localStorage.setItem('kelasku_classes_cache_at', String(state.myClassesAt));}catch{}
       return state.myClasses;
     } catch (err) {
-      const grid = document.getElementById('class-grid');
-      if (!background && !hadCache && grid) grid.innerHTML = `<div class="panel error-panel"><strong>Daftar kelas gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
+      if(owner===classAccountKey())directoryErrors.mine='Kelasmu belum dapat diperbarui. Gunakan tombol Perbarui untuk mencoba lagi.';
       return state.myClasses || [];
-    } finally { myClassesInFlight = null; }
+    } finally { if(myClassesInFlight===request){myClassesInFlight=null;if(owner===classAccountKey()){directoryLoading.mine=false;drawDirectory();}} }
   })();
-  return myClassesInFlight;
-}
-
-function drawMyClasses(items) {
-  syncCreateClassLimit(items);
-  const grid = document.getElementById('class-grid');
-  const count = document.getElementById('class-count');
-  if (!grid) return;
-  if (count) count.textContent = `${items.length} kelas aktif`;
-  if (!items.length) {
-    grid.innerHTML = `<div class="empty class-empty"><div><div class="empty-icon">${svg('i-class')}</div><strong>Belum ada kelas</strong><span>Buat kelas sendiri atau masuk menggunakan kode dari ketua kelas.</span><div class="empty-actions"><button id="empty-create" class="btn btn-primary">Buat Kelas</button><button id="empty-join" class="btn btn-secondary">Masuk dengan Kode</button></div></div></div>`;
-    document.getElementById('empty-create').onclick = openCreateClass;
-    document.getElementById('empty-join').onclick = openJoinCode;
-    return;
-  }
-
-  grid.innerHTML = items.map(c => classListRow(c, true)).join('');
-  bindClassRows(grid);
+  myClassesInFlight=request;return request;
 }
 
 
@@ -187,10 +194,13 @@ function syncCreateClassLimit(items = []) {
   const owned = (items || []).filter(c => String(c.role || '').toUpperCase() === 'OWNER').length;
   const full = !isSuperAdmin && owned >= 3;
   btn.disabled = full;
+  const demoOwned=(items || []).filter(c=>String(c.role || '').toUpperCase()==='OWNER'&&isDemoClass(c)).length;
+  const limitNote=document.getElementById('class-create-limit-note');
+  if(limitNote){limitNote.hidden=!full;limitNote.textContent=full?`Batas 3 kelas buatanmu sudah terpakai${demoOwned?`, termasuk ${demoOwned} kelas demo`:''}.`:'';}
   btn.title = isSuperAdmin
     ? `Super Admin: ${owned} kelas dimiliki, tanpa batas sementara.`
     : (full ? 'Batas sementara tercapai: maksimal 3 kelas yang dibuat per akun.' : `Kamu sudah membuat ${owned}/3 kelas.`);
-  btn.innerHTML = full ? `${svg('i-lock')} Batas 3 Kelas` : `${svg('i-plus')} Buat Kelas`;
+  btn.innerHTML = full ? `${svg('i-info')} Batas 3 Kelas` : `${svg('i-plus')} Buat Kelas`;
 }
 
 
@@ -231,33 +241,25 @@ function hydrateClassCoverImages(root=document){
   });
 }
 
-function classListRow(c, mine = false) {
-  const leader = c.is_class_leader ? '<span class="role-pill leader-role-pill">Ketua Kelas</span>' : '';
-  const isMember = Boolean(mine || c.is_member);
-  const action = isMember
-    ? `<button type="button" class="class-row-action" data-open-class="${esc(c.class_id)}" aria-label="Buka ${esc(c.name || 'kelas')}">${svg('i-arrow')}<span>Buka</span></button>`
-    : `<button type="button" class="class-row-action join" data-public-join="${esc(c.class_id)}" aria-label="Gabung ${esc(c.name || 'kelas')}">${svg('i-plus')}<span>Gabung</span></button>`;
-  const memberCount = Number(c.member_count || 0);
-  const desc = [c.institution || 'KelasKu', c.cohort ? `Angkatan ${c.cohort}` : '', c.class_code || ''].filter(Boolean).join(' · ');
-  const rowTarget = isMember ? `data-class-card-open="${esc(c.class_id)}"` : `data-class-card-preview="${esc(c.class_id)}"`;
-  return `<article class="class-list-row class-room-card" ${rowTarget} tabindex="0" role="button" aria-label="${isMember?'Buka':'Lihat'} ${esc(c.name || 'kelas')}">
-    <span class="class-symbol small class-room-icon${classCoverClass(c)}"${classCoverAttrs(c)}>${classIdentityIconMarkup(c)}</span>
-    <div class="class-list-copy class-room-copy"><strong>${esc(c.name)}</strong><small class="class-list-subtitle">${esc(desc)}</small></div>
-    <div class="class-list-badge-line class-room-badges">${c.role ? `<span class="role-pill role-${String(c.role||'member').toLowerCase()}">${esc(roleLabel(c.role))}</span>` : ''}${leader}<span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility || 'PUBLIC')}</span>${memberCount ? `<span class="class-member-mobile class-card-kpi" aria-label="${memberCount} anggota"><span class="material-symbols-rounded">group</span>${memberCount}</span>` : ''}</div>
-    <div class="class-list-action class-room-action">${action}</div>
-  </article>`;
-}
 
 function bindClassRows(root) {
   hydrateClassCoverImages(root);
+  root.querySelectorAll('[data-directory-image]').forEach(img=>{
+    const loaded=()=>img.classList.add('is-loaded');
+    const failed=()=>img.remove();
+    img.addEventListener('load',loaded,{once:true});img.addEventListener('error',failed,{once:true});
+    if(img.complete){if(img.naturalWidth)loaded();else failed();}
+  });
   const openClass = id => {
     state.selectedClassId = id;
     sessionStorage.setItem('kelasku_selected_class', state.selectedClassId);
     go('class');
   };
   const previewClass = id => {
-    const item = (state.publicClasses?.items || []).find(x => String(x.class_id) === String(id));
-    if (item) openJoinPreview(item, item.class_code || '');
+    const item = localSearchPool().find(x => String(x.class_id) === String(id));
+    if(!item)return;
+    if(isArchivedClass(item)){showModal(`<div class="modal-head"><div><div class="eyebrow">KELAS ARSIP</div><h2>${esc(item.name)}</h2></div><button class="icon-btn mini" data-close-modal aria-label="Tutup informasi kelas">${svg('i-close')}</button></div><p class="copy compact-copy">Kelas ini sudah diarsipkan. Akses aktivitas mengikuti ketentuan pengelola kelas.</p><p class="copy compact-copy">${esc(item.description || item.institution || '')}</p>`);return;}
+    openJoinPreview(item, item.class_code || '');
   };
 
   root.querySelectorAll('[data-class-card-open]').forEach(row => {
@@ -279,41 +281,33 @@ function bindClassRows(root) {
   root.querySelectorAll('[data-open-class]').forEach(el => {
     el.onclick = e => { e.stopPropagation(); openClass(el.dataset.openClass); };
   });
-  root.querySelectorAll('[data-public-join]').forEach(btn => {
-    btn.onclick = e => { e.stopPropagation(); previewClass(btn.dataset.publicJoin); };
+  root.querySelectorAll('[data-directory-preview]').forEach(btn => {
+    btn.onclick = e => { e.stopPropagation(); previewClass(btn.dataset.directoryPreview); };
   });
 }
 
 async function loadPublicClasses(force = false) {
-  const slot = document.getElementById('public-class-list');
-  if (!slot) return;
-  if (!force && state.publicClasses?.items?.length) drawPublicClasses(state.publicClasses);
-  try {
-    const data = await api('listPublicClasses', { page: publicPage, limit: 30, query: publicQuery });
-    state.publicClasses = data;
-    if (publicPage === 1 && !publicQuery) { try { localStorage.setItem('kelasku_public_classes_cache', JSON.stringify(data)); } catch {} }
-    drawPublicClasses(data);
-  } catch (err) {
-    if (!state.publicClasses?.items?.length) slot.innerHTML = `<div class="panel error-panel"><strong>Kelas umum gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
-  }
-}
-
-function drawPublicClasses(data) {
-  const slot = document.getElementById('public-class-list');
-  const count = document.getElementById('public-class-count');
-  const pager = document.getElementById('public-class-pager');
-  if (!slot) return;
-  const items = data.items || [];
-  if (count) count.textContent = `${Number(data.total || items.length)} kelas PUBLIC`;
-  slot.innerHTML = items.length
-    ? items.map(c => classListRow(c, false)).join('')
-    : '<div class="search-empty">Belum ada kelas umum.</div>';
-  bindClassRows(slot);
-  if (pager) {
-    pager.innerHTML = `<button class="btn btn-secondary small-btn" id="public-prev" ${Number(data.page||1)<=1?'disabled':''}>${svg('i-back')} Sebelumnya</button><span>Halaman ${Number(data.page||1)}</span><button class="btn btn-secondary small-btn" id="public-next" ${data.has_more?'':'disabled'}>Berikutnya ${svg('i-arrow')}</button>`;
-    document.getElementById('public-prev')?.addEventListener('click',()=>{publicPage=Math.max(1,publicPage-1);loadPublicClasses(true);});
-    document.getElementById('public-next')?.addEventListener('click',()=>{publicPage+=1;loadPublicClasses(true);});
-  }
+  if(!directoryVisible())return;
+  const owner=classAccountKey(),page=publicPage,query=publicQuery,key=`${owner}::${page}::${query}`;
+  if(!force&&publicClassesKey===key&&state.publicClasses&&Date.now()-publicClassesAt<MY_CLASSES_TTL_MS)return state.publicClasses;
+  if(publicClassesInFlight?.key===key)return publicClassesInFlight.request;
+  const seq=++publicRequestSeq;
+  directoryLoading.public=true;directoryErrors.public='';drawDirectory();
+  const request=(async()=>{
+    try{
+      const data=await api('listPublicClasses',{page,limit:30,query});
+      if(owner!==classAccountKey()||seq!==publicRequestSeq)return;
+      if(!Array.isArray(data?.items))throw new Error('Daftar kelas umum belum lengkap.');
+      state.publicClasses=data;publicClassesKey=key;publicClassesAt=Date.now();
+      if(page===1&&!query){try{localStorage.setItem('kelasku_public_classes_cache',JSON.stringify(data));}catch{}}
+      return data;
+    }catch(err){
+      if(owner===classAccountKey()&&seq===publicRequestSeq)directoryErrors.public='Kelas umum belum dapat diperbarui. Gunakan tombol Perbarui untuk mencoba lagi.';
+    }finally{
+      if(publicClassesInFlight?.request===request){publicClassesInFlight=null;if(owner===classAccountKey()){directoryLoading.public=false;drawDirectory();}}
+    }
+  })();
+  publicClassesInFlight={key,request};return request;
 }
 
 function classSearchOutsideHandler(e){
@@ -335,7 +329,8 @@ function scheduleLiveSearch(immediate=false){
   if(classSearchTimer)clearTimeout(classSearchTimer);
   if(query.length<2){hideSearchResults();return;}
   drawLocalSearchSuggestions(query);
-  classSearchTimer=setTimeout(()=>runSearch(query),immediate?0:220);
+  classSearchRequestSeq++;
+  classSearchTimer=setTimeout(()=>runSearch(query),immediate?0:300);
 }
 
 function localSearchPool(){
@@ -365,16 +360,17 @@ async function runSearch(queryOverride='') {
   const query = String(queryOverride || input?.value || '').trim();
   if (!box || query.length < 2) { hideSearchResults(); return; }
   const seq=++classSearchRequestSeq;
+  const owner=classAccountKey();
   box.classList.remove('hidden');
   if(!box.querySelector('[data-search-class]'))box.innerHTML = '<div class="search-loading"><span class="status-dot"></span>Mencari kelas…</div>';
   try {
     const data = await api('searchClasses', { query });
-    if(seq!==classSearchRequestSeq || String(input?.value||'').trim()!==query)return;
+    if(owner!==classAccountKey()||!directoryVisible()||seq!==classSearchRequestSeq || String(input?.value||'').trim()!==query)return;
     const items = (data.items || []).slice(0,8);
     box.innerHTML = items.length ? items.map(searchCard).join('') : '<div class="search-empty">Kelas tidak ditemukan.</div>';
     bindSearchRows(box,items,query);
   } catch (err) {
-    if(seq!==classSearchRequestSeq)return;
+    if(owner!==classAccountKey()||!directoryVisible()||seq!==classSearchRequestSeq)return;
     box.innerHTML = `<div class="search-empty">${esc(err.message)}</div>`;
   }
 }
@@ -391,6 +387,7 @@ function searchCard(c) {
 
 function selectSearchClass(c, query = '') {
   if (!c) return;
+  if(isArchivedClass(c)){showModal(`<div class="modal-head"><h2>${esc(c.name)}</h2><button class="icon-btn mini" data-close-modal aria-label="Tutup">${svg('i-close')}</button></div><p class="copy compact-copy">Kelas ini telah diarsipkan.</p>`);return;}
   if (c.role) {
     state.selectedClassId = c.class_id;
     sessionStorage.setItem('kelasku_selected_class', c.class_id);
@@ -477,7 +474,7 @@ function joinPreviewHtml(c, code) {
   const waiting = String(c.membership_status || '').toUpperCase() === 'PENDING';
   const landingUrl=publicLandingUrl(c);
   const memberCount=Number(c.member_count||0);
-  return `<div class="join-preview panel join-preview-compact"><span class="class-symbol">${svg('i-class')}</span><div class="join-preview-copy"><h3>${esc(c.name)}</h3><p>${[c.institution||'',c.cohort?`Angkatan ${c.cohort}`:'',c.class_code||''].filter(Boolean).map(esc).join(' · ')}</p><div class="join-preview-kpis"><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(c.visibility||'PUBLIC')}</span>${memberCount?`<span class="class-card-kpi"><span class="material-symbols-rounded">group</span>${memberCount}</span>`:''}</div></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Join Code valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="join-preview-actions"><button id="confirm-join-btn" class="btn btn-primary" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button><a class="btn btn-secondary" href="${esc(landingUrl)}"><span class="material-symbols-rounded">open_in_new</span> Landing Kelas</a></div>`;
+  return `<div class="join-preview panel join-preview-compact"><span class="class-symbol">${svg('i-class')}</span><div class="join-preview-copy"><h3>${esc(c.name)}</h3><p>${[c.institution||'',c.cohort?`Angkatan ${c.cohort}`:'',c.class_code||''].filter(Boolean).map(esc).join(' · ')}</p><div class="join-preview-kpis"><span class="visibility-badge visibility-${String(c.visibility||'PUBLIC').toLowerCase()}">${esc(directoryVisibility(c))}</span>${memberCount?`<span class="class-card-kpi"><span class="material-symbols-rounded">group</span>${memberCount}</span>`:''}</div></div></div>${viaJoin?'<div class="join-code-valid">'+svg('i-check')+' Kode bergabung valid</div>':''}<div id="join-request-status" class="request-status ${waiting?'ok':''}">${waiting?'Permintaan bergabung sedang menunggu persetujuan.':''}</div><div class="join-preview-actions"><button id="confirm-join-btn" class="btn btn-primary" ${waiting?'disabled':''}>${waiting?'Menunggu Persetujuan':'Ajukan Bergabung'}</button><a class="btn btn-secondary" href="${esc(landingUrl)}">${svg('i-eye')}Info Publik Kelas</a></div>`;
 }
 
 async function submitJoin(c, code) {
@@ -499,11 +496,10 @@ function showModal(html) {
   closeModal();
   const el = document.createElement('div'); el.id='phase-modal'; el.className='overlay';
   el.innerHTML=`<div class="modal glass phase-modal-card">${html}</div>`; document.body.appendChild(el);
-  el.querySelectorAll('[data-close-modal]').forEach(x=>x.onclick=closeModal);
+  el.querySelectorAll('[data-close-modal]').forEach(x=>{x.onclick=closeModal;if(!x.getAttribute('aria-label'))x.setAttribute('aria-label','Tutup');});
   el.onclick=e=>{ if(e.target===el) closeModal(); };
 }
 function closeModal(){ document.getElementById('phase-modal')?.remove(); }
-function classSkeleton(){ return '<div class="panel fast-load-panel"><span class="status-dot"></span><div><strong>Menyiapkan daftar kelas…</strong><small>Cache kelas akan dipakai pada pembukaan berikutnya.</small></div></div>'; }
 
 function roleLabel(role) {
   const key = String(role || 'MEMBER').toUpperCase();
