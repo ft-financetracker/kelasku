@@ -69,7 +69,7 @@ function directoryPeopleHtml(members,item,caption) {
   const remaining=known?Math.max(0,total-people.length):0;
   return `<div class="cl-people">${people.length?`<span class="cl-avatar-stack" aria-label="Avatar anggota kelas">${avatars}${remaining?`<span class="cl-avatar-more" title="${remaining} anggota lainnya">+${remaining}</span>`:''}</span>`:''}<small>${esc(known?`${total} anggota`:caption)}</small></div>`;
 }
-export function directoryCardHtml(item, {mine = false, banner = '', members = []} = {}) {
+export function directoryCardHtml(item, {mine = false, banner = '', members = [], layout = 'grid'} = {}) {
   const member=mine || isClassMember(item),demo=isDemoClass(item),archived=isArchivedClass(item);
   const pending=String(item.membership_status || '').toUpperCase() === 'PENDING';
   const id=esc(String(item.class_id || '')),name=esc(item.name || 'Kelas');
@@ -79,12 +79,21 @@ export function directoryCardHtml(item, {mine = false, banner = '', members = []
   const subtitle=[item.institution || 'KelasKu',item.cohort ? `Angkatan ${item.cohort}` : ''].filter(Boolean).join(' · ');
   const chips=[item.study_program || '',item.semester || ''].filter(Boolean);
   const identity=item.icon_key && String(item.icon_key)!=='school' ? `<span class="material-symbols-rounded cl-card-custom-icon">${esc(item.icon_key)}</span>` : svg('i-class');
-  return `<article class="cl-card${demo?' is-demo':''}${archived?' is-archived':''}">
+  const status=archived?'Selesai':pending?'Menunggu persetujuan':'Aktif';
+  const badges=`<span class="cl-badge${demo?' cl-badge-demo':''}" title="${esc(label)}">${esc(label)}</span><span class="cl-card-state" title="${esc(status)}">${status}</span>`;
+  const logo=`<span class="cl-card-logo" aria-hidden="true">${identity}${directoryImage(item.cover_url,'cl-logo-image')}</span>`;
+  const footer=`<div class="cl-card-foot">${directoryPeopleHtml(members,item,demo?'Ruang contoh KelasKu':member?'Sudah bergabung':pending?'Permintaan sedang diproses':'Lihat informasi sebelum bergabung')}<button type="button" class="cl-open" ${member&&!archived?`data-open-class="${id}"`:`data-directory-preview="${id}"`} aria-label="${esc(action)}: ${name}"><span>${esc(action)}</span>${svg('i-arrow')}</button></div>`;
+  const cardClass=`cl-card${demo?' is-demo':''}${archived?' is-archived':''}`;
+  if(layout==='list'){
+    const details=[{text:subtitle},...chips.map(text=>({text})),...(code?[{text:code,className:'cl-code'}]:[]),...(member?[{text:directoryRole(item.role)}]:[]),...(item.is_class_leader?[{text:'Ketua Kelas'}]:[])];
+    return `<article class="${cardClass} cl-list-row">${logo}<div class="cl-list-heading"><h3 title="${name}">${name}</h3><div class="cl-list-badges">${badges}</div></div><div class="cl-list-details" title="${esc(details.map(part=>part.text).join(' · '))}">${details.map(part=>`<span${part.className?` class="${part.className}"`:''}>${esc(part.text)}</span>`).join('')}</div>${footer}</article>`;
+  }
+  return `<article class="${cardClass}">
     <div class="cl-card-banner" aria-hidden="true">${directoryImage(banner,'cl-banner-image')}<span class="cl-banner-pattern">${svg(demo?'i-eye':'i-class')}</span></div>
-    <div class="cl-card-top"><span class="cl-badge${demo?' cl-badge-demo':''}">${esc(label)}</span><span class="cl-card-state">${archived?'Selesai':pending?'Menunggu persetujuan':'Aktif'}</span></div>
-    <div class="cl-card-main"><span class="cl-card-logo" aria-hidden="true">${identity}${directoryImage(item.cover_url,'cl-logo-image')}</span><div class="cl-card-copy"><h3>${name}</h3><p>${esc(subtitle)}</p>${chips.length?`<div class="cl-card-chips">${chips.map(text=>`<span>${esc(text)}</span>`).join('')}</div>`:''}</div></div>
+    <div class="cl-card-top">${badges}</div>
+    <div class="cl-card-main">${logo}<div class="cl-card-copy"><h3>${name}</h3><p>${esc(subtitle)}</p>${chips.length?`<div class="cl-card-chips">${chips.map(text=>`<span>${esc(text)}</span>`).join('')}</div>`:''}</div></div>
     <div class="cl-card-meta">${code?`<span class="cl-code">${esc(code)}</span>`:''}${member?`<span>${esc(directoryRole(item.role))}</span>`:''}${item.is_class_leader?'<span>Ketua Kelas</span>':''}</div>
-    <div class="cl-card-foot">${directoryPeopleHtml(members,item,demo?'Ruang contoh KelasKu':member?'Sudah bergabung':pending?'Permintaan sedang diproses':'Lihat informasi sebelum bergabung')}<button type="button" class="cl-open" ${member&&!archived?`data-open-class="${id}"`:`data-directory-preview="${id}"`} aria-label="${esc(action)}: ${name}"><span>${esc(action)}</span>${svg('i-arrow')}</button></div>
+    ${footer}
   </article>`;
 }
 

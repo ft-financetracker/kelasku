@@ -7,7 +7,7 @@ import { go } from '../core/router.js';
 import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c75';
 import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c75';
 import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c75';
-import { prefetchMyClasses } from './classes.js?v=6739r52c81';
+import { prefetchMyClasses } from './classes.js?v=6739r52c82';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
