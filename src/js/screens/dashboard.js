@@ -3,7 +3,7 @@ import { api } from '../core/api.js';
 import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
-import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js';
+import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6739r52c9';
 
 let carouselTimer = null;
 let carouselIndex = 0;
@@ -27,6 +27,7 @@ export function renderDashboard() {
   }) + '<div id="notif-drawer" class="drawer glass hidden"></div>';
 
   bindAppShell({
+    onRefresh: () => refreshDashboard(true),
     onSearch: () => go('classes'),
     onNotifications: toggleNotifications
   });
@@ -73,10 +74,12 @@ function drawSkeleton() {
 }
 
 async function refreshDashboard(force = false) {
+  const owner = state.sessionToken;
   const fresh = state.dashboard && (Date.now() - Number(state.dashboardAt || 0) < Number(C.DASHBOARD_CACHE_MS || 300000));
   if (!force && fresh) return state.dashboard;
   try {
     const data = await api('getDashboard', {}, { onSlow: () => {} });
+    if (state.sessionToken !== owner) return;
     const changed = !sameData(state.dashboard, data);
     state.dashboard = data;
     state.dashboardAt = Date.now();
@@ -86,10 +89,12 @@ async function refreshDashboard(force = false) {
     localStorage.setItem('kelasku_user_cache', JSON.stringify(state.user));
     if (changed && currentRoute() === 'dashboard') drawDashboard(data);
   } catch (err) {
+    if (state.sessionToken !== owner) return;
     if (!state.dashboard) {
       const slot = document.getElementById('dashboard-slot');
       if (slot) slot.innerHTML = `<div class="alert danger">${esc(err.message)}</div>`;
     }
+    if (force) throw err;
   }
 }
 
