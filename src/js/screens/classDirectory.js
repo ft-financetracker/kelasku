@@ -85,14 +85,13 @@ export function directoryCardHtml(item, {mine = false, banner = '', members = []
   const footer=`<div class="cl-card-foot">${directoryPeopleHtml(members,item,demo?'Ruang contoh KelasKu':member?'Sudah bergabung':pending?'Permintaan sedang diproses':'Lihat informasi sebelum bergabung')}<button type="button" class="cl-open" ${member&&!archived?`data-open-class="${id}"`:`data-directory-preview="${id}"`} aria-label="${esc(action)}: ${name}"><span>${esc(action)}</span>${svg('i-arrow')}</button></div>`;
   const cardClass=`cl-card${demo?' is-demo':''}${archived?' is-archived':''}`;
   if(layout==='list'){
-    const details=[{text:subtitle},...chips.map(text=>({text})),...(code?[{text:code,className:'cl-code'}]:[]),...(member?[{text:directoryRole(item.role)}]:[]),...(item.is_class_leader?[{text:'Ketua Kelas'}]:[])];
+    const details=[{text:subtitle},...chips.map(text=>({text})),...(code?[{text:code,className:'cl-code'}]:[]),...(member?[{text:directoryRole(item.role),className:'cl-role-badge'}]:[]),...(item.is_class_leader?[{text:'Ketua Kelas',className:'cl-role-badge cl-leader-badge'}]:[])];
     return `<article class="${cardClass} cl-list-row">${logo}<div class="cl-list-heading"><h3 title="${name}">${name}</h3><div class="cl-list-badges">${badges}</div></div><div class="cl-list-details" title="${esc(details.map(part=>part.text).join(' · '))}">${details.map(part=>`<span${part.className?` class="${part.className}"`:''}>${esc(part.text)}</span>`).join('')}</div>${footer}</article>`;
   }
   return `<article class="${cardClass}">
-    <div class="cl-card-banner" aria-hidden="true">${directoryImage(banner,'cl-banner-image')}<span class="cl-banner-pattern">${svg(demo?'i-eye':'i-class')}</span></div>
-    <div class="cl-card-top">${badges}</div>
-    <div class="cl-card-main">${logo}<div class="cl-card-copy"><h3>${name}</h3><p>${esc(subtitle)}</p>${chips.length?`<div class="cl-card-chips">${chips.map(text=>`<span>${esc(text)}</span>`).join('')}</div>`:''}</div></div>
-    <div class="cl-card-meta">${code?`<span class="cl-code">${esc(code)}</span>`:''}${member?`<span>${esc(directoryRole(item.role))}</span>`:''}${item.is_class_leader?'<span>Ketua Kelas</span>':''}</div>
+    <div class="cl-card-body"><div class="cl-card-banner" aria-hidden="true">${directoryImage(banner,'cl-banner-image')}<span class="cl-banner-pattern">${svg(demo?'i-eye':'i-class')}</span></div>
+    <div class="cl-card-main">${logo}<div class="cl-card-copy"><div class="cl-card-heading"><h3 title="${name}">${name}</h3><div class="cl-card-top">${badges}</div></div><p>${esc(subtitle)}</p>${chips.length?`<div class="cl-card-chips">${chips.map(text=>`<span>${esc(text)}</span>`).join('')}</div>`:''}</div></div>
+    <div class="cl-card-meta">${code?`<span class="cl-code">${esc(code)}</span>`:''}${member?`<span class="cl-role-badge">${esc(directoryRole(item.role))}</span>`:''}${item.is_class_leader?'<span class="cl-role-badge cl-leader-badge">Ketua Kelas</span>':''}</div></div>
     ${footer}
   </article>`;
 }
