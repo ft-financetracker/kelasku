@@ -1,8 +1,9 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
 import { go } from '../core/router.js';
+import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6739r52c91';
 
 let overview = state.adminOverview || null;
 let overviewAt = overview ? Date.now() : 0;
@@ -224,10 +225,12 @@ export function renderAdminSystem() {
 
 async function loadAdminSystem() {
   const slot = document.getElementById('admin-system-slot');
+  const owner = state.sessionToken;
   try {
     const data = await api('adminGetSystemStatus');
+    if (state.sessionToken !== owner || !slot?.isConnected) return;
     drawAdminSystem(data);
-  } catch(err) { slot.innerHTML = errorBox(err.message); }
+  } catch(err) { if (state.sessionToken === owner && slot?.isConnected) slot.innerHTML = errorBox(err.message); }
 }
 
 function drawAdminSystem(data) {
@@ -239,6 +242,8 @@ function drawAdminSystem(data) {
       ${systemStatusCard('Backend Version', `v${data.version}`, `Build ${data.build}`)}
       ${systemStatusCard('Schema', `v${data.schema_version}`, 'Database schema')}
     </section>
+
+    ${navigationEditorHtml()}
 
     <form id="admin-config-form" class="panel admin-section admin-config-section">
       <div class="panel-head"><div><div class="panel-title">Konfigurasi Operasional</div><p class="panel-copy">Perubahan ini memengaruhi seluruh pengguna aplikasi.</p></div>${svg('i-gear')}</div>
@@ -261,6 +266,7 @@ function drawAdminSystem(data) {
       <div class="admin-release-list">${(data.releases || []).length ? data.releases.map(releaseRow).join('') : emptyRow('Belum ada release.')}</div>
     </section>`;
   document.getElementById('admin-config-form').onsubmit = saveConfig;
+  mountNavigationEditor(document.getElementById('admin-navigation-editor'), config);
 }
 
 export function renderAdminAudit() {
@@ -342,6 +348,7 @@ async function saveConfig(event) {
     const data = await api('adminUpdateAppConfig', { values }, { onSlow: () => status.textContent = 'Masih diproses. Jangan klik dua kali.' });
     state.remoteConfig = data.config;
     localStorage.setItem('kelasku_app_config_cache', JSON.stringify(data.config));
+    window.dispatchEvent(new CustomEvent('kelasku-config-updated'));
     const uiScale=Math.max(90,Math.min(125,Number(data.config?.ui_text_scale||100)))/100;
     document.documentElement.style.setProperty('--kk-admin-text-scale', String(uiScale));
     document.documentElement.style.setProperty('--kk-admin-font-bump', `${Math.round((uiScale-1)*100)/10}px`);

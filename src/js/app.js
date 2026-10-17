@@ -16,19 +16,19 @@ import { applyPreferences } from './core/preferences.js?v=6739r51';
 import { renderSplash } from './screens/splash.js';
 import { renderOnboarding } from './screens/onboarding.js';
 import { renderAuth } from './screens/auth.js';
-import { renderProfile } from './screens/profile.js';
+import { renderProfile } from './screens/profile.js?v=6739r52c91';
 import { renderSetup } from './screens/setup.js';
-import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6739r52c9';
-import { renderAccount } from './screens/account.js';
-import { renderSettings } from './screens/settings.js?v=6739r51';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6739r52c9';
-import { renderClassRoom } from './screens/classRoom.js?v=6739r52c9';
-import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js';
-import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6739r52c9';
-import { renderAppInfo } from './screens/appInfo.js';
+import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6739r52c91';
+import { renderAccount } from './screens/account.js?v=6739r52c91';
+import { renderSettings } from './screens/settings.js?v=6739r52c91';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6739r52c91';
+import { renderClassRoom } from './screens/classRoom.js?v=6739r52c91';
+import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js?v=6739r52c91';
+import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6739r52c91';
+import { renderAppInfo } from './screens/appInfo.js?v=6739r52c91';
 import { renderAttendanceLanding } from './screens/attendanceLanding.js';
-import { renderMessages, prefetchMessageRooms } from './screens/messages.js';
-import { renderNotifications } from './screens/notifications.js';
+import { renderMessages, prefetchMessageRooms } from './screens/messages.js?v=6739r52c91';
+import { renderNotifications } from './screens/notifications.js?v=6739r52c91';
 
 const authGuard = renderer => () => { if(state.sessionToken)return renderer(); const route=currentRoute(); if(route&&route!=='auth')sessionStorage.setItem('kelasku_post_auth_route',route); return go('auth',{replace:true}); };
 
@@ -206,6 +206,7 @@ function applyRemoteConfig(config) {
   if (!config) return;
   state.remoteConfig = config;
   writeJson('kelasku_app_config_cache', config);
+  window.dispatchEvent(new CustomEvent('kelasku-config-updated'));
   const scale = Math.max(90, Math.min(125, Number(config.ui_text_scale || 100))) / 100;
   document.documentElement.style.setProperty('--kk-admin-text-scale', String(scale));
   document.documentElement.style.setProperty('--kk-admin-font-bump', `${Math.round((scale - 1) * 100) / 10}px`);

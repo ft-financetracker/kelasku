@@ -1,7 +1,7 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c9';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
 import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c75';

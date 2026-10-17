@@ -3,7 +3,7 @@ import { api } from '../core/api.js';
 import { esc, logo, svg, toast } from '../core/utils.js';
 import { go } from '../core/router.js';
 import { shouldShowAppSetup } from '../core/pwa.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
 
 let pendingAvatarDataUrl = '';
 let avatarRemove = false;

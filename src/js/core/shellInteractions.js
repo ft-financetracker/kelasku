@@ -1,19 +1,18 @@
-// C9: presentation and deliberate pull refresh only. No API, polling or router writes.
+// Shared shell lifecycle. No API, polling or router writes.
+import { navigationActiveRoute, DEFAULT_NAVIGATION } from './navigationConfig.js?v=6739r52c91';
 let releaseShell = null;
-let lastNavIndex = null;
+let releaseNavigation = null, navigationShell = null, lastNavRoute = null;
 const PULL_THRESHOLD = 60;
 const PULL_LIMIT = 84;
 
-export function bottomNavigationRoute(active = '') {
-  if (['classes','class','join','schedule','materials','announcements','attendance','attendance-link'].includes(active)) return 'classes';
-  if (active === 'tasks' || active === 'messages') return active;
-  if (['account','profile','settings','app-info'].includes(active) || String(active).startsWith('admin')) return 'account';
-  return 'dashboard';
+export function bottomNavigationRoute(active = '', ids = DEFAULT_NAVIGATION) {
+  return navigationActiveRoute(active, ids);
 }
 
 // Pixel geometry: a real transparent concave cradle, including the edge stations.
 export function navigationSurfacePath(width, height, center) {
   const w = Math.max(1, Number(width) || 400), h = Math.max(58, Number(height) || 72);
+  if (center === null) return `M 16 .5 H ${w-16} Q ${w-.5} .5 ${w-.5} 16 V ${h} H .5 V 16 Q .5 .5 16 .5 Z`;
   const x = Math.max(34, Math.min(w - 34, Number(center) || w / 2));
   const left = Math.max(0, x - 46), right = Math.min(w, x + 46);
   const corner = Math.max(0, Math.min(16, left, w - right));
@@ -27,8 +26,8 @@ function bindFloatingNavigation(shell) {
   const path = surface?.querySelector('path');
   const items = nav ? [...nav.querySelectorAll('.floating-nav-item')] : [];
   const index = items.findIndex(item => item.classList.contains('active'));
-  if (!path || index < 0) return () => {};
-  const hit = items[index].querySelector('.floating-nav-hit');
+  if (!path || !items.length) return () => {};
+  const hit = items[index]?.querySelector('.floating-nav-hit');
   let frame = 0, lastWidth = 0, lastHeight = 0;
   const reduced = () => document.documentElement.classList.contains('kk-mobile-safe-render') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const paint = (animate = false) => {
@@ -37,14 +36,16 @@ function bindFloatingNavigation(shell) {
     if (!box.width || !box.height) return;
     lastWidth = box.width; lastHeight = box.height;
     const center = i => { const r = items[i].getBoundingClientRect(); return r.left + r.width / 2 - box.left; };
-    const end = center(index), start = animate && lastNavIndex !== null ? center(lastNavIndex) : end;
+    const previous = items.findIndex(item => item.dataset.route === lastNavRoute);
+    const end = index < 0 ? null : center(index);
+    const start = animate && previous >= 0 && end !== null ? center(previous) : end;
     surface.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
     const draw = x => {
       path.setAttribute('d', navigationSurfacePath(box.width, box.height, x));
-      if (hit) hit.style.transform = `translateX(${Math.round((x-end)*100)/100}px)`;
+      if (hit && x !== null) hit.style.transform = `translateX(${Math.round((x-end)*100)/100}px)`;
     };
     draw(start);
-    lastNavIndex = index;
+    lastNavRoute = items[index]?.dataset.route || null;
     if (start === end || reduced()) { draw(end); return; }
     let started;
     const step = now => {
@@ -150,10 +151,20 @@ function bindPullRefresh(shell, options) {
 export function bindShellInteractions(shell, options = {}) {
   releaseShell?.(); releaseShell = null;
   if (!shell) return;
-  const releaseNav = bindFloatingNavigation(shell), releasePull = bindPullRefresh(shell,options);
+  refreshFloatingNavigation(shell);
+  const releasePull = bindPullRefresh(shell,options);
   const observer = typeof MutationObserver === 'function' ? new MutationObserver(() => { if (!shell.isConnected) release(); }) : null;
   const host = document.getElementById('app');
-  const release = () => { releaseNav(); releasePull(); observer?.disconnect(); if (releaseShell === release) releaseShell = null; };
+  const release = () => {
+    if (navigationShell === shell) { releaseNavigation?.(); releaseNavigation = null; navigationShell = null; }
+    releasePull(); observer?.disconnect(); if (releaseShell === release) releaseShell = null;
+  };
   if (host) observer?.observe(host,{childList:true});
   releaseShell = release;
+}
+
+export function refreshFloatingNavigation(shell) {
+  releaseNavigation?.();
+  navigationShell = shell;
+  releaseNavigation = shell ? bindFloatingNavigation(shell) : null;
 }

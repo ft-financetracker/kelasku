@@ -1,7 +1,7 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, fmtDate, toast, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
 import { openDeepLink } from '../core/router.js';
 
 let category='ALL';

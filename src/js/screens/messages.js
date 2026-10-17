@@ -1,7 +1,7 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
 import { compressImageFile, blobToDataUrl, formatBytes } from '../core/media.js';
