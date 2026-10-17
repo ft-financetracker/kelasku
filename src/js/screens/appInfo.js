@@ -1,5 +1,5 @@
 import { C, esc, svg, toast, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
 import { getAppSetupState, checkForAppUpdate, updateApp } from '../core/pwa.js';
 import { go } from '../core/router.js';
 

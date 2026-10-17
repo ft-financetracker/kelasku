@@ -3,7 +3,7 @@ import { api } from '../core/api.js';
 import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
-import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6739r52c9';
+import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6739r52c91';
 
 let carouselTimer = null;
 let carouselIndex = 0;

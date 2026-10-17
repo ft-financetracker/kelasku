@@ -1,7 +1,8 @@
 import { state } from './state.js';
 import { esc, svg, logo, toast } from './utils.js';
 import { go } from './router.js';
-import { bindShellInteractions, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6739r52c9';
+import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6739r52c91';
+import { navigationMenus } from './navigationConfig.js?v=6739r52c91';
 
 function unreadCount(type){const key=String(type||'').toUpperCase();return (state.notifications||[]).filter(n=>!n.read_at&&String(n.type||'SYSTEM').toUpperCase()===key).length;}
 function unreadAny(types=[]){const set=new Set(types.map(x=>String(x).toUpperCase()));return (state.notifications||[]).filter(n=>!n.read_at&&set.has(String(n.type||'SYSTEM').toUpperCase())).length;}
@@ -10,14 +11,13 @@ function signalForRoute(route){if(route==='schedule')return signalHtml(unreadCou
 export function refreshShellIndicators(){document.querySelectorAll('[data-route]').forEach(btn=>{const route=btn.dataset.route;const old=btn.querySelector('.nav-signal');if(old)old.remove();const html=signalForRoute(route);if(html)btn.insertAdjacentHTML('beforeend',html);});const bell=document.getElementById('notif-badge');if(bell){const n=(state.notifications||[]).filter(x=>!x.read_at).length;bell.textContent=n>99?'99+':String(n);bell.classList.toggle('hidden',!n);}}
 export function appShell(options = {}) {
   const active = options.active || 'dashboard';
-  const bottomActive = bottomNavigationRoute(active);
   const content = options.content || '';
   const searchPlaceholder = options.searchPlaceholder || 'Cari di KelasKu…';
   const admin = String(state.user?.global_role || '') === 'SUPER_ADMIN';
   const sidebarCollapsed = localStorage.getItem('kelasku_sidebar_collapsed') === '1';
 
   return `
-    <div class="dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}${active === 'class' ? ' room-shell' : ''}">
+    <div class="dashboard ${sidebarCollapsed ? 'sidebar-collapsed' : ''}${active === 'class' ? ' room-shell' : ''}" data-shell-active="${esc(active)}">
       <aside class="sidebar">
         <button type="button" class="sidebar-brand-toggle" id="sidebar-brand-toggle" aria-label="Ciutkan atau buka menu" title="Ciutkan / buka menu">${logo()}</button>
         <nav class="nav" aria-label="Navigasi utama">
@@ -51,14 +51,7 @@ ${logo(true)}
         <div class="dashboard-body">${content}</div>
       </main>
 
-      <nav class="bottom-nav bottom-nav-floating" aria-label="Navigasi bawah">
-        <svg class="floating-nav-surface" viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${navigationSurfacePath(400,72,12+(400-24)*([ 'classes','tasks','dashboard','messages','account' ].indexOf(bottomActive)+.5)/5)}"></path></svg>
-        ${bottomItem('i-class', 'Kelas', 'classes', bottomActive === 'classes')}
-        ${bottomItem('i-task', 'Tugas', 'tasks', bottomActive === 'tasks')}
-        ${bottomItem('i-home', 'Beranda', 'dashboard', bottomActive === 'dashboard')}
-        ${bottomItem('i-chat', 'Chat', 'messages', bottomActive === 'messages')}
-        ${bottomItem('i-user', 'Profil', 'account', bottomActive === 'account')}
-      </nav>
+      ${bottomNavigationHtml(active)}
     </div>`;
 }
 
@@ -69,6 +62,14 @@ export function bindAppShell(options = {}) {
     onError: error => toast(error?.message || 'Data belum dapat diperbarui. Coba lagi.') });
   refreshShellIndicators();
   if(!window.__kelaskuShellSignalBound){window.__kelaskuShellSignalBound=true;window.addEventListener('kelasku-notifications-updated',refreshShellIndicators);}
+  if (!window.__kelaskuNavigationConfigBound) {
+    window.__kelaskuNavigationConfigBound = true;
+    window.addEventListener('kelasku-config-updated', refreshShellNavigation);
+    window.addEventListener('storage', event => {
+      if (event.key !== 'kelasku_app_config_cache' || !event.newValue) return;
+      try { state.remoteConfig = JSON.parse(event.newValue); refreshShellNavigation(); } catch {}
+    });
+  }
   document.querySelectorAll('[data-route]').forEach(btn => {
     btn.onclick = () => handleRoute(btn.dataset.route);
   });
@@ -128,4 +129,26 @@ function sideItem(icon, label, route, active, homeCta = false) {
 function bottomItem(icon, label, route, active) {
   const cls = `bottom-item floating-nav-item ${active ? 'active' : ''}`;
   return `<button type="button" class="${cls}" data-route="${esc(route)}" ${active ? 'aria-current="page"' : ''} title="${esc(label)}" aria-label="${esc(label)}"><span class="floating-nav-hit">${svg(icon)}</span><span class="floating-nav-label">${esc(label)}</span>${signalForRoute(route)}</button>`;
+}
+
+export function bottomNavigationHtml(active, config = state.remoteConfig) {
+  const menus = navigationMenus(config), ids = menus.map(item => item.id);
+  const selected = bottomNavigationRoute(active, ids), index = ids.indexOf(selected);
+  const center = index < 0 ? null : 12 + 376 * (index + .5) / menus.length;
+  return `<nav class="bottom-nav bottom-nav-floating" data-navigation="c91" style="--nav-count:${menus.length}" aria-label="Navigasi bawah">
+    <svg class="floating-nav-surface" viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${navigationSurfacePath(400,72,center)}"></path></svg>
+    ${menus.map(item => bottomItem(item.icon, item.label, item.id, item.id === selected)).join('')}
+  </nav>`;
+}
+
+export function refreshShellNavigation() {
+  const shell = document.querySelector('.dashboard');
+  const nav = shell?.querySelector('.bottom-nav-floating');
+  if (!nav) return;
+  nav.outerHTML = bottomNavigationHtml(shell.dataset.shellActive || 'dashboard');
+  shell.querySelectorAll('.bottom-nav-floating [data-route]').forEach(button => {
+    button.onclick = () => handleRoute(button.dataset.route);
+  });
+  refreshFloatingNavigation(shell);
+  refreshShellIndicators();
 }
