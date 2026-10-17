@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { esc, svg, logo, toast } from './utils.js';
 import { go } from './router.js';
+import { bindShellInteractions, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6739r52c9';
 
 function unreadCount(type){const key=String(type||'').toUpperCase();return (state.notifications||[]).filter(n=>!n.read_at&&String(n.type||'SYSTEM').toUpperCase()===key).length;}
 function unreadAny(types=[]){const set=new Set(types.map(x=>String(x).toUpperCase()));return (state.notifications||[]).filter(n=>!n.read_at&&set.has(String(n.type||'SYSTEM').toUpperCase())).length;}
@@ -9,6 +10,7 @@ function signalForRoute(route){if(route==='schedule')return signalHtml(unreadCou
 export function refreshShellIndicators(){document.querySelectorAll('[data-route]').forEach(btn=>{const route=btn.dataset.route;const old=btn.querySelector('.nav-signal');if(old)old.remove();const html=signalForRoute(route);if(html)btn.insertAdjacentHTML('beforeend',html);});const bell=document.getElementById('notif-badge');if(bell){const n=(state.notifications||[]).filter(x=>!x.read_at).length;bell.textContent=n>99?'99+':String(n);bell.classList.toggle('hidden',!n);}}
 export function appShell(options = {}) {
   const active = options.active || 'dashboard';
+  const bottomActive = bottomNavigationRoute(active);
   const content = options.content || '';
   const searchPlaceholder = options.searchPlaceholder || 'Cari di KelasKu…';
   const admin = String(state.user?.global_role || '') === 'SUPER_ADMIN';
@@ -35,6 +37,7 @@ export function appShell(options = {}) {
       </aside>
 
       <main class="main">
+        <div class="shell-pull-status" role="status" aria-live="polite" hidden><span class="shell-pull-icon">${svg('i-refresh')}</span><span data-pull-label>Tarik untuk memperbarui</span></div>
         <div class="topbar">
 ${logo(true)}
           ${options.hideSearch ? '<div class="search-spacer"></div>' : `<button type="button" class="search search-button" id="shell-search">${esc(searchPlaceholder)}</button>`}
@@ -48,17 +51,22 @@ ${logo(true)}
         <div class="dashboard-body">${content}</div>
       </main>
 
-      <nav class="bottom-nav bottom-nav-minimal" aria-label="Navigasi bawah">
-        ${bottomMaterialItem('school', 'Kelas', 'classes', active === 'classes' || active === 'class')}
-        ${bottomMaterialItem('assignment_turned_in', 'Tugas', 'tasks', active === 'tasks')}
-        ${bottomMaterialItem('home', 'Beranda', 'dashboard', active === 'dashboard')}
-        ${bottomMaterialItem('chat_bubble', 'Chat', 'messages', active === 'messages')}
-        ${bottomMaterialItem('person', 'Profil', 'account', active === 'account' || active === 'settings' || active === 'app-info' || String(active).startsWith('admin'))}
+      <nav class="bottom-nav bottom-nav-floating" aria-label="Navigasi bawah">
+        <svg class="floating-nav-surface" viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${navigationSurfacePath(400,72,12+(400-24)*([ 'classes','tasks','dashboard','messages','account' ].indexOf(bottomActive)+.5)/5)}"></path></svg>
+        ${bottomItem('i-class', 'Kelas', 'classes', bottomActive === 'classes')}
+        ${bottomItem('i-task', 'Tugas', 'tasks', bottomActive === 'tasks')}
+        ${bottomItem('i-home', 'Beranda', 'dashboard', bottomActive === 'dashboard')}
+        ${bottomItem('i-chat', 'Chat', 'messages', bottomActive === 'messages')}
+        ${bottomItem('i-user', 'Profil', 'account', bottomActive === 'account')}
       </nav>
     </div>`;
 }
 
 export function bindAppShell(options = {}) {
+  const shell = document.querySelector('.dashboard'), owner = state.sessionToken;
+  bindShellInteractions(shell, { onRefresh: options.onRefresh, canRefresh: options.canRefresh,
+    isCurrent: () => state.sessionToken === owner && shell?.isConnected,
+    onError: error => toast(error?.message || 'Data belum dapat diperbarui. Coba lagi.') });
   refreshShellIndicators();
   if(!window.__kelaskuShellSignalBound){window.__kelaskuShellSignalBound=true;window.addEventListener('kelasku-notifications-updated',refreshShellIndicators);}
   document.querySelectorAll('[data-route]').forEach(btn => {
@@ -117,7 +125,7 @@ function sideItem(icon, label, route, active, homeCta = false) {
   return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}">${iconHtml}<span>${esc(label)}</span>${signalForRoute(route)}</button>`;
 }
 
-function bottomMaterialItem(symbol, label, route, active) {
-  const cls = `bottom-item bottom-material-item ${active ? 'active' : ''}`;
-  return `<button type="button" class="${cls}" data-route="${esc(route)}" title="${esc(label)}" aria-label="${esc(label)}"><span class="bottom-material-hit"><span class="material-symbols-rounded bottom-material-icon">${esc(symbol)}</span></span>${signalForRoute(route)}</button>`;
+function bottomItem(icon, label, route, active) {
+  const cls = `bottom-item floating-nav-item ${active ? 'active' : ''}`;
+  return `<button type="button" class="${cls}" data-route="${esc(route)}" ${active ? 'aria-current="page"' : ''} title="${esc(label)}" aria-label="${esc(label)}"><span class="floating-nav-hit">${svg(icon)}</span><span class="floating-nav-label">${esc(label)}</span>${signalForRoute(route)}</button>`;
 }

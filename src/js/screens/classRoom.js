@@ -3,10 +3,10 @@ import { loadClassAcademicData, loadAttendanceClassData, rememberAttendanceSessi
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c8';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c9';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c83';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c9';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6739r3';
 
@@ -37,6 +37,7 @@ const classAnalyticsSummaryAt = new Map();
 const classAnalyticsSummaryInFlight = new Map();
 let classWarmTimer = null;
 const classWarmAt = new Map();
+let roomCacheOwner = '';
 
 function cacheFresh(atMap, classId, ttl) {
   return Date.now() - Number(atMap?.[classId] || 0) < ttl;
@@ -80,6 +81,10 @@ function scheduleClassWarmup(classId) {
 }
 
 export function renderClassRoom() {
+  if (roomCacheOwner !== state.sessionToken) {
+    classAnalyticsSummaryCache.clear(); classAnalyticsSummaryAt.clear();
+    roomCacheOwner = state.sessionToken;
+  }
   const classId = state.selectedClassId || sessionStorage.getItem('kelasku_selected_class') || '';
   if (!classId) { go('classes'); return; }
   state.selectedClassId = classId;
@@ -87,12 +92,13 @@ export function renderClassRoom() {
   currentClassData = cached;
 
   const content = `<div class="class-room-page">
-    <div class="page-head class-room-head"><div><h1>Ruang Kelas</h1></div><button id="back-classes" class="btn btn-secondary class-room-back-btn">${svg('i-back')} Kembali</button></div>
+    <div class="page-head class-room-head"><div><h1>Ruang Kelas</h1></div><div class="page-actions"><button type="button" id="room-refresh" class="icon-btn room-refresh-button" title="Perbarui bagian ini" aria-label="Perbarui bagian Ruang Kelas">${svg('i-refresh')}</button><button id="back-classes" class="btn btn-secondary class-room-back-btn">${svg('i-back')} Kembali</button></div></div>
     <div id="class-room-slot">${cached ? '' : roomSkeleton()}</div>
   </div>`;
 
   document.getElementById('app').innerHTML = appShell({ active: 'class', content, hideSearch: true });
-  bindAppShell();
+  bindAppShell({onRefresh:refreshCurrentRoom,canRefresh:()=>activeTab!=='settings'&&!document.getElementById('room-refresh')?.disabled});
+  document.getElementById('room-refresh').onclick = () => refreshCurrentRoom().catch(err => toast(err.message));
   document.getElementById('back-classes').onclick = () => go('classes');
   timelineCategory = 'ALL';
   activeTab = sessionStorage.getItem('kelasku_class_tab') || 'overview';
@@ -101,40 +107,65 @@ export function renderClassRoom() {
   loadClassDetail(Boolean(cached));
 }
 
-async function loadClassDetail(background = false, force = false) {
+async function loadClassDetail(background = false, force = false, reportErrors = false) {
   const classId = String(state.selectedClassId || '');
+  const owner = state.sessionToken, key = `${owner || ''}::${classId}`;
   const slot = document.getElementById('class-room-slot');
   const cached = state.classDetails[classId];
   if (!force && cached && cacheFresh(state.classDetailsAt, classId, CLASS_DETAIL_TTL_MS)) return cached;
-  if (classDetailInFlight.has(classId)) return classDetailInFlight.get(classId);
+  if (classDetailInFlight.has(key)) return classDetailInFlight.get(key);
 
   const request = (async () => {
     try {
       const data = await api('getClassDetail', { class_id: classId });
+      if (state.sessionToken !== owner) return null;
       syncClassHeroCache(data,{authoritative:true});
       syncPublicLandingAppearanceCache(data);
       const previous = state.classDetails[classId];
       const changed = !sameData(previous, data);
       persistClassCache('classDetails','classDetailsAt','kelasku_class_details_cache','kelasku_class_details_cache_at',classId,data);
-      if (String(state.selectedClassId) === classId) {
+      if (String(state.selectedClassId) === classId && document.getElementById('class-room-slot')) {
         currentClassData = data;
         if (changed || !background) drawClass(data, true);
       }
       return data;
     } catch (err) {
-      if (!background && !cached && slot && String(state.selectedClassId) === classId) {
+      if (reportErrors) throw err;
+      if (!background && !cached && slot?.isConnected && state.sessionToken === owner && String(state.selectedClassId) === classId) {
         slot.innerHTML = `<div class="panel error-panel"><strong>Kelas gagal dimuat.</strong><p>${esc(err.message)}</p><button class="btn btn-secondary" id="back-error">Kembali ke Kelas</button></div>`;
         document.getElementById('back-error').onclick = () => go('classes');
       }
       return cached || null;
     } finally {
-      classDetailInFlight.delete(classId);
+      classDetailInFlight.delete(key);
     }
   })();
-  classDetailInFlight.set(classId, request);
+  classDetailInFlight.set(key, request);
   return request;
 }
 
+
+const roomRefreshInFlight = new Map();
+async function refreshCurrentRoom() {
+  if (activeTab === 'settings') { toast('Simpan atau batalkan perubahan pengaturan sebelum memperbarui.'); return; }
+  const button = document.getElementById('room-refresh'), tab = activeTab;
+  const key = `${state.sessionToken || ''}::${state.selectedClassId || ''}::${tab}`;
+  if (roomRefreshInFlight.has(key)) return roomRefreshInFlight.get(key);
+  if (button) { button.disabled = true; button.classList.add('is-loading'); }
+  const request = (async () => {
+    try {
+      if (['announcements','schedule','tasks','materials','attendance'].includes(tab)) return await loadClassAcademic(false,true,true);
+      if (tab === 'timeline') return await loadClassTimeline(false,true,true);
+      if (tab === 'analytics') return await (document.querySelector('.analytics-detail-panel') ? loadClassAnalytics(false,true,true) : loadClassAnalyticsSummary(false,true,true));
+      return await loadClassDetail(false,true,true);
+    } finally {
+      if (button?.isConnected) { button.disabled = false; button.classList.remove('is-loading'); }
+    }
+  })();
+  roomRefreshInFlight.set(key,request);
+  request.finally(() => { if (roomRefreshInFlight.get(key) === request) roomRefreshInFlight.delete(key); }).catch(() => {});
+  return request;
+}
 
 function classIconKey(data){
   return String(data?.class?.icon_key || data?.appearance?.icon_key || 'school').trim() || 'school';
@@ -163,9 +194,9 @@ function drawClass(data, preserveTab = true) {
       </picture>
       <div class="class-hero-shade-v6725" aria-hidden="true"></div>
       <div class="class-hero-main class-hero-copy-v6725 class-hero-copy-v6728">
-        <h2>${esc(c.name)}</h2>
+        <h2 title="${esc(c.name)}">${esc(c.name)}</h2>
         <div class="class-primary-meta class-hero-subtitle"><span>${esc(c.institution || 'KelasKu')}</span>${c.study_program?`<span>${esc(c.study_program)}</span>`:''}${c.cohort?`<span>Angkatan ${esc(c.cohort)}</span>`:''}${c.semester?`<span>${esc(c.semester)}</span>`:''}</div>
-        <p class="class-hero-description">${esc(c.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
+        <p class="class-hero-description" title="${esc(c.description || '')}">${esc(c.description || 'Belajar dan berdiskusi bersama dalam satu ruang.')}</p>
         <div class="class-hero-mobile-rule-v6720 class-hero-rule-v6725 class-hero-rule-v6728" aria-hidden="true"></div>
         <div class="class-hero-bottomline">
           <div class="class-secondary-meta"><span>Class</span><span class="visibility-badge visibility-${String(c.visibility||'DISCOVERABLE').toLowerCase()}">${esc(c.visibility || 'DISCOVERABLE')}</span></div>
@@ -364,7 +395,7 @@ function switchTab(tab, data) {
   bindTab(tab, data);
 }
 
-async function loadClassAcademic(background = false, force = false) {
+async function loadClassAcademic(background = false, force = false, reportErrors = false) {
   const classId = String(state.selectedClassId || '');
   const cached = state.classAcademic[classId], owner = state.sessionToken;
   const key = `${owner || ''}::${classId}`, source = activeTab==='attendance' ? loadAttendanceClassData(classId,{ force }) : loadClassAcademicData(classId,{ force });
@@ -381,6 +412,7 @@ async function loadClassAcademic(background = false, force = false) {
       }
       return data;
     } catch (err) {
+      if (reportErrors) throw err;
       if (err.code !== 'CLASS_DATA_CHANGED' && state.sessionToken===owner && !background && !cached && ['announcements','schedule','tasks','materials','attendance'].includes(activeTab) && String(state.selectedClassId) === classId) {
         document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Data akademik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
       }
@@ -438,26 +470,29 @@ function drawAcademicTab(tab, data) {
   bindAcademicTab(tab, data);
 }
 
-async function loadClassTimeline(background=false) {
+async function loadClassTimeline(background=false,force=false,reportErrors=false) {
   const classId=String(state.selectedClassId||'');
+  const owner=state.sessionToken;
   const category=String(timelineCategory||'ALL');
-  const key=`${classId}:${category}`;
+  const key=`${owner || ''}::${classId}:${category}`;
   const cached=state.classTimeline[classId];
   const freshAll = category === 'ALL' && cached && (Date.now() - Number(state.classTimelineAt?.[classId] || 0) < 60000);
-  if (freshAll) return cached;
+  if (!force && freshAll) return cached;
   if(classTimelineInFlight.has(key))return classTimelineInFlight.get(key);
   const request=(async()=>{
     try {
       const data = await api('getClassTimeline',{class_id:classId,category,limit:60});
+      if(state.sessionToken!==owner)return null;
       const previous = state.classTimeline[classId];
       const changed = !sameData(previous, data);
       if(String(state.selectedClassId)===classId && String(timelineCategory)===category){
         state.classTimeline[classId] = data;
         state.classTimelineAt[classId]=Date.now();
-        if ((changed || !background) && activeTab === 'timeline') drawTimeline(data);
+        if ((changed || !background) && activeTab === 'timeline' && document.getElementById('room-content')) drawTimeline(data);
       }
       return data;
     } catch (err) {
+      if(reportErrors)throw err;
       if (!background && !cached && activeTab === 'timeline' && String(state.selectedClassId)===classId) {
         document.getElementById('room-content').innerHTML = `<div class="panel error-panel"><strong>Timeline gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
       }
@@ -1052,27 +1087,30 @@ async function saveAttendance(event,attendanceId){event.preventDefault();const b
 
 
 
-async function loadClassAnalyticsSummary(background=false,force=false){
+async function loadClassAnalyticsSummary(background=false,force=false,reportErrors=false){
   const classId=String(state.selectedClassId||'');
+  const owner=state.sessionToken,key=`${owner || ''}::${classId}`;
   const cached=classAnalyticsSummaryCache.get(classId)||null;
   if(!force&&cached&&Date.now()-Number(classAnalyticsSummaryAt.get(classId)||0)<45000)return cached;
-  if(classAnalyticsSummaryInFlight.has(classId))return classAnalyticsSummaryInFlight.get(classId);
+  if(classAnalyticsSummaryInFlight.has(key))return classAnalyticsSummaryInFlight.get(key);
   const request=(async()=>{
     try{
       const data=await api('getAttendanceAnalyticsSummary',{class_id:classId});
+      if(state.sessionToken!==owner)return null;
       classAnalyticsSummaryCache.set(classId,data);
       classAnalyticsSummaryAt.set(classId,Date.now());
       if(String(state.selectedClassId)===classId&&activeTab==='analytics'&&!background)drawClassAnalyticsSummary(data);
       if(String(state.selectedClassId)===classId&&activeTab==='analytics'&&background)drawClassAnalyticsSummary(data);
       return data;
     }catch(err){
+      if(reportErrors)throw err;
       if(!background&&!cached&&activeTab==='analytics'&&String(state.selectedClassId)===classId){
         document.getElementById('room-content').innerHTML=`<div class="panel error-panel"><strong>Ringkasan Analitik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
       }
       return cached||null;
-    }finally{classAnalyticsSummaryInFlight.delete(classId);}
+    }finally{classAnalyticsSummaryInFlight.delete(key);}
   })();
-  classAnalyticsSummaryInFlight.set(classId,request);
+  classAnalyticsSummaryInFlight.set(key,request);
   return request;
 }
 function analyticsRate_(counter={}){
@@ -1099,9 +1137,9 @@ function drawClassAnalyticsSummary(data){
       <div class="analytics-quick-copy">
         <span class="analytics-quick-eyebrow">ANALITIK KELAS</span>
         <h2>Ringkasan cepat</h2>
-        <p>Informasi inti dimuat lebih ringan. Detail lengkap hanya diambil saat dibutuhkan.</p>
+        <p>Ringkasan sesi dan kehadiran kelas.</p>
       </div>
-      <button type="button" id="open-analytics-detail" class="btn btn-primary analytics-detail-cta"><span class="material-symbols-rounded">insights</span> Buka Analitik Lengkap</button>
+      <button type="button" id="open-analytics-detail" class="btn btn-primary analytics-detail-cta" aria-label="Buka Analitik Lengkap"><span class="material-symbols-rounded" aria-hidden="true">insights</span><span class="analytics-detail-full">Buka Analitik Lengkap</span><span class="analytics-detail-short" aria-hidden="true">Detail</span></button>
     </div>
     <div class="analytics-quick-kpis">
       <article><span class="material-symbols-rounded">event_note</span><div><small>Total Sesi</small><strong>${Number(data.session_count||0)}</strong><em>jadwal presensi aktif</em></div></article>
@@ -1125,7 +1163,7 @@ function drawClassAnalyticsSummary(data){
   });
 }
 
-async function loadClassAnalytics(background=false,force=false){
+async function loadClassAnalytics(background=false,force=false,reportErrors=false){
   const classId=String(state.selectedClassId||'');
   const cached=state.classAnalytics[classId];
   if(!force&&cached&&Date.now()-Number(state.classAnalyticsAt?.[classId]||0)<60000)return cached;
@@ -1138,6 +1176,7 @@ async function loadClassAnalytics(background=false,force=false){
       if(String(state.selectedClassId)===classId&&(changed||!background)&&activeTab==='analytics')drawClassAnalytics(data);
       return data;
     }catch(err){
+      if(reportErrors)throw err;
       if(!background&&!cached&&activeTab==='analytics'&&String(state.selectedClassId)===classId)document.getElementById('room-content').innerHTML=`<div class="panel error-panel"><strong>Analitik gagal dimuat.</strong><p>${esc(err.message)}</p></div>`;
       return cached||null;
     }finally{classAnalyticsInFlight.delete(classId);}

@@ -1,13 +1,13 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c9';
 import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
 import { go } from '../core/router.js';
 import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c75';
 import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c75';
 import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c75';
-import { prefetchMyClasses } from './classes.js?v=6739r52c83';
+import { prefetchMyClasses } from './classes.js?v=6739r52c9';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
@@ -72,7 +72,7 @@ function renderAcademicShell(title, copy, active, icon) {
     <div id="academic-slot" ${attendance ? 'role="tabpanel" aria-labelledby="att-tab-sessions"' : ''}>${state.academicHub ? '' : academicSkeleton()}</div>`;
 
   document.getElementById('app').innerHTML = appShell({ active, content:attendance ? `<section class="attendance-v2">${content}</section>` : content, hideSearch:true });
-  bindAppShell();
+  bindAppShell({onRefresh:refreshCurrentAcademic});
   bindAcademicToolbar();
   if (attendance) bindAcademicRows();
   if (state.academicHub) drawAcademicScreen(state.academicHub);
@@ -80,6 +80,11 @@ function renderAcademicShell(title, copy, active, icon) {
 }
 
 function resetAcademicPages(){scheduleListPage=1;taskListPage=1;materialListPage=1;announcementListPage=1;resetAttendancePages();}
+async function refreshCurrentAcademic() {
+  if (activeAcademicScreen !== 'attendance') return loadAcademicHub(true);
+  if (!state.academicHub) await loadAcademicHub(true);
+  return attendanceIsReportView() ? refreshAttendanceReport(true) : refreshAttendanceSessions(true);
+}
 function pageSlice(items,page,size=ACADEMIC_PAGE_SIZE){const total=Math.max(1,Math.ceil(items.length/size));const safe=Math.min(Math.max(1,page),total);return{page:safe,totalPages:total,total:items.length,items:items.slice((safe-1)*size,safe*size)};}
 function academicPager(kind,page,totalPages,total){if(totalPages<=1)return '';return `<div class="table-pagination academic-pagination"><span>${total} item • Halaman ${page}/${totalPages}</span><div><button type="button" data-academic-page-kind="${kind}" data-academic-page="${Math.max(1,page-1)}" ${page<=1?'disabled':''}>‹</button><button type="button" class="active">${page}</button><button type="button" data-academic-page-kind="${kind}" data-academic-page="${Math.min(totalPages,page+1)}" ${page>=totalPages?'disabled':''}>›</button></div></div>`;}
 function bindAcademicToolbar() {
