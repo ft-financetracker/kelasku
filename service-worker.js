@@ -2,7 +2,7 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.39-b339-r52-cleaning-c8-2-compact-list';
+const CACHE_NAME = 'kelasku-v6.7.39-b339-r52-cleaning-c8-3-card-polish';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -21,9 +21,9 @@ const APP_SHELL = [
   '/src/css/attendance.css',
   '/src/css/attendance.css?v=6739r52c75',
   '/src/css/classes.css',
-  '/src/css/classes.css?v=6739r52c82',
+  '/src/css/classes.css?v=6739r52c83',
   '/src/js/app.js',
-  '/src/js/app.js?v=6739r52c82',
+  '/src/js/app.js?v=6739r52c83',
   '/src/js/core/state.js',
   '/src/js/core/storage.js',
   '/src/js/core/utils.js',
@@ -43,7 +43,7 @@ const APP_SHELL = [
   '/src/js/screens/setup.js',
   '/src/js/screens/dashboard.js',
   '/src/js/screens/academic.js',
-  '/src/js/screens/academic.js?v=6739r52c82',
+  '/src/js/screens/academic.js?v=6739r52c83',
   '/src/js/screens/classAcademicData.js',
   '/src/js/screens/classAcademicData.js?v=6739r52c75',
   '/src/js/screens/attendanceAnalytics.js',
@@ -53,11 +53,11 @@ const APP_SHELL = [
   '/src/js/screens/account.js',
   '/src/js/screens/settings.js',
   '/src/js/screens/classes.js',
-  '/src/js/screens/classes.js?v=6739r52c82',
+  '/src/js/screens/classes.js?v=6739r52c83',
   '/src/js/screens/classDirectory.js',
-  '/src/js/screens/classDirectory.js?v=6739r52c82',
+  '/src/js/screens/classDirectory.js?v=6739r52c83',
   '/src/js/screens/classRoom.js',
-  '/src/js/screens/classRoom.js?v=6739r52c82',
+  '/src/js/screens/classRoom.js?v=6739r52c83',
   '/src/js/screens/admin.js',
   '/src/js/screens/appInfo.js',
   '/src/js/screens/attendanceLanding.js',
