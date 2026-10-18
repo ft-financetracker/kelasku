@@ -1,8 +1,8 @@
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, semverCmp, C, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
-import { applyPreferences, previewPreferences } from '../core/preferences.js';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
+import { applyPreferences, previewPreferences } from '../core/preferences.js?v=6739r52c93';
 import { go } from '../core/router.js';
 import { getAppSetupState, installPWA, enableNotifications, updateApp, checkForAppUpdate } from '../core/pwa.js';
 

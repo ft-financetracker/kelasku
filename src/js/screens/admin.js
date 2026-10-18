@@ -1,9 +1,10 @@
+import { receiveAppConfig } from '../core/configSync.js?v=6739r52c93';
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
 import { go } from '../core/router.js';
-import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6739r52c91';
+import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6739r52c93';
 
 let overview = state.adminOverview || null;
 let overviewAt = overview ? Date.now() : 0;
@@ -346,9 +347,7 @@ async function saveConfig(event) {
 
   try {
     const data = await api('adminUpdateAppConfig', { values }, { onSlow: () => status.textContent = 'Masih diproses. Jangan klik dua kali.' });
-    state.remoteConfig = data.config;
-    localStorage.setItem('kelasku_app_config_cache', JSON.stringify(data.config));
-    window.dispatchEvent(new CustomEvent('kelasku-config-updated'));
+    receiveAppConfig(data.config);
     const uiScale=Math.max(90,Math.min(125,Number(data.config?.ui_text_scale||100)))/100;
     document.documentElement.style.setProperty('--kk-admin-text-scale', String(uiScale));
     document.documentElement.style.setProperty('--kk-admin-font-bump', `${Math.round((uiScale-1)*100)/10}px`);

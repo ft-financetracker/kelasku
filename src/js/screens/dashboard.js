@@ -3,7 +3,8 @@ import { api } from '../core/api.js';
 import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js';
 import { showSystemNotification, updateApp } from '../core/pwa.js';
 import { go, currentRoute, openDeepLink } from '../core/router.js';
-import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6739r52c91';
+import { startShellUpdates, refreshShellUpdates } from '../core/shellUpdates.js?v=6739r52c93';
+import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6739r52c93';
 
 let carouselTimer = null;
 let carouselIndex = 0;
@@ -11,7 +12,6 @@ let carouselPhysicalIndex = 1;
 let carouselMoving = false;
 let updateEventHandler = null;
 let notificationEventHandler = null;
-let notificationPollBound = false;
 let dashboardAttendanceHydrateTimer = null;
 
 export function renderDashboard() {
@@ -297,36 +297,12 @@ async function toggleNotifications() {
   fetchNotifications(false).catch(err => console.warn('Notification refresh:', err));
 }
 
-const SYSTEM_NOTIFIED_KEY='kelasku_system_notified_ids_v1';
-function readSystemNotifiedIds(){try{return new Set(JSON.parse(localStorage.getItem(SYSTEM_NOTIFIED_KEY)||'[]').map(String));}catch{return new Set();}}
-function rememberSystemNotifiedIds(ids){try{const list=[...ids].slice(-240);localStorage.setItem(SYSTEM_NOTIFIED_KEY,JSON.stringify(list));}catch{}}
-function recentNotification(n,maxAgeMs=12*60*60*1000){const t=new Date(n?.created_at||0).getTime();return Number.isFinite(t)&&t>0&&(Date.now()-t)<=maxAgeMs;}
-
 async function fetchNotifications(showSystem) {
-  if (!state.sessionToken) return;
-  try {
-    const data = await api('getNotifications', { limit: 20 });
-    state.notifications = data.items || [];
-    localStorage.setItem('kelasku_notification_cache', JSON.stringify(state.notifications));
-    window.dispatchEvent(new CustomEvent('kelasku-notifications-updated',{detail:{items:state.notifications}}));
-
-    const unread = state.notifications.filter(n => !n.read_at);
-    refreshNotificationSummary(unread.length);
-
-    if (showSystem && 'Notification' in window && Notification.permission === 'granted') {
-      const notified=readSystemNotifiedIds();
-      const fresh=unread.filter(n=>recentNotification(n)&&!notified.has(String(n.notification_id))).slice(0,3);
-      for (const n of fresh) {
-        await showSystemNotification(n.title, n.body, n.deep_link || 'dashboard', n.notification_id);
-        notified.add(String(n.notification_id));
-      }
-      if(fresh.length)rememberSystemNotifiedIds(notified);
-    }
-
-    renderNotificationDrawer();
-  } catch (err) {
-    console.warn('Notification:', err);
-  }
+  const owner = state.sessionToken;
+  const data = await refreshShellUpdates({showSystem, force:!showSystem});
+  if (!data || state.sessionToken !== owner) return;
+  refreshNotificationSummary((state.notifications || []).filter(item => !item.read_at).length);
+  renderNotificationDrawer();
 }
 
 function renderNotificationDrawer() {
@@ -386,20 +362,7 @@ async function markNotification(id) {
 }
 
 export function startNotificationPolling() {
-  if (!state.sessionToken) return;
-  if (!notificationPollBound) {
-    notificationPollBound = true;
-    const refresh = () => { if (state.sessionToken && navigator.onLine) fetchNotifications(true); };
-    window.addEventListener('focus', refresh);
-    window.addEventListener('online', refresh);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
-  }
-  // Cache state dipakai sebagai oldIds, sehingga hanya item baru yang memunculkan notifikasi sistem.
-  fetchNotifications(true);
-  if (state.notificationTimer) return;
-  state.notificationTimer = setInterval(() => {
-    if (state.sessionToken && navigator.onLine) fetchNotifications(true);
-  }, Number(state.remoteConfig?.notification_poll_ms || C.NOTIFICATION_POLL_MS || 60000));
+  startShellUpdates();
 }
 
 export async function logoutFromDashboard() {

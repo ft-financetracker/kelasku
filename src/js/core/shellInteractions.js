@@ -1,7 +1,8 @@
 // Shared shell lifecycle. No API, polling or router writes.
-import { navigationActiveRoute, DEFAULT_NAVIGATION } from './navigationConfig.js?v=6739r52c91';
+import { navigationActiveRoute, DEFAULT_NAVIGATION } from './navigationConfig.js?v=6739r52c93';
 let releaseShell = null;
-let releaseNavigation = null, navigationShell = null, lastNavRoute = null;
+let navigationController = null;
+let interactionShell = null, interactionOptions = null;
 const PULL_THRESHOLD = 60;
 const PULL_LIMIT = 84;
 
@@ -20,49 +21,49 @@ export function navigationSurfacePath(width, height, center) {
   return `M ${n(corner)} .5 H ${n(left)} C ${n(x-35)} .5 ${n(x-34)} 5 ${n(x-32)} 13 C ${n(x-28)} 33 ${n(x-18)} 44 ${n(x)} 44 C ${n(x+18)} 44 ${n(x+28)} 33 ${n(x+32)} 13 C ${n(x+34)} 5 ${n(x+35)} .5 ${n(right)} .5 H ${n(w-corner)} Q ${n(w-.5)} .5 ${n(w-.5)} ${n(corner)} V ${n(h)} H .5 V ${n(corner)} Q .5 .5 ${n(corner)} .5 Z`;
 }
 
-function bindFloatingNavigation(shell) {
-  const nav = shell.querySelector('.bottom-nav-floating');
-  const surface = nav?.querySelector('.floating-nav-surface');
-  const path = surface?.querySelector('path');
-  const items = nav ? [...nav.querySelectorAll('.floating-nav-item')] : [];
-  const index = items.findIndex(item => item.classList.contains('active'));
-  if (!path || !items.length) return () => {};
-  const hit = items[index]?.querySelector('.floating-nav-hit');
-  let frame = 0, lastWidth = 0, lastHeight = 0;
-  const reduced = () => document.documentElement.classList.contains('kk-mobile-safe-render') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const paint = (animate = false) => {
-    cancelAnimationFrame(frame);
+function createNavigationController(nav) {
+  let frame = 0, currentX = null, targetX = null, width = 0, height = 0, disposed = false, lastPath = null, lastIndicator = null;
+  const reduced = () => Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const update = (resize = false) => {
+    if (disposed || !nav.isConnected) return;
     const box = nav.getBoundingClientRect();
     if (!box.width || !box.height) return;
-    lastWidth = box.width; lastHeight = box.height;
-    const center = i => { const r = items[i].getBoundingClientRect(); return r.left + r.width / 2 - box.left; };
-    const previous = items.findIndex(item => item.dataset.route === lastNavRoute);
-    const end = index < 0 ? null : center(index);
-    const start = animate && previous >= 0 && end !== null ? center(previous) : end;
-    surface.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
+    const surface = nav.querySelector('.floating-nav-surface'), path = surface?.querySelector('path');
+    const indicator = nav.querySelector('.floating-nav-indicator');
+    const active = nav.querySelector('.floating-nav-item.active');
+    if (!surface || !path) return;
+    const activeBox = active?.getBoundingClientRect();
+    const end = activeBox ? activeBox.left + activeBox.width/2 - box.left : null;
+    const resized = Math.abs(width-box.width)>.5 || Math.abs(height-box.height)>.5;
+    const sameTarget = end === targetX && !resized && lastPath === path && lastIndicator === indicator;
+    if (sameTarget && (frame || currentX === end)) return;
+    cancelAnimationFrame(frame); frame = 0;
+    width = box.width; height = box.height; targetX = end; lastPath = path; lastIndicator = indicator;
+    surface.setAttribute('viewBox',`0 0 ${width} ${height}`);
     const draw = x => {
-      path.setAttribute('d', navigationSurfacePath(box.width, box.height, x));
-      if (hit && x !== null) hit.style.transform = `translateX(${Math.round((x-end)*100)/100}px)`;
+      currentX = x;
+      path.setAttribute('d',navigationSurfacePath(width,height,x));
+      if (indicator && x !== null) indicator.style.transform = `translate3d(${Math.round((x-26)*100)/100}px,0,0)`;
     };
-    draw(start);
-    lastNavRoute = items[index]?.dataset.route || null;
-    if (start === end || reduced()) { draw(end); return; }
-    let started;
+    if (end === null || currentX === null || currentX === end || resize || resized || reduced()) { draw(end); return; }
+    const start = currentX, began = performance.now();
     const step = now => {
-      if (!nav.isConnected) return;
-      started ??= now;
-      const t = Math.min(1, (now-started)/220), eased = 1-Math.pow(1-t,3);
-      draw(start+(end-start)*eased);
-      if (t < 1) frame = requestAnimationFrame(step);
+      frame = 0;
+      if (disposed || !nav.isConnected) return;
+      const progress = Math.min(1,Math.max(0,(now-began)/220));
+      draw(start + (end-start)*(1-Math.pow(1-progress,3)));
+      if (progress < 1) frame = requestAnimationFrame(step);
     };
     frame = requestAnimationFrame(step);
   };
-  paint(true);
-  const resized = () => { const box = nav.getBoundingClientRect(); if (Math.abs(box.width-lastWidth)>.5 || Math.abs(box.height-lastHeight)>.5) paint(); };
+  const resized = () => update(true);
   const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(resized) : null;
   observer?.observe(nav);
-  window.addEventListener('resize', resized, {passive:true});
-  return () => { cancelAnimationFrame(frame); observer?.disconnect(); window.removeEventListener('resize', resized); };
+  window.addEventListener('resize',resized,{passive:true});
+  const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const motionChanged = () => update(true);
+  media?.addEventListener?.('change',motionChanged);
+  return {nav,update,dispose(){disposed=true;cancelAnimationFrame(frame);observer?.disconnect();window.removeEventListener('resize',resized);media?.removeEventListener?.('change',motionChanged);}};
 }
 
 function bindPullRefresh(shell, options) {
@@ -149,22 +150,32 @@ function bindPullRefresh(shell, options) {
 }
 
 export function bindShellInteractions(shell, options = {}) {
+  if (shell && interactionShell === shell) {
+    Object.assign(interactionOptions, options);
+    refreshFloatingNavigation(shell);
+    return;
+  }
   releaseShell?.(); releaseShell = null;
   if (!shell) return;
+  interactionShell = shell; interactionOptions = options;
   refreshFloatingNavigation(shell);
   const releasePull = bindPullRefresh(shell,options);
   const observer = typeof MutationObserver === 'function' ? new MutationObserver(() => { if (!shell.isConnected) release(); }) : null;
   const host = document.getElementById('app');
   const release = () => {
-    if (navigationShell === shell) { releaseNavigation?.(); releaseNavigation = null; navigationShell = null; }
-    releasePull(); observer?.disconnect(); if (releaseShell === release) releaseShell = null;
+    if (navigationController && !navigationController.nav.isConnected) { navigationController.dispose(); navigationController = null; }
+    releasePull(); observer?.disconnect(); if (releaseShell === release) { releaseShell = null; interactionShell = null; interactionOptions = null; }
   };
   if (host) observer?.observe(host,{childList:true});
   releaseShell = release;
 }
 
 export function refreshFloatingNavigation(shell) {
-  releaseNavigation?.();
-  navigationShell = shell;
-  releaseNavigation = shell ? bindFloatingNavigation(shell) : null;
+  const nav = shell?.querySelector('.bottom-nav-floating');
+  if (!nav) return;
+  if (navigationController?.nav !== nav) {
+    navigationController?.dispose();
+    navigationController = createNavigationController(nav);
+  }
+  navigationController.update();
 }

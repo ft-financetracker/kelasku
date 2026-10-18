@@ -1,7 +1,7 @@
 import { state, clearSession } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
 import { go } from '../core/router.js';
 import { confirmDialog } from '../core/dialog.js';
 

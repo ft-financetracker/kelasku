@@ -3,7 +3,7 @@ import { writeBool } from '../core/storage.js';
 import { state } from '../core/state.js';
 import { go } from '../core/router.js';
 import { api } from '../core/api.js';
-import { applyPreferences } from '../core/preferences.js';
+import { applyPreferences } from '../core/preferences.js?v=6739r52c93';
 
 const slides = [
   { icon: 'i-mega', eyebrow: 'Informasi', title: 'Semua Informasi dalam <span class="accent">Satu Tempat</span>', copy: 'Jadwal, pengumuman, materi, dan informasi kelas lebih mudah ditemukan.' },
