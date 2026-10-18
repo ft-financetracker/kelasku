@@ -22,9 +22,10 @@ export function applyPreferences(settings = state.settings, options = {}) {
   root.dataset.textSize = String(settings.text_size || 'NORMAL').toLowerCase();
   root.dataset.density = String(settings.density || 'COMFORTABLE').toLowerCase();
   root.style.colorScheme = effectiveTheme === 'LIGHT' ? 'light' : 'dark';
+  root.style.backgroundColor = effectiveTheme === 'LIGHT' ? '#E7DBCC' : '#06142F';
 
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', effectiveTheme === 'LIGHT' ? '#F4FAFF' : '#0B132B');
+  if (meta) meta.setAttribute('content', effectiveTheme === 'LIGHT' ? '#E7DBCC' : '#0B132B');
 
   bindSystemTheme();
   return effectiveTheme;

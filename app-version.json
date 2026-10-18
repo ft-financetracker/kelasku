@@ -1,8 +1,8 @@
 {
   "version": "6.7.39",
-  "build": "20260930.339",
+  "build": "20261018.394",
   "schema": 17,
-  "release_date": "2026-09-30",
-  "release_note": "Landing Link Cepat mempertahankan 2 kategori per baris; submenu kini terbuka full-width sebagai row-list compact tanpa kolom kanan kosong atau card tinggi.",
-  "release_time_wib": "08:35 WIB"
+  "release_date": "2026-10-18",
+  "release_note": "C9.3.1: Pengajar/Pengamat dikecualikan konsisten dari rekap dan ekspor; cache diperbarui saat perubahan role. Memuat anggota-absensi, Soft Mocha dan navbar C9.2.",
+  "release_time_wib": "20:12 WIB"
 }

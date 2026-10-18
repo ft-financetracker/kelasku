@@ -237,7 +237,7 @@
 .attendance-v2 .att-form-submit:disabled{opacity:.6;cursor:wait}
 .attendance-v2 .att-form-submit .att-icon{width:18px;height:18px}
 .attendance-v2 .att-form-help{margin:0;font-size:10px;line-height:1.6;color:var(--att-muted);text-align:center}
-html[data-theme="light"] .attendance-v2 .att-form-note input{background:#fff}
+html[data-theme="light"] .attendance-v2 .att-form-note input{background:var(--mocha-card)}
 html[data-theme="light"] .attendance-v2 .att-form-message.is-error{color:#b52d49}
 .attendance-v2 .att-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:1200px){
@@ -362,16 +362,16 @@ html[data-theme="light"] .attendance-v2 .att-form-message.is-error{color:#b52d49
   .attendance-v2 .att-pagination{font-size:9px}
   .attendance-v2 .att-pagination>div{gap:8px}
 }
-html[data-theme="light"] .attendance-v2{--att-panel:#f8fcff;--att-border:rgba(12,118,158,.23);--att-muted:#486780;--att-green:#008c70;--att-cyan:#007da7}
+html[data-theme="light"] .attendance-v2{--att-panel:var(--mocha-card);--att-border:rgba(12,118,158,.23);--att-muted:var(--mocha-muted);--att-green:#008c70;--att-cyan:#007da7}
 html[data-theme="light"] .attendance-v2 .att-tone-amber,html[data-theme="light"] .attendance-v2 .att-tone-gold{--att-tone:#9b6500;--att-tone-bg:rgba(207,146,27,.1)}
 html[data-theme="light"] .attendance-v2 .att-tone-red{--att-tone:#c43e59}
 html[data-theme="light"] .attendance-v2 .att-tone-muted{--att-tone:#58758f}
-html[data-theme="light"] .attendance-v2 .att-metric{background:linear-gradient(120deg,#effaff,#f8fcff)}
-html[data-theme="light"] .attendance-v2 .att-toolbar .academic-search,html[data-theme="light"] .attendance-v2 .att-toolbar .control{background:#fff}
+html[data-theme="light"] .attendance-v2 .att-metric{background:linear-gradient(120deg,var(--mocha-card),var(--mocha-card))}
+html[data-theme="light"] .attendance-v2 .att-toolbar .academic-search,html[data-theme="light"] .attendance-v2 .att-toolbar .control{background:var(--mocha-card)}
 html[data-theme="light"] .attendance-v2 .att-session-row,html[data-theme="light"] .attendance-v2 .att-rate-card,html[data-theme="light"] .attendance-v2 .att-distribution{background:rgba(225,241,249,.32)}
-html[data-theme="light"] .attendance-v2 .att-rate-ring>div{background:#f8fcff}
-html[data-theme="light"] .attendance-v2 .att-action-primary{color:#002c31}
-html[data-theme="light"] .att-detail-overlay .modal.att-detail-modal{background:#f8fcff!important;color:#102744;border-color:#b5d4e7}
+html[data-theme="light"] .attendance-v2 .att-rate-ring>div{background:var(--mocha-card)}
+html[data-theme="light"] .attendance-v2 .att-action-primary{color:var(--mocha-text)}
+html[data-theme="light"] .att-detail-overlay .modal.att-detail-modal{background:var(--mocha-card)!important;color:var(--mocha-text);border-color:var(--mocha-line)}
 @media(max-width:600px){
   .att-detail-overlay.overlay{padding:10px}
   .att-detail-overlay .modal.att-detail-modal{max-height:calc(100dvh - 20px)!important;border-radius:16px}

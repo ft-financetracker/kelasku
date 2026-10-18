@@ -28,6 +28,8 @@
     document.documentElement.dataset.themePref=String(pref||'DARK').toLowerCase();
     document.documentElement.dataset.theme=String(effective||'DARK').toLowerCase();
     document.documentElement.style.colorScheme=effective==='LIGHT'?'light':'dark';
+    document.documentElement.style.backgroundColor=effective==='LIGHT'?'#E7DBCC':'#06142F';
+    var themeMeta=document.querySelector('meta[name="theme-color"]');if(themeMeta)themeMeta.setAttribute('content',effective==='LIGHT'?'#E7DBCC':'#0B132B');
   })();
   </script>
 
@@ -63,13 +65,15 @@
       }catch(e){}
     })();
   </script>
-  <link rel="stylesheet" href="src/css/app.css?v=6739r52c2" />
+  <link rel="stylesheet" href="src/css/app.css?v=6739r52c93" />
 
-  <link rel="stylesheet" href="src/css/attendance.css?v=6739r52c75" />
-  <link rel="stylesheet" href="src/css/classes.css?v=6739r52c83" />
-  <link rel="stylesheet" href="src/css/shell.css?v=6739r52c91" />
-  <link rel="stylesheet" href="src/css/navigation-editor.css?v=6739r52c91" />
+  <link rel="stylesheet" href="src/css/attendance.css?v=6739r52c93" />
+  <link rel="stylesheet" href="src/css/classes.css?v=6739r52c93" />
+  <link rel="stylesheet" href="src/css/shell.css?v=6739r52c93" />
+  <link rel="stylesheet" href="src/css/navigation-editor.css?v=6739r52c93" />
 
+  <link rel="stylesheet" href="src/css/enrollment.css?v=6739r52c93" />
+  <link rel="stylesheet" href="src/css/soft-mocha.css?v=6739r52c93" />
   <title>KelasKu — Belajar Bersama Lebih Mudah</title>
 </head>
 <body>
@@ -113,7 +117,7 @@
   <div id="toast-root" class="toast-root"></div>
 
   <script src="config.js?v=6739"></script>
-  <script type="module" src="src/js/app.js?v=6739r52c91"></script>
+  <script type="module" src="src/js/app.js?v=6739r52c931"></script>
 </body>
 </html>
 

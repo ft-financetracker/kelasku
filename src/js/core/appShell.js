@@ -1,8 +1,13 @@
 import { state } from './state.js';
 import { esc, svg, logo, toast } from './utils.js';
-import { go } from './router.js';
-import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6739r52c91';
-import { navigationMenus } from './navigationConfig.js?v=6739r52c91';
+import { go, currentRoute } from './router.js';
+import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6739r52c93';
+import { navigationMenus } from './navigationConfig.js?v=6739r52c93';
+import { receiveAppConfig } from './configSync.js?v=6739r52c93';
+import { startShellUpdates } from './shellUpdates.js?v=6739r52c93';
+
+let retainedNavigation = null, retainedOwner = '';
+const shellOptions = new WeakMap();
 
 function unreadCount(type){const key=String(type||'').toUpperCase();return (state.notifications||[]).filter(n=>!n.read_at&&String(n.type||'SYSTEM').toUpperCase()===key).length;}
 function unreadAny(types=[]){const set=new Set(types.map(x=>String(x).toUpperCase()));return (state.notifications||[]).filter(n=>!n.read_at&&set.has(String(n.type||'SYSTEM').toUpperCase())).length;}
@@ -57,6 +62,8 @@ ${logo(true)}
 
 export function bindAppShell(options = {}) {
   const shell = document.querySelector('.dashboard'), owner = state.sessionToken;
+  if (shell) { options = {...(shellOptions.get(shell) || {}),...options}; shellOptions.set(shell, options); }
+  attachSharedNavigation(shell, owner);
   bindShellInteractions(shell, { onRefresh: options.onRefresh, canRefresh: options.canRefresh,
     isCurrent: () => state.sessionToken === owner && shell?.isConnected,
     onError: error => toast(error?.message || 'Data belum dapat diperbarui. Coba lagi.') });
@@ -67,7 +74,7 @@ export function bindAppShell(options = {}) {
     window.addEventListener('kelasku-config-updated', refreshShellNavigation);
     window.addEventListener('storage', event => {
       if (event.key !== 'kelasku_app_config_cache' || !event.newValue) return;
-      try { state.remoteConfig = JSON.parse(event.newValue); refreshShellNavigation(); } catch {}
+      try { receiveAppConfig(JSON.parse(event.newValue)); } catch {}
     });
   }
   document.querySelectorAll('[data-route]').forEach(btn => {
@@ -108,10 +115,12 @@ export function bindAppShell(options = {}) {
     if (typeof options.onSearch === 'function') options.onSearch();
     else go('classes');
   };
+  startShellUpdates();
 }
 
 function handleRoute(route) {
   if (!route) return;
+  if (currentRoute() === route) return;
   if (route.startsWith('future:')) {
     const label = route.split(':')[1] || 'Fitur';
     toast(`${label.charAt(0).toUpperCase() + label.slice(1)} akan dibuka pada fase berikutnya.`);
@@ -135,8 +144,9 @@ export function bottomNavigationHtml(active, config = state.remoteConfig) {
   const menus = navigationMenus(config), ids = menus.map(item => item.id);
   const selected = bottomNavigationRoute(active, ids), index = ids.indexOf(selected);
   const center = index < 0 ? null : 12 + 376 * (index + .5) / menus.length;
-  return `<nav class="bottom-nav bottom-nav-floating" data-navigation="c91" style="--nav-count:${menus.length}" aria-label="Navigasi bawah">
+  return `<nav class="bottom-nav bottom-nav-floating" data-navigation="c92" data-navigation-items="${ids.join(',')}" style="--nav-count:${menus.length}" aria-label="Navigasi bawah">
     <svg class="floating-nav-surface" viewBox="0 0 400 72" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="${navigationSurfacePath(400,72,center)}"></path></svg>
+    <span class="floating-nav-indicator" data-indicator-route="${esc(selected)}" aria-hidden="true" ${index < 0 ? 'hidden' : ''} style="transform:translate3d(${(center || 26)-26}px,0,0)">${index < 0 ? '' : svg(menus[index].icon)}</span>
     ${menus.map(item => bottomItem(item.icon, item.label, item.id, item.id === selected)).join('')}
   </nav>`;
 }
@@ -145,10 +155,44 @@ export function refreshShellNavigation() {
   const shell = document.querySelector('.dashboard');
   const nav = shell?.querySelector('.bottom-nav-floating');
   if (!nav) return;
-  nav.outerHTML = bottomNavigationHtml(shell.dataset.shellActive || 'dashboard');
+  reconcileNavigation(nav, shell.dataset.shellActive || 'dashboard');
   shell.querySelectorAll('.bottom-nav-floating [data-route]').forEach(button => {
     button.onclick = () => handleRoute(button.dataset.route);
   });
   refreshFloatingNavigation(shell);
   refreshShellIndicators();
+}
+
+function attachSharedNavigation(shell, owner) {
+  const fresh = shell?.querySelector('.bottom-nav-floating');
+  if (!fresh) return;
+  if (retainedNavigation && retainedOwner === owner && fresh !== retainedNavigation) fresh.replaceWith(retainedNavigation);
+  else { retainedNavigation = fresh; retainedOwner = owner; }
+  reconcileNavigation(retainedNavigation, shell.dataset.shellActive || 'dashboard');
+}
+
+function reconcileNavigation(nav, active) {
+  const menus = navigationMenus(state.remoteConfig), ids = menus.map(menu => menu.id);
+  if (nav.dataset.navigationItems !== ids.join(',')) {
+    const holder = document.createElement('div');
+    holder.innerHTML = bottomNavigationHtml(active);
+    nav.innerHTML = holder.querySelector('.bottom-nav-floating').innerHTML;
+    nav.dataset.navigationItems = ids.join(',');
+    nav.style.setProperty('--nav-count', String(ids.length));
+  }
+  const selected = bottomNavigationRoute(active, ids);
+  nav.querySelectorAll('.floating-nav-item').forEach(item => {
+    const yes = item.dataset.route === selected;
+    item.classList.toggle('active', yes);
+    if (yes) item.setAttribute('aria-current','page'); else item.removeAttribute('aria-current');
+  });
+  const indicator = nav.querySelector('.floating-nav-indicator');
+  if (indicator) {
+    indicator.hidden = !selected;
+    if (indicator.dataset.indicatorRoute !== selected) {
+      indicator.dataset.indicatorRoute = selected;
+      const menu = menus.find(item => item.id === selected);
+      indicator.innerHTML = menu ? svg(menu.icon) : '';
+    }
+  }
 }

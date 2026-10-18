@@ -1,9 +1,10 @@
+import { attendanceEnrollmentHtml, mountAttendanceEnrollment } from './attendanceEnrollment.js?v=6739r52c93';
 import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6739r52c75';
 import { loadClassAcademicData, loadAttendanceClassData, rememberAttendanceSessionDetail, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c75';
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c91';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
 import { confirmDialog } from '../core/dialog.js';
 import { go } from '../core/router.js';
 import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6739r52c9';
@@ -1428,6 +1429,7 @@ function memberRow(m,p) {
     <div class="member-academic-v52">${esc(academic)}</div>
     <div class="member-side member-side-v52">
       <div class="member-badges">${memberBadgesHtml(m)}</div>
+      ${p.can_manage_members&&!['TEACHER','OBSERVER'].includes(String(m.class_role).toUpperCase())?`<button type="button" class="enrollment-sync-button" data-enrollment-user="${esc(m.user_id)}" aria-label="Sinkron absensi ${esc(m.full_name||m.username)}">Sinkron absensi</button>`:''}
       ${canRemove?`<button class="member-remove-btn" data-remove-user="${esc(m.user_id)}" title="Keluarkan anggota" aria-label="Keluarkan ${esc(m.full_name||m.username)}">
         <span class="material-symbols-rounded">person_remove</span>
       </button>`:''}
@@ -1437,7 +1439,7 @@ function memberRow(m,p) {
 
 function requestsHtml(data) {
   const items=data.pending_requests||[];
-  return `<section class="panel"><div class="panel-head"><div><div class="panel-title">Permintaan Bergabung</div><p class="panel-copy">Setiap tindakan dikunci selama request berjalan agar tidak terkirim dua kali.</p></div></div><div class="member-list">${items.length?items.map(r=>`<div class="member-row join-request-row" data-request-row="${esc(r.request_id)}"><div class="member-avatar">${avatarMarkup(r)}</div><div class="member-info"><strong>${esc(r.full_name||r.username)}</strong><span>@${esc(r.username||'-')} · ${esc(r.kelasku_id||'-')}</span><small>${esc(r.message||'Tanpa pesan')}</small><span class="inline-request-status" data-request-status></span></div><div class="member-actions"><button class="btn btn-secondary small-btn" data-request="${esc(r.request_id)}" data-decision="REJECT">Tolak</button><button class="btn btn-primary small-btn" data-request="${esc(r.request_id)}" data-decision="APPROVE">Terima</button></div></div>`).join(''):'<div class="search-empty">Tidak ada permintaan yang menunggu.</div>'}</div></section>`;
+  return `<section class="panel"><div class="panel-head"><div><div class="panel-title">Permintaan Bergabung</div><p class="panel-copy">Terima anggota sekaligus tambahkan ke absensi yang masih terbuka dan akan datang.</p></div></div><div class="member-list">${items.length?items.map(r=>`<div class="member-row join-request-row" data-request-row="${esc(r.request_id)}"><div class="member-avatar">${avatarMarkup(r)}</div><div class="member-info"><strong>${esc(r.full_name||r.username)}</strong><span>@${esc(r.username||'-')} · ${esc(r.kelasku_id||'-')}</span><small>${esc(r.message||'Tanpa pesan')}</small><span class="inline-request-status" data-request-status></span></div><div class="member-actions"><button class="btn btn-secondary small-btn" data-request="${esc(r.request_id)}" data-decision="REJECT">Tolak</button><button class="btn btn-primary small-btn" data-request="${esc(r.request_id)}" data-decision="APPROVE">Terima</button></div></div>`).join(''):'<div class="search-empty">Tidak ada permintaan yang menunggu.</div>'}</div></section>`;
 }
 
 
@@ -1764,6 +1766,7 @@ function settingsHtml(data) {
 }
 
 function bindTab(tab,data) {
+  document.querySelectorAll('[data-enrollment-user]').forEach(button=>button.onclick=()=>openMemberAttendanceSync(button.dataset.enrollmentUser));
   if(tab==='overview'){
     document.querySelectorAll('[data-module-tab]').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.moduleTab,data));
     document.getElementById('quick-settings')?.addEventListener('click',()=>switchTab('settings',data));
@@ -1807,7 +1810,15 @@ async function handleClassExit(data){const isOwner=Boolean(data.permissions?.is_
 
 function activateClassSettingPane(key){activeClassSettingPane=key||'identity';document.querySelectorAll('[data-class-setting-tab]').forEach(b=>b.classList.toggle('active',b.dataset.classSettingTab===activeClassSettingPane));document.querySelectorAll('[data-class-setting-pane]').forEach(p=>p.classList.toggle('active',p.dataset.classSettingPane===activeClassSettingPane));}
 
-async function decideRequest(requestId,decision,button){
+async function decideRequest(requestId,decision,button,enrollment=null){
+  const classId=String(state.selectedClassId),owner=state.sessionToken;
+  if(decision==='APPROVE'&&!enrollment){
+    const request=(currentClassData?.pending_requests||[]).find(item=>String(item.request_id)===String(requestId));
+    if(!showModal(attendanceEnrollmentHtml(request?.full_name||request?.username,true)))return;
+    const root=document.getElementById('attendance-enrollment');
+    if(root)mountAttendanceEnrollment(root,{classId,onSubmit:scope=>decideRequest(requestId,decision,button,scope),close:closeModal});
+    return;
+  }
   const row=button.closest('[data-request-row]');
   const buttons=[...(row?.querySelectorAll('[data-request]')||[])];
   const status=row?.querySelector('[data-request-status]');
@@ -1818,9 +1829,11 @@ async function decideRequest(requestId,decision,button){
   button.innerHTML=`<span class="btn-spinner"></span><span>${decision==='APPROVE'?'Menerima…':'Menolak…'}</span>`;
   if(status){status.className='inline-request-status progress';status.textContent='Sedang memproses… jangan klik dua kali.';}
   try{
-    await api('decideJoinRequest',{request_id:requestId,decision},{onSlow:()=>{if(status)status.textContent='Masih diproses oleh server. Tombol tetap dikunci.';}});
+    const result=await api('decideJoinRequest',{request_id:requestId,decision,...(enrollment||{})},{timeout:40000,onSlow:()=>{if(status)status.textContent='Masih diproses oleh server. Tombol tetap dikunci.';}});
     if(status){status.className='inline-request-status ok';status.textContent=decision==='APPROVE'?'Diterima ✓':'Ditolak ✓';}
-    toast(decision==='APPROVE'?'Anggota diterima.':'Permintaan ditolak.');
+    if(state.sessionToken!==owner||String(state.selectedClassId)!==classId)return result;
+    toast(decision==='APPROVE'?(result.already_processed?'Anggota sudah diterima.':`Anggota diterima · ${Number(result.attendance_sync?.added||0)} sesi disinkronkan.`):'Permintaan ditolak.');
+    if(decision==='APPROVE')invalidateMemberAttendance(classId);
 
     // Setelah write sukses, jangan tunggu GET kedua hanya untuk membuat UI terasa selesai.
     if(currentClassData){
@@ -1832,26 +1845,51 @@ async function decideRequest(requestId,decision,button){
     const pendingCount=(currentClassData?.pending_requests||[]).length;
     if(manageBadge)manageBadge.textContent=String(pendingCount);
     if(currentClassData)refreshRoomNavigation(activeTab,currentClassData);
-    loadClassDetail(true);
+    loadClassDetail(true,true);
+    return result;
   }catch(err){
     if(row) row.dataset.busy='0';
     if(status){status.className='inline-request-status error';status.textContent=err.message;}
-    toast(err.message);buttons.forEach(x=>x.disabled=false);button.innerHTML=old;
+    buttons.forEach(x=>x.disabled=false);button.innerHTML=old;
+    if(enrollment)throw err;
+    toast(err.message);
   }
+}
+
+function invalidateMemberAttendance(classId){
+  invalidateAcademicClientCache(classId);
+  classAnalyticsSummaryCache.delete(classId);classAnalyticsSummaryAt.delete(classId);
+  markClassCacheStale('classDetailsAt','kelasku_class_details_cache_at',classId);
+}
+
+function openMemberAttendanceSync(userId){
+  const classId=String(state.selectedClassId),owner=state.sessionToken;
+  const member=(currentClassData?.members||[]).find(item=>String(item.user_id)===String(userId));
+  if(!showModal(attendanceEnrollmentHtml(member?.full_name||member?.username)))return;
+  const root=document.getElementById('attendance-enrollment');
+  if(root)mountAttendanceEnrollment(root,{classId,userId,close:closeModal,onSubmit:async scope=>{
+    if(state.sessionToken!==owner||String(state.selectedClassId)!==classId)throw new Error('Kelas atau akun telah berubah. Buka ulang sinkronisasi.');
+    const result=await api('syncClassMemberAttendance',{class_id:classId,user_id:userId,...scope},{timeout:40000});
+    if(state.sessionToken===owner&&String(state.selectedClassId)===classId){invalidateMemberAttendance(classId);toast(`${Number(result.attendance_sync?.added||0)} sesi ditambahkan. Data yang sudah ada tetap disimpan.`);}
+    return result;
+  }});
 }
 
 async function changeRole(userId,role,select){
   if(select.disabled)return;
+  const classId=String(state.selectedClassId),owner=state.sessionToken;
   const member=(currentClassData?.members||[]).find(x=>String(x.user_id)===String(userId));
   const previous=member?.class_role||'MEMBER';
   select.disabled=true;
   select.dataset.busy='1';
   try{
-    await api('setClassMemberRole',{class_id:state.selectedClassId,user_id:userId,class_role:role,replace_coordinator:false},{onSlow:()=>toast('Perubahan role masih diproses. Kontrol tetap dikunci.')});
+    await api('setClassMemberRole',{class_id:classId,user_id:userId,class_role:role,replace_coordinator:false},{onSlow:()=>toast('Perubahan role masih diproses. Kontrol tetap dikunci.')});
+    if(state.sessionToken!==owner||String(state.selectedClassId)!==classId)return;
     if(member)member.class_role=role;
     if(currentClassData)state.classDetails[state.selectedClassId]=currentClassData;
+    invalidateMemberAttendance(classId);
     toast('Role anggota diperbarui.');
-    loadClassDetail(true);
+    loadClassDetail(true,true);
   }catch(err){
     toast(err.message);
     select.value=previous;
@@ -2123,8 +2161,8 @@ function avatarMarkup(user){return user?.avatar_url?`<img src="${esc(user.avatar
 function selectRow(label,name,value,options){return `<label class="setting-row"><span><strong>${esc(label)}</strong></span><select class="control setting-control" name="${esc(name)}">${options.map(x=>`<option value="${x[0]}" ${String(value)===x[0]?'selected':''}>${esc(x[1])}</option>`).join('')}</select></label>`;}
 function toggleRow(label,name,value){return `<label class="setting-row"><span><strong>${esc(label)}</strong></span><span class="switch"><input type="checkbox" name="${esc(name)}" ${truthy(value)?'checked':''}><span></span></span></label>`;}
 function truthy(v){return v===true||String(v).toUpperCase()==='TRUE'||String(v)==='1';}
-function showModal(html){closeModal();const el=document.createElement('div');el.id='phase-modal';el.className='overlay';el.innerHTML=`<div class="modal glass phase-modal-card">${html}</div>`;document.body.appendChild(el);el.querySelectorAll('[data-close-modal]').forEach(x=>x.onclick=closeModal);el.onclick=e=>{if(e.target===el)closeModal();};}
-function closeModal(){document.getElementById('phase-modal')?.remove();}
+function showModal(html){if(document.getElementById('phase-modal')?.dataset.busy==='1'){toast('Tunggu sampai penyimpanan selesai.');return false;}closeModal();const el=document.createElement('div');el.id='phase-modal';el.className='overlay';el.innerHTML=`<div class="modal glass phase-modal-card">${html}</div>`;document.body.appendChild(el);el.querySelectorAll('[data-close-modal]').forEach(x=>x.onclick=closeModal);el.onclick=e=>{if(e.target===el)closeModal();};return true;}
+function closeModal(){const modal=document.getElementById('phase-modal');if(modal?.dataset.busy==='1')return;modal?.remove();}
 function openExternal(url){if(!/^https?:\/\//i.test(String(url||'')))return toast('Tautan tidak valid.');window.open(url,'_blank','noopener,noreferrer');}
 function dateMs(value){const n=new Date(value||'').getTime();return Number.isFinite(n)?n:0;}
 function shortDate(value){try{return new Intl.DateTimeFormat('id-ID',{dateStyle:'medium'}).format(new Date(value));}catch{return value||'-';}}

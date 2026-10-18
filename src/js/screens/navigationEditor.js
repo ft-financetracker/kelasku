@@ -1,8 +1,9 @@
+import { receiveAppConfig } from '../core/configSync.js?v=6739r52c93';
 import { state } from '../core/state.js';
 import { api } from '../core/api.js';
 import { esc, svg } from '../core/utils.js';
-import { NAVIGATION_MENUS, DEFAULT_NAVIGATION, navigationIds, validateNavigation, moveNavigation, NAVIGATION_MIN, NAVIGATION_MAX } from '../core/navigationConfig.js?v=6739r52c91';
-import { navigationSurfacePath } from '../core/shellInteractions.js?v=6739r52c91';
+import { NAVIGATION_MENUS, DEFAULT_NAVIGATION, navigationIds, validateNavigation, moveNavigation, NAVIGATION_MIN, NAVIGATION_MAX } from '../core/navigationConfig.js?v=6739r52c93';
+import { navigationSurfacePath } from '../core/shellInteractions.js?v=6739r52c93';
 
 export function navigationEditorHtml() {
   return '<section id="admin-navigation-editor" class="panel admin-section nav-editor" aria-label="Susun navigasi bawah"></section>';
@@ -44,7 +45,7 @@ export function mountNavigationEditor(host, config = {}) {
     if (!host.isConnected) return;
     host.innerHTML = `
       <div class="panel-head"><div><div class="panel-title">Susun Navigasi Bawah</div><p class="panel-copy">Pilih menu yang tampil dan atur urutannya untuk seluruh pengguna.</p></div>${svg('i-menu')}</div>
-      ${supported ? '' : '<p class="nav-editor-compat" role="status">Pratinjau dapat dicoba. Perbarui Apps Script C9.1 untuk mengaktifkan penyimpanan global.</p>'}
+      ${supported ? (config.navigation_sync_supported ? '' : '<p class="nav-editor-compat" role="status">Penyimpanan tersedia. Perbarui Apps Script C9.2 agar akun lain menerima perubahan selama aplikasi terbuka.</p>') : '<p class="nav-editor-compat" role="status">Pratinjau dapat dicoba. Perbarui Apps Script C9.2 untuk mengaktifkan penyimpanan global.</p>'}
       <div class="nav-editor-layout">
         <div class="nav-editor-controls">
           <div class="nav-editor-section-title"><strong>Menu yang ditampilkan</strong><span>${draft.length} / ${NAVIGATION_MAX}</span></div>
@@ -94,10 +95,8 @@ export function mountNavigationEditor(host, config = {}) {
       const next = data?.config;
       if (Number(next?.navigation_config_version) !== 1 || validateNavigation(next?.bottom_navigation) || JSON.stringify(navigationIds(next.bottom_navigation)) !== JSON.stringify(submitted)) throw new Error('Server belum mengonfirmasi susunan ini. Muat ulang pengaturan sebelum mencoba lagi.');
       saved = submitted; draft = [...submitted]; revision = String(next.bottom_navigation_revision || '');
-      state.remoteConfig = next;
-      try { localStorage.setItem('kelasku_app_config_cache', JSON.stringify(next)); } catch {}
-      window.dispatchEvent(new CustomEvent('kelasku-config-updated'));
-      status = 'Navigasi tersimpan. Pengguna lain menerima susunan ini saat memuat ulang aplikasi.'; statusKind = 'success';
+      receiveAppConfig(next);
+      status = 'Navigasi tersimpan. Pengguna aktif menerima pembaruan saat pemeriksaan berikutnya atau saat kembali ke aplikasi.'; statusKind = 'success';
     } catch (error) {
       if (current()) { status = error.message || 'Navigasi belum tersimpan.'; statusKind = 'error'; }
     } finally {
