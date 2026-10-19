@@ -1,5 +1,5 @@
-import { state } from './state.js?v=6740forms2';
-import { validateNavigation } from './navigationConfig.js?v=6740forms2';
+import { state } from './state.js?v=6740forms3';
+import { validateNavigation } from './navigationConfig.js?v=6740forms3';
 
 const navigationKeys = ['bottom_navigation','bottom_navigation_revision','bottom_navigation_sequence','navigation_config_version','navigation_sync_supported'];
 

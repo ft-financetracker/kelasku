@@ -1,8 +1,8 @@
-import { state, setSession } from '../core/state.js?v=6740forms2';
-import { api } from '../core/api.js?v=6740forms2';
-import { esc, logo, svg } from '../core/utils.js?v=6740forms2';
-import { go } from '../core/router.js?v=6740forms2';
-import { shouldShowAppSetup } from '../core/pwa.js?v=6740forms2';
+import { state, setSession } from '../core/state.js?v=6740forms3';
+import { api } from '../core/api.js?v=6740forms3';
+import { esc, logo, svg } from '../core/utils.js?v=6740forms3';
+import { go } from '../core/router.js?v=6740forms3';
+import { shouldShowAppSetup } from '../core/pwa.js?v=6740forms3';
 
 function safePostAuthUrl(){
   let raw='';try{raw=sessionStorage.getItem('kelasku_post_auth_url')||new URL(window.location.href).searchParams.get('return')||'';}catch{}

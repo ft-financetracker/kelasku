@@ -1,9 +1,9 @@
-import { state, setIdentity } from '../core/state.js?v=6740forms2';
-import { api } from '../core/api.js?v=6740forms2';
-import { esc, logo, svg, toast } from '../core/utils.js?v=6740forms2';
-import { go } from '../core/router.js?v=6740forms2';
-import { shouldShowAppSetup } from '../core/pwa.js?v=6740forms2';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms2';
+import { state, setIdentity } from '../core/state.js?v=6740forms3';
+import { api } from '../core/api.js?v=6740forms3';
+import { esc, logo, svg, toast } from '../core/utils.js?v=6740forms3';
+import { go } from '../core/router.js?v=6740forms3';
+import { shouldShowAppSetup } from '../core/pwa.js?v=6740forms3';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms3';
 
 let pendingAvatarDataUrl = '';
 let avatarRemove = false;

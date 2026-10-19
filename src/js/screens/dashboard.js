@@ -1,10 +1,10 @@
-import { state, clearSession } from '../core/state.js?v=6740forms2';
-import { api } from '../core/api.js?v=6740forms2';
-import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js?v=6740forms2';
-import { showSystemNotification, updateApp } from '../core/pwa.js?v=6740forms2';
-import { go, currentRoute, openDeepLink } from '../core/router.js?v=6740forms2';
-import { startShellUpdates, refreshShellUpdates } from '../core/shellUpdates.js?v=6740forms2';
-import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6740forms2';
+import { state, clearSession } from '../core/state.js?v=6740forms3';
+import { api } from '../core/api.js?v=6740forms3';
+import { C, esc, svg, fmtDate, semverCmp, toast, sameData } from '../core/utils.js?v=6740forms3';
+import { showSystemNotification, updateApp } from '../core/pwa.js?v=6740forms3';
+import { go, currentRoute, openDeepLink } from '../core/router.js?v=6740forms3';
+import { startShellUpdates, refreshShellUpdates } from '../core/shellUpdates.js?v=6740forms3';
+import { appShell, bindAppShell, refreshShellIndicators } from '../core/appShell.js?v=6740forms3';
 
 let carouselTimer = null;
 let carouselIndex = 0;
