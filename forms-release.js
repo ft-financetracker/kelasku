@@ -1,2 +1,2 @@
 /* Preserve the user's API_URL and other configured values. */
-window.KELASKU_CONFIG=Object.freeze({...window.KELASKU_CONFIG,APP_VERSION:'6.7.40',BUILD:'20261019.402',RELEASED_AT_WIB:'19 Okt 2026 · Forms V1 · Tugas Global'});
+window.KELASKU_CONFIG=Object.freeze({...window.KELASKU_CONFIG,APP_VERSION:'6.7.40',BUILD:'20261019.401',RELEASED_AT_WIB:'19 Okt 2026 · Forms V1 · Navigasi'});

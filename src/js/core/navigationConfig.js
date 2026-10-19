@@ -43,8 +43,7 @@ export function navigationMenus(config = {}) {
 export function navigationActiveRoute(active = '', ids = DEFAULT_NAVIGATION) {
   if (ids.includes(active)) return active;
   let parent = '';
-  if (active === 'forms') parent = 'tasks';
-  else if (['class','join','schedule','materials','announcements','attendance','attendance-link'].includes(active)) parent = 'classes';
+  if (['class','join','schedule','materials','announcements','attendance','attendance-link'].includes(active)) parent = 'classes';
   else if (['profile','settings','app-info','notifications'].includes(active) || String(active).startsWith('admin')) parent = 'account';
   return ids.includes(parent) ? parent : '';
 }

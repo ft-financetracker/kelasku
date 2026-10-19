@@ -1,6 +1,6 @@
-import { api } from '../core/api.js?v=6740forms3';
-import { esc, svg, toast, logo } from '../core/utils.js?v=6740forms3';
-import { go } from '../core/router.js?v=6740forms3';
+import { api } from '../core/api.js?v=6740forms2';
+import { esc, svg, toast, logo } from '../core/utils.js?v=6740forms2';
+import { go } from '../core/router.js?v=6740forms2';
 
 let currentToken='';
 

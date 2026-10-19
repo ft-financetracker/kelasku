@@ -1,5 +1,5 @@
-import { readJson } from './storage.js?v=6740forms3';
-import { randomId } from './utils.js?v=6740forms3';
+import { readJson } from './storage.js?v=6740forms2';
+import { randomId } from './utils.js?v=6740forms2';
 
 function getDeviceId() {
   let id = localStorage.getItem('kelasku_device_id');
