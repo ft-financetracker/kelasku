@@ -1,4 +1,4 @@
-import { C, esc } from '../core/utils.js?v=6740forms2';
+import { C, esc } from '../core/utils.js?v=6740forms3';
 
 export function renderSplash(status = 'Menyiapkan KelasKu…') {
   const app = document.getElementById('app');
