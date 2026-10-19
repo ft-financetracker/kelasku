@@ -1,6 +1,6 @@
-import {api} from '../core/api.js?v=6740forms3';
+import {api} from '../core/api.js?v=6740forms2';
 
-export async function dispatchPublic({legacy=()=>import('../screens/publicLinks.js?v=6740forms3'),forms=async(alias)=>{const {startForms}=await import('./live.js?v=6740forms3');document.body.innerHTML='<div id="kelasku-public-form" class="kkf"></div>';document.body.style.margin='0';await startForms({root:document.getElementById('kelasku-public-form'),alias});},resolve=alias=>api('getPublicRoute',{alias},{auth:false}),locationObject=location}={}){
+export async function dispatchPublic({legacy=()=>import('../screens/publicLinks.js?v=6740forms2'),forms=async(alias)=>{const {startForms}=await import('./live.js?v=6740forms2');document.body.innerHTML='<div id="kelasku-public-form" class="kkf"></div>';document.body.style.margin='0';await startForms({root:document.getElementById('kelasku-public-form'),alias});},resolve=alias=>api('getPublicRoute',{alias},{auth:false}),locationObject=location}={}){
  const path=locationObject.pathname.replace(/^\/+|\/+$/g,''),params=new URLSearchParams(locationObject.search),alias=(params.get('c')||(!['','links.html','index.html'].includes(path)?path:'')).trim().toLowerCase();
  if(!window.KELASKU_FORMS_CONFIG?.ENABLED)return legacy();
  // Underscores remain valid in older class links; Forms aliases never use them.

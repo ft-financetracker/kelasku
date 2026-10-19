@@ -1,6 +1,6 @@
-import { api } from '../core/api.js?v=6740forms3';
-import { state } from '../core/state.js?v=6740forms3';
-import { esc } from '../core/utils.js?v=6740forms3';
+import { api } from '../core/api.js?v=6740forms2';
+import { state } from '../core/state.js?v=6740forms2';
+import { esc } from '../core/utils.js?v=6740forms2';
 
 export function attendanceEnrollmentHtml(name, approval = false) {
   return `<div id="attendance-enrollment" data-approval="${approval ? '1' : '0'}"><div class="modal-head"><div><div class="eyebrow">PESERTA ABSENSI</div><h2 id="enrollment-title">${approval ? 'Terima & sinkronkan' : 'Sinkron absensi'}</h2><p class="panel-copy">${esc(name || 'Anggota kelas')}</p></div><button type="button" class="icon-btn mini" data-close-modal aria-label="Tutup">×</button></div><div data-enrollment-body role="status">Memuat pilihan mapel…</div></div>`;

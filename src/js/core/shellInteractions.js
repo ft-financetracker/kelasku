@@ -1,5 +1,5 @@
 // Shared shell lifecycle. No API, polling or router writes.
-import { navigationActiveRoute, DEFAULT_NAVIGATION } from './navigationConfig.js?v=6740forms3';
+import { navigationActiveRoute, DEFAULT_NAVIGATION } from './navigationConfig.js?v=6740forms2';
 let releaseShell = null;
 let navigationController = null;
 let interactionShell = null, interactionOptions = null;

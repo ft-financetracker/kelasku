@@ -1,9 +1,9 @@
-import { esc, svg, logo } from '../core/utils.js?v=6740forms3';
-import { writeBool } from '../core/storage.js?v=6740forms3';
-import { state } from '../core/state.js?v=6740forms3';
-import { go } from '../core/router.js?v=6740forms3';
-import { api } from '../core/api.js?v=6740forms3';
-import { applyPreferences } from '../core/preferences.js?v=6740forms3';
+import { esc, svg, logo } from '../core/utils.js?v=6740forms2';
+import { writeBool } from '../core/storage.js?v=6740forms2';
+import { state } from '../core/state.js?v=6740forms2';
+import { go } from '../core/router.js?v=6740forms2';
+import { api } from '../core/api.js?v=6740forms2';
+import { applyPreferences } from '../core/preferences.js?v=6740forms2';
 
 const slides = [
   { icon: 'i-mega', eyebrow: 'Informasi', title: 'Semua Informasi dalam <span class="accent">Satu Tempat</span>', copy: 'Jadwal, pengumuman, materi, dan informasi kelas lebih mudah ditemukan.' },

@@ -1,8 +1,8 @@
 {
   "version": "6.7.40",
-  "build": "20261019.402",
+  "build": "20261019.401",
   "schema": 17,
   "release_date": "2026-10-19",
-  "release_note": "Tugas Global menyatu dengan menu Tugas; workspace langsung tampil, kategori lebih ringkas dan layout mobile dibatasi dengan benar.",
+  "release_note": "Formulir tetap memakai navigasi KelasKu; pengaturan navbar mendapat room langsung dan akses dari Pengaturan.",
   "release_time_wib": "RC1"
 }
