@@ -4,3 +4,12 @@
 .forms-launch small{display:block;font-size:12px;opacity:.8;margin-top:3px}
 .forms-launch button{flex-shrink:0}
 @media(max-width:360px){.forms-launch{padding:12px;gap:8px}.forms-launch small{font-size:11px}}
+.forms-workspace.kkf{min-height:0;background:transparent}
+.forms-workspace.kkf .kkf-topbar{position:static;min-height:52px;padding:0 0 12px;background:transparent;justify-content:flex-end}
+.forms-workspace.kkf .kkf-topbar .kkf-brand{display:none}
+.forms-workspace.kkf .kkf-frame{display:block;min-height:0}
+.forms-workspace.kkf .kkf-sidebar{position:static;height:auto;padding:8px 0 12px;border-right:0;background:transparent;overflow:visible}
+.forms-workspace.kkf .kkf-space-label,.forms-workspace.kkf .kkf-sidebar-foot{display:none}
+.forms-workspace.kkf .kkf-side-nav{display:flex;gap:5px;overflow:auto;scrollbar-width:none}
+.forms-workspace.kkf .kkf-side-nav button{width:auto;flex-shrink:0;min-height:44px;padding:10px 12px}
+.forms-workspace.kkf .kkf-main{max-width:none;padding:20px 0 30px}

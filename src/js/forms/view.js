@@ -1,6 +1,6 @@
-import * as M from './model.js?v=6740forms1';
-import { icon } from './icons.js?v=6740forms1';
-import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6740forms1';
+import * as M from './model.js?v=6740forms2';
+import { icon } from './icons.js?v=6740forms2';
+import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6740forms2';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const attr=esc;

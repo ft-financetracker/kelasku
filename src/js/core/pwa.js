@@ -1,6 +1,6 @@
-import { state } from './state.js?v=6740forms1';
-import { C, toast, isStandalone, semverCmp } from './utils.js?v=6740forms1';
-import { readBool, writeBool } from './storage.js?v=6740forms1';
+import { state } from './state.js?v=6740forms2';
+import { C, toast, isStandalone, semverCmp } from './utils.js?v=6740forms2';
+import { readBool, writeBool } from './storage.js?v=6740forms2';
 
 const SETUP_DONE_KEY = 'kelasku_app_setup_completed';
 const PWA_INSTALLED_KEY = 'kelasku_pwa_installed';
