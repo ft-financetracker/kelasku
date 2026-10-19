@@ -1,9 +1,9 @@
-import { state, clearSession } from '../core/state.js?v=6740forms1';
-import { api } from '../core/api.js?v=6740forms1';
-import { esc, svg, toast } from '../core/utils.js?v=6740forms1';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
-import { go } from '../core/router.js?v=6740forms1';
-import { confirmDialog } from '../core/dialog.js?v=6740forms1';
+import { state, clearSession } from '../core/state.js?v=6740forms2';
+import { api } from '../core/api.js?v=6740forms2';
+import { esc, svg, toast } from '../core/utils.js?v=6740forms2';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms2';
+import { go } from '../core/router.js?v=6740forms2';
+import { confirmDialog } from '../core/dialog.js?v=6740forms2';
 
 export function renderAccount() {
   const u = state.user || {};

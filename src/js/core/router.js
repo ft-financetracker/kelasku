@@ -33,6 +33,7 @@ const ROUTE_PATHS = Object.freeze({
   'admin-users': '/admin/pengguna',
   'admin-classes': '/admin/kelas',
   'admin-system': '/admin/sistem',
+  'admin-navigation': '/admin/navigasi',
   'admin-audit': '/admin/audit'
 });
 const PATH_ROUTES = new Map();

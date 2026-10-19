@@ -1,6 +1,6 @@
-import { svg, logo } from '../core/utils.js?v=6740forms1';
-import { installPWA, enableNotifications, getAppSetupState, shouldShowAppSetup, completeAppSetup } from '../core/pwa.js?v=6740forms1';
-import { go } from '../core/router.js?v=6740forms1';
+import { svg, logo } from '../core/utils.js?v=6740forms2';
+import { installPWA, enableNotifications, getAppSetupState, shouldShowAppSetup, completeAppSetup } from '../core/pwa.js?v=6740forms2';
+import { go } from '../core/router.js?v=6740forms2';
 
 function finishSetupDestination(){let target='';try{target=String(sessionStorage.getItem('kelasku_post_auth_url')||'');}catch{}if(target.startsWith('/')&&!target.startsWith('//')){try{sessionStorage.removeItem('kelasku_post_auth_url');}catch{}window.location.assign(target);return true;}return false;}
 

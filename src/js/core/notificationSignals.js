@@ -1,7 +1,7 @@
-import { state } from './state.js?v=6740forms1';
-import { api } from './api.js?v=6740forms1';
-import { C } from './utils.js?v=6740forms1';
-import { showSystemNotification } from './pwa.js?v=6740forms1';
+import { state } from './state.js?v=6740forms2';
+import { api } from './api.js?v=6740forms2';
+import { C } from './utils.js?v=6740forms2';
+import { showSystemNotification } from './pwa.js?v=6740forms2';
 
 let timer=null;
 let bound=false;

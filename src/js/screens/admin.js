@@ -1,10 +1,10 @@
-import { receiveAppConfig } from '../core/configSync.js?v=6740forms1';
-import { state } from '../core/state.js?v=6740forms1';
-import { api } from '../core/api.js?v=6740forms1';
-import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js?v=6740forms1';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
-import { go } from '../core/router.js?v=6740forms1';
-import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6740forms1';
+import { receiveAppConfig } from '../core/configSync.js?v=6740forms2';
+import { state } from '../core/state.js?v=6740forms2';
+import { api } from '../core/api.js?v=6740forms2';
+import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js?v=6740forms2';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms2';
+import { go } from '../core/router.js?v=6740forms2';
+import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6740forms2';
 
 let overview = state.adminOverview || null;
 let overviewAt = overview ? Date.now() : 0;
@@ -61,6 +61,7 @@ function drawAdminHub(data) {
       ${adminRoom('i-users','Pengguna & Akses','Cari, filter, ubah role, dan suspend akun dengan pagination.','admin-users',`${s.active_users || 0} user aktif`)}
       ${adminRoom('i-class','Kelas & Membership','Cari kelas, cek owner/member, visibility, dan status kelas.','admin-classes',`${s.active_classes || 0} kelas aktif`)}
       ${adminRoom('i-gear','Sistem & Release','Maintenance, minimum version, update, PWA config, dan status backend.','admin-system',`v${config.current_version || window.KELASKU_CONFIG.APP_VERSION}`)}
+      ${adminRoom('i-menu','Navigasi Bawah','Pilih menu, tampilkan Formulir, dan susun urutan tombol untuk seluruh pengguna.','admin-navigation','Susun menu')}
       ${adminRoom('i-shield','Audit & Aktivitas','Telusuri aktivitas admin, user, kelas, dan perubahan sistem.','admin-audit',`${s.audit_events || 0} event`)}
     </section>
 
@@ -213,6 +214,28 @@ function bindClassRows() {
       } catch(err) { toast(err.message); }
       finally { btn.disabled=false; btn.innerHTML=old; }
     };
+  });
+}
+
+export function renderAdminNavigation() {
+  const owner = state.sessionToken;
+  const content = adminRoomShell('Navigasi Bawah','Pilih menu dan susun urutan tombol untuk seluruh pengguna.', 'i-menu',
+    `<p id="admin-navigation-load-status" class="request-status" role="status">Memperbarui konfigurasi…</p>${navigationEditorHtml()}`);
+  document.getElementById('app').innerHTML = appShell({ active:'admin-navigation', content, hideSearch:true });
+  bindAppShell();
+  document.getElementById('admin-back').onclick = () => go('admin');
+  const host = document.getElementById('admin-navigation-editor');
+  let editor = mountNavigationEditor(host, state.remoteConfig || {});
+  api('adminGetSystemStatus').then(data => {
+    if (state.sessionToken !== owner || !host.isConnected) return;
+    const config = data.app_config || {};
+    receiveAppConfig(config);
+    if (!editor?.isDirty()) editor = mountNavigationEditor(host, config);
+    document.getElementById('admin-navigation-load-status').textContent = editor?.isDirty()
+      ? 'Perubahanmu tetap dipertahankan. Simpan setelah urutan sesuai.' : 'Konfigurasi navigasi siap.';
+  }).catch(error => {
+    if (state.sessionToken !== owner || !host.isConnected) return;
+    document.getElementById('admin-navigation-load-status').textContent = 'Konfigurasi terbaru belum dapat dimuat. '+error.message;
   });
 }
 

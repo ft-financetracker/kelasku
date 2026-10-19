@@ -1,8 +1,8 @@
 {
   "version": "6.7.40",
-  "build": "20261019.400",
+  "build": "20261019.401",
   "schema": 17,
   "release_date": "2026-10-19",
-  "release_note": "Forms V1 RC1: tugas Global, Supabase, akses peserta, penilaian, ranking dan ekspor. Pilot sebelum aktivasi umum.",
+  "release_note": "Formulir tetap memakai navigasi KelasKu; pengaturan navbar mendapat room langsung dan akses dari Pengaturan.",
   "release_time_wib": "RC1"
 }

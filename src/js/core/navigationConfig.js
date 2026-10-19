@@ -2,7 +2,7 @@
 export const NAVIGATION_MENUS = Object.freeze([
   { id:'classes', label:'Kelas', icon:'i-class' },
   { id:'tasks', label:'Tugas', icon:'i-task' },
-  { id:'forms', label:'Tugas Global', icon:'i-file' },
+  { id:'forms', label:'Formulir', icon:'i-file' },
   { id:'dashboard', label:'Beranda', icon:'i-home' },
   { id:'messages', label:'Chat', icon:'i-chat' },
   { id:'account', label:'Profil', icon:'i-user' },
