@@ -1,10 +1,10 @@
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { esc, svg, toast, semverCmp, C, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
-import { applyPreferences, previewPreferences } from '../core/preferences.js?v=6739r52c93';
-import { go } from '../core/router.js';
-import { getAppSetupState, installPWA, enableNotifications, updateApp, checkForAppUpdate } from '../core/pwa.js';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { esc, svg, toast, semverCmp, C, sameData } from '../core/utils.js?v=6740forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
+import { applyPreferences, previewPreferences } from '../core/preferences.js?v=6740forms1';
+import { go } from '../core/router.js?v=6740forms1';
+import { getAppSetupState, installPWA, enableNotifications, updateApp, checkForAppUpdate } from '../core/pwa.js?v=6740forms1';
 
 const SETTINGS_TTL_MS = 120000;
 

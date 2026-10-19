@@ -11,8 +11,8 @@
  * - tetap bisa menerima response dari Apps Script
  */
 
-import { state, clearSession } from './state.js';
-import { C, randomId, isStandalone } from './utils.js';
+import { state, clearSession } from './state.js?v=6740forms1';
+import { C, randomId, isStandalone } from './utils.js?v=6740forms1';
 
 export function apiConfigured() {
   return Boolean(C.API_URL && !C.API_URL.includes('PASTE_'));

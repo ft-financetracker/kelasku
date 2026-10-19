@@ -1,6 +1,6 @@
 /** Attendance presentation. Data loading and cache are owned by the controller. */
-import { esc } from '../core/utils.js';
-import { attendanceReportData } from './attendanceAnalytics.js?v=6739r52c75';
+import { esc } from '../core/utils.js?v=6740forms1';
+import { attendanceReportData } from './attendanceAnalytics.js?v=6740forms1';
 
 const PAGE_SIZE = 12;
 const VIEWS = [

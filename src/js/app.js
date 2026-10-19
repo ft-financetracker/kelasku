@@ -5,31 +5,31 @@
  * Bootstrap tetap compound: config + user + settings + dashboard.
  */
 
-import { receiveAppConfig } from './core/configSync.js?v=6739r52c93';
-import { state, setSession, setIdentity, clearSession } from './core/state.js';
-import { api } from './core/api.js';
-import { C, sleep, semverCmp } from './core/utils.js';
-import { readBool, writeJson } from './core/storage.js';
-import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=6739';
-import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js';
-import { applyPreferences } from './core/preferences.js?v=6739r52c93';
+import { receiveAppConfig } from './core/configSync.js?v=6740forms1';
+import { state, setSession, setIdentity, clearSession } from './core/state.js?v=6740forms1';
+import { api } from './core/api.js?v=6740forms1';
+import { C, sleep, semverCmp } from './core/utils.js?v=6740forms1';
+import { readBool, writeJson } from './core/storage.js?v=6740forms1';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=6740forms1';
+import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js?v=6740forms1';
+import { applyPreferences } from './core/preferences.js?v=6740forms1';
 
-import { renderSplash } from './screens/splash.js';
-import { renderOnboarding } from './screens/onboarding.js';
-import { renderAuth } from './screens/auth.js';
-import { renderProfile } from './screens/profile.js?v=6739r52c93';
-import { renderSetup } from './screens/setup.js';
-import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6739r52c93';
-import { renderAccount } from './screens/account.js?v=6739r52c93';
-import { renderSettings } from './screens/settings.js?v=6739r52c93';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6739r52c93';
-import { renderClassRoom } from './screens/classRoom.js?v=6739r52c931';
-import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js?v=6739r52c93';
-import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6739r52c93';
-import { renderAppInfo } from './screens/appInfo.js?v=6739r52c93';
-import { renderAttendanceLanding } from './screens/attendanceLanding.js';
-import { renderMessages, prefetchMessageRooms } from './screens/messages.js?v=6739r52c93';
-import { renderNotifications } from './screens/notifications.js?v=6739r52c93';
+import { renderSplash } from './screens/splash.js?v=6740forms1';
+import { renderOnboarding } from './screens/onboarding.js?v=6740forms1';
+import { renderAuth } from './screens/auth.js?v=6740forms1';
+import { renderProfile } from './screens/profile.js?v=6740forms1';
+import { renderSetup } from './screens/setup.js?v=6740forms1';
+import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6740forms1';
+import { renderAccount } from './screens/account.js?v=6740forms1';
+import { renderSettings } from './screens/settings.js?v=6740forms1';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6740forms1';
+import { renderClassRoom } from './screens/classRoom.js?v=6740forms1';
+import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminAudit } from './screens/admin.js?v=6740forms1';
+import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6740forms1';
+import { renderAppInfo } from './screens/appInfo.js?v=6740forms1';
+import { renderAttendanceLanding } from './screens/attendanceLanding.js?v=6740forms1';
+import { renderMessages, prefetchMessageRooms } from './screens/messages.js?v=6740forms1';
+import { renderNotifications } from './screens/notifications.js?v=6740forms1';
 
 const authGuard = renderer => () => { if(state.sessionToken)return renderer(); const route=currentRoute(); if(route&&route!=='auth')sessionStorage.setItem('kelasku_post_auth_route',route); return go('auth',{replace:true}); };
 
@@ -39,6 +39,7 @@ registerRoute('auth', renderAuth);
 registerRoute('profile', authGuard(renderProfile));
 registerRoute('setup', authGuard(renderSetup));
 registerRoute('dashboard', authGuard(renderDashboard));
+registerRoute('forms', authGuard(async()=>{document.getElementById('app').innerHTML='<div class="forms-launch" role="status">Menyiapkan Tugas Global…</div>';try{const {renderFormsOwner}=await import('./forms/live.js?v=6740forms1');if(currentRoute()==='forms')renderFormsOwner();}catch(e){if(currentRoute()==='forms')document.getElementById('app').textContent='Tugas Global belum dapat dimuat. Muat ulang halaman.';}}));
 registerRoute('account', authGuard(renderAccount));
 registerRoute('settings', authGuard(renderSettings));
 registerRoute('app-info', authGuard(renderAppInfo));

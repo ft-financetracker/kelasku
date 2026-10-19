@@ -2,39 +2,75 @@
  * KelasKu Service Worker
  * WAJIB naikkan CACHE_NAME setiap release frontend.
  */
-const CACHE_NAME = 'kelasku-v6.7.39-b339-r52-cleaning-c931-participant-role-recap';
+const CACHE_NAME = 'kelasku-v6.7.40-forms-v1-rc1';
 const APP_SHELL = [
-  '/src/css/app.css?v=6739r52c93',
-  '/src/css/enrollment.css?v=6739r52c93',
-  '/src/css/soft-mocha.css?v=6739r52c93',
-  '/src/js/screens/attendanceEnrollment.js?v=6739r52c93',
-  '/src/js/core/preferences.js?v=6739r52c93',
+  '/src/js/app.js?v=6740forms1',
+  '/src/js/core/api.js?v=6740forms1',
+  '/src/js/core/appShell.js?v=6740forms1',
+  '/src/js/core/configSync.js?v=6740forms1',
+  '/src/js/core/dialog.js?v=6740forms1',
+  '/src/js/core/media.js?v=6740forms1',
+  '/src/js/core/navigationConfig.js?v=6740forms1',
+  '/src/js/core/notificationSignals.js?v=6740forms1',
+  '/src/js/core/preferences.js?v=6740forms1',
+  '/src/js/core/pwa.js?v=6740forms1',
+  '/src/js/core/router.js?v=6740forms1',
+  '/src/js/core/shellInteractions.js?v=6740forms1',
+  '/src/js/core/shellUpdates.js?v=6740forms1',
+  '/src/js/core/state.js?v=6740forms1',
+  '/src/js/core/storage.js?v=6740forms1',
+  '/src/js/core/utils.js?v=6740forms1',
+  '/src/js/core/xlsx.js?v=6740forms1',
+  '/src/js/forms/client.js?v=6740forms1',
+  '/src/js/forms/dispatcher.js?v=6740forms1',
+  '/src/js/forms/icons.js?v=6740forms1',
+  '/src/js/forms/live.js?v=6740forms1',
+  '/src/js/forms/model.js?v=6740forms1',
+  '/src/js/forms/view.js?v=6740forms1',
+  '/src/js/forms/workspace.js?v=6740forms1',
+  '/src/js/screens/academic.js?v=6740forms1',
+  '/src/js/screens/account.js?v=6740forms1',
+  '/src/js/screens/admin.js?v=6740forms1',
+  '/src/js/screens/appInfo.js?v=6740forms1',
+  '/src/js/screens/attendanceAnalytics.js?v=6740forms1',
+  '/src/js/screens/attendanceEnrollment.js?v=6740forms1',
+  '/src/js/screens/attendanceHub.js?v=6740forms1',
+  '/src/js/screens/attendanceLanding.js?v=6740forms1',
+  '/src/js/screens/auth.js?v=6740forms1',
+  '/src/js/screens/classAcademicData.js?v=6740forms1',
+  '/src/js/screens/classDirectory.js?v=6740forms1',
+  '/src/js/screens/classRoom.js?v=6740forms1',
+  '/src/js/screens/classes.js?v=6740forms1',
+  '/src/js/screens/dashboard.js?v=6740forms1',
+  '/src/js/screens/messages.js?v=6740forms1',
+  '/src/js/screens/navigationEditor.js?v=6740forms1',
+  '/src/js/screens/notifications.js?v=6740forms1',
+  '/src/js/screens/onboarding.js?v=6740forms1',
+  '/src/js/screens/profile.js?v=6740forms1',
+  '/src/js/screens/publicLinks.js?v=6740forms1',
+  '/src/js/screens/settings.js?v=6740forms1',
+  '/src/js/screens/setup.js?v=6740forms1',
+  '/src/js/screens/splash.js?v=6740forms1',
+  '/forms-config.js?v=6740forms1',
+  '/forms-release.js?v=6740forms1',
+  '/src/css/forms-entry.css?v=6740forms1',
+  '/src/css/forms.css?v=6740forms1',
+  '/src/js/forms/client.js',
+  '/src/js/forms/workspace.js',
+  '/src/js/forms/model.js',
+  '/src/js/forms/view.js',
+  '/src/js/forms/icons.js',
+  '/src/css/app.css?v=6740forms1',
+  '/src/css/enrollment.css?v=6740forms1',
+  '/src/css/soft-mocha.css?v=6740forms1',
   '/src/js/core/configSync.js',
-  '/src/js/core/configSync.js?v=6739r52c93',
   '/src/js/core/shellUpdates.js',
-  '/src/js/core/shellUpdates.js?v=6739r52c93',
 
-  '/src/css/shell.css?v=6739r52c93',
+  '/src/css/shell.css?v=6740forms1',
   '/src/css/navigation-editor.css',
-  '/src/css/navigation-editor.css?v=6739r52c93',
-  '/src/js/app.js?v=6739r52c931',
-  '/src/js/core/appShell.js?v=6739r52c93',
-  '/src/js/core/shellInteractions.js?v=6739r52c93',
+  '/src/css/navigation-editor.css?v=6740forms1',
   '/src/js/core/navigationConfig.js',
-  '/src/js/core/navigationConfig.js?v=6739r52c93',
   '/src/js/screens/navigationEditor.js',
-  '/src/js/screens/navigationEditor.js?v=6739r52c93',
-  '/src/js/screens/academic.js?v=6739r52c93',
-  '/src/js/screens/messages.js?v=6739r52c93',
-  '/src/js/screens/dashboard.js?v=6739r52c93',
-  '/src/js/screens/admin.js?v=6739r52c93',
-  '/src/js/screens/profile.js?v=6739r52c93',
-  '/src/js/screens/classes.js?v=6739r52c93',
-  '/src/js/screens/settings.js?v=6739r52c93',
-  '/src/js/screens/notifications.js?v=6739r52c93',
-  '/src/js/screens/account.js?v=6739r52c93',
-  '/src/js/screens/appInfo.js?v=6739r52c93',
-  '/src/js/screens/classRoom.js?v=6739r52c931',
 
   '/',
   '/index.html',
@@ -52,9 +88,9 @@ const APP_SHELL = [
   '/src/css/app.css',
   '/src/css/shell.css',
   '/src/css/attendance.css',
-  '/src/css/attendance.css?v=6739r52c93',
+  '/src/css/attendance.css?v=6740forms1',
   '/src/css/classes.css',
-  '/src/css/classes.css?v=6739r52c93',
+  '/src/css/classes.css?v=6740forms1',
   '/src/js/app.js',
   '/src/js/core/state.js',
   '/src/js/core/storage.js',
@@ -76,16 +112,12 @@ const APP_SHELL = [
   '/src/js/screens/dashboard.js',
   '/src/js/screens/academic.js',
   '/src/js/screens/classAcademicData.js',
-  '/src/js/screens/classAcademicData.js?v=6739r52c75',
   '/src/js/screens/attendanceAnalytics.js',
-  '/src/js/screens/attendanceAnalytics.js?v=6739r52c75',
   '/src/js/screens/attendanceHub.js',
-  '/src/js/screens/attendanceHub.js?v=6739r52c75',
   '/src/js/screens/account.js',
   '/src/js/screens/settings.js',
   '/src/js/screens/classes.js',
   '/src/js/screens/classDirectory.js',
-  '/src/js/screens/classDirectory.js?v=6739r52c83',
   '/src/js/screens/classRoom.js',
   '/src/js/screens/admin.js',
   '/src/js/screens/appInfo.js',
@@ -112,7 +144,7 @@ const APP_SHELL = [
 const APP_ROUTE_PATHS = new Set([
   '/', '/login', '/lengkapi-profil', '/setup', '/dashboard', '/profil', '/pengaturan', '/tentang',
   '/kelas', '/join', '/ruang-kelas', '/jadwal', '/tugas', '/materi', '/pengumuman', '/absensi', '/pesan',
-  '/notifikasi', '/admin', '/admin/pengguna', '/admin/kelas', '/admin/sistem', '/admin/audit'
+  '/formulir', '/notifikasi', '/admin', '/admin/pengguna', '/admin/kelas', '/admin/sistem', '/admin/audit'
 ]);
 
 self.addEventListener('install', event => {
@@ -153,6 +185,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  if (req.method !== 'GET') return;
+  if (url.pathname === '/forms-config.js') { event.respondWith(fetch(req, {cache:'no-store'}).catch(()=>caches.match(req))); return; }
+
   if (req.mode === 'navigate') {
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
     const isPublicLinks = path.endsWith('/links.html');
@@ -182,7 +217,8 @@ self.addEventListener('fetch', event => {
       return;
     }
 
-    const fallback = isPublicLinks ? '/links.html' : '/index.html';
+    const fallback = isPublicLinks ? '/links.html' : null;
+    if (!fallback) { event.respondWith(fetch(req).catch(()=>Response.error())); return; }
     event.respondWith(
       fetch(req)
         .then(async res => {
@@ -193,7 +229,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(fallback, clone));
           return res;
         })
-        .catch(async () => (await caches.match(fallback)) || caches.match('/index.html'))
+        .catch(async () => (await caches.match(fallback)) || Response.error())
     );
     return;
   }

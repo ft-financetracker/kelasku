@@ -22,6 +22,7 @@ const ROUTE_PATHS = Object.freeze({
   class: '/ruang-kelas',
   schedule: '/jadwal',
   tasks: '/tugas',
+  forms: '/formulir',
   materials: '/materi',
   announcements: '/pengumuman',
   attendance: '/absensi',

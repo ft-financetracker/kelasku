@@ -1,8 +1,8 @@
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { esc, svg, fmtDate, toast, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
-import { openDeepLink } from '../core/router.js';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { esc, svg, fmtDate, toast, sameData } from '../core/utils.js?v=6740forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
+import { openDeepLink } from '../core/router.js?v=6740forms1';
 
 let category='ALL';
 let currentItems=[];

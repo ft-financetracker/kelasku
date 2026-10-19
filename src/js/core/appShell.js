@@ -1,10 +1,10 @@
-import { state } from './state.js';
-import { esc, svg, logo, toast } from './utils.js';
-import { go, currentRoute } from './router.js';
-import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6739r52c93';
-import { navigationMenus } from './navigationConfig.js?v=6739r52c93';
-import { receiveAppConfig } from './configSync.js?v=6739r52c93';
-import { startShellUpdates } from './shellUpdates.js?v=6739r52c93';
+import { state } from './state.js?v=6740forms1';
+import { esc, svg, logo, toast } from './utils.js?v=6740forms1';
+import { go, currentRoute } from './router.js?v=6740forms1';
+import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6740forms1';
+import { navigationMenus } from './navigationConfig.js?v=6740forms1';
+import { receiveAppConfig } from './configSync.js?v=6740forms1';
+import { startShellUpdates } from './shellUpdates.js?v=6740forms1';
 
 let retainedNavigation = null, retainedOwner = '';
 const shellOptions = new WeakMap();
@@ -30,6 +30,7 @@ export function appShell(options = {}) {
           ${sideItem('i-class', 'Kelas', 'classes', active === 'classes' || active === 'class')}
           ${sideItem('i-calendar', 'Jadwal', 'schedule', active === 'schedule')}
           ${sideItem('i-task', 'Tugas', 'tasks', active === 'tasks')}
+          ${window.KELASKU_FORMS_CONFIG?.ENABLED ? sideItem('i-file', 'Tugas Global', 'forms', active === 'forms') : ''}
           ${sideItem('i-file', 'Materi', 'materials', active === 'materials')}
           ${sideItem('i-mega', 'Pengumuman', 'announcements', active === 'announcements')}
           ${sideItem('i-check', 'Absensi', 'attendance', active === 'attendance')}
@@ -53,7 +54,7 @@ ${logo(true)}
             <button class="icon-btn shell-account-btn" id="shell-account" title="Profil" aria-label="Profil">${state.user?.avatar_url ? `<img class="shell-avatar-img" src="${esc(state.user.avatar_url)}" alt="">` : svg('i-user')}</button>
           </div>
         </div>
-        <div class="dashboard-body">${content}</div>
+        <div class="dashboard-body">${active==='dashboard'&&window.KELASKU_FORMS_CONFIG?.ENABLED?`<section class="forms-launch"><div><strong>Tugas Global</strong><small>Buat tugas, bagikan tautan, pantau progres.</small></div><button type="button" class="btn primary" data-route="forms">Buka</button></section>`:''}${content}</div>
       </main>
 
       ${bottomNavigationHtml(active)}
