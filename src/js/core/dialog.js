@@ -1,4 +1,4 @@
-import { esc, svg } from './utils.js';
+import { esc, svg } from './utils.js?v=6740forms1';
 
 export function confirmDialog(options = {}) {
   const title = options.title || 'Konfirmasi';

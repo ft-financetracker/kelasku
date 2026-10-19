@@ -1,8 +1,8 @@
-import { state } from './state.js';
-import { api } from './api.js';
-import { C } from './utils.js';
-import { showSystemNotification } from './pwa.js';
-import { receiveAppConfig } from './configSync.js?v=6739r52c93';
+import { state } from './state.js?v=6740forms1';
+import { api } from './api.js?v=6740forms1';
+import { C } from './utils.js?v=6740forms1';
+import { showSystemNotification } from './pwa.js?v=6740forms1';
+import { receiveAppConfig } from './configSync.js?v=6740forms1';
 
 let bound = false, inFlight = null, lastOwner = '', lastStarted = -Infinity;
 const EVENT_COOLDOWN_MS = 3000;

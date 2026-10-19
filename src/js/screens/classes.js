@@ -1,9 +1,9 @@
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { esc, svg, toast } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
-import { go } from '../core/router.js';
-import { directoryClasses, sortDirectoryClasses, directoryCardHtml, directoryTabsHtml, directoryEmptyHtml, directoryIcon, directoryHeroArt, directoryPage, directoryPagerHtml, DIRECTORY_PAGE_SIZE, DIRECTORY_VIEWS, isArchivedClass, isDemoClass, isClassMember, directoryVisibility } from './classDirectory.js?v=6739r52c83';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { esc, svg, toast } from '../core/utils.js?v=6740forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
+import { go } from '../core/router.js?v=6740forms1';
+import { directoryClasses, sortDirectoryClasses, directoryCardHtml, directoryTabsHtml, directoryEmptyHtml, directoryIcon, directoryHeroArt, directoryPage, directoryPagerHtml, DIRECTORY_PAGE_SIZE, DIRECTORY_VIEWS, isArchivedClass, isDemoClass, isClassMember, directoryVisibility } from './classDirectory.js?v=6740forms1';
 
 let publicPage = 1;
 let publicQuery = '';

@@ -1,7 +1,7 @@
 /** One class-academic source/cache for Room and the attendance menu. */
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { loadAttendanceAnalytics, attendanceAnalyticsRequestedAt, rememberAttendanceAnalyticsRecord } from './attendanceAnalytics.js?v=6739r52c75';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { loadAttendanceAnalytics, attendanceAnalyticsRequestedAt, rememberAttendanceAnalyticsRecord } from './attendanceAnalytics.js?v=6740forms1';
 
 const TTL_MS = 90000;
 const inFlight = new Map();

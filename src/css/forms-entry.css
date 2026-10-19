@@ -1,0 +1,6 @@
+.forms-launch{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;padding:14px 16px;border:1px solid rgba(49,197,183,.3);border-radius:16px;background:rgba(49,197,183,.08);color:inherit}
+.forms-launch>div{min-width:0}
+.forms-launch strong{display:block;font-size:14px}
+.forms-launch small{display:block;font-size:12px;opacity:.8;margin-top:3px}
+.forms-launch button{flex-shrink:0}
+@media(max-width:360px){.forms-launch{padding:12px;gap:8px}.forms-launch small{font-size:11px}}

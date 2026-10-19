@@ -1,6 +1,6 @@
 /** Shared attendance analytics source and C6 counters for Room and /absen. */
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
 
 const TTL_MS = 60000;
 const inFlight = new Map();

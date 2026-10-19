@@ -1,13 +1,13 @@
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
-import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js';
-import { go } from '../core/router.js';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6739r52c75';
-import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6739r52c75';
-import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6739r52c75';
-import { prefetchMyClasses } from './classes.js?v=6739r52c9';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js?v=6740forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
+import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js?v=6740forms1';
+import { go } from '../core/router.js?v=6740forms1';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6740forms1';
+import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6740forms1';
+import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6740forms1';
+import { prefetchMyClasses } from './classes.js?v=6740forms1';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';

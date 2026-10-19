@@ -1,9 +1,9 @@
-import { receiveAppConfig } from '../core/configSync.js?v=6739r52c93';
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { esc, svg } from '../core/utils.js';
-import { NAVIGATION_MENUS, DEFAULT_NAVIGATION, navigationIds, validateNavigation, moveNavigation, NAVIGATION_MIN, NAVIGATION_MAX } from '../core/navigationConfig.js?v=6739r52c93';
-import { navigationSurfacePath } from '../core/shellInteractions.js?v=6739r52c93';
+import { receiveAppConfig } from '../core/configSync.js?v=6740forms1';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { esc, svg } from '../core/utils.js?v=6740forms1';
+import { NAVIGATION_MENUS, DEFAULT_NAVIGATION, navigationIds, validateNavigation, moveNavigation, NAVIGATION_MIN, NAVIGATION_MAX } from '../core/navigationConfig.js?v=6740forms1';
+import { navigationSurfacePath } from '../core/shellInteractions.js?v=6740forms1';
 
 export function navigationEditorHtml() {
   return '<section id="admin-navigation-editor" class="panel admin-section nav-editor" aria-label="Susun navigasi bawah"></section>';

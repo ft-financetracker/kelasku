@@ -1,10 +1,10 @@
-import { receiveAppConfig } from '../core/configSync.js?v=6739r52c93';
-import { state } from '../core/state.js';
-import { api } from '../core/api.js';
-import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6739r52c93';
-import { go } from '../core/router.js';
-import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6739r52c93';
+import { receiveAppConfig } from '../core/configSync.js?v=6740forms1';
+import { state } from '../core/state.js?v=6740forms1';
+import { api } from '../core/api.js?v=6740forms1';
+import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js?v=6740forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms1';
+import { go } from '../core/router.js?v=6740forms1';
+import { navigationEditorHtml, mountNavigationEditor } from './navigationEditor.js?v=6740forms1';
 
 let overview = state.adminOverview || null;
 let overviewAt = overview ? Date.now() : 0;

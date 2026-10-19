@@ -1,5 +1,5 @@
-import { readJson } from './storage.js';
-import { randomId } from './utils.js';
+import { readJson } from './storage.js?v=6740forms1';
+import { randomId } from './utils.js?v=6740forms1';
 
 function getDeviceId() {
   let id = localStorage.getItem('kelasku_device_id');
@@ -65,6 +65,8 @@ export function setIdentity(identity) {
 }
 
 export function clearSession() {
+  window.dispatchEvent(new CustomEvent('kelasku-session-cleared'));
+  localStorage.setItem('kelasku_forms_v1_logout',String(Date.now()));
   setSession('', null);
   state.dashboard = null;
   state.dashboardAt = 0;
