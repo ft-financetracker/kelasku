@@ -1,13 +1,13 @@
-import { state } from '../core/state.js?v=6740forms2';
-import { api } from '../core/api.js?v=6740forms2';
-import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js?v=6740forms2';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms2';
-import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js?v=6740forms2';
-import { go } from '../core/router.js?v=6740forms2';
-import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6740forms2';
-import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6740forms2';
-import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6740forms2';
-import { prefetchMyClasses } from './classes.js?v=6740forms2';
+import { state } from '../core/state.js?v=6741forms1';
+import { api } from '../core/api.js?v=6741forms1';
+import { esc, svg, toast, fmtDate, sameData } from '../core/utils.js?v=6741forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6741forms1';
+import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js?v=6741forms1';
+import { go } from '../core/router.js?v=6741forms1';
+import { attendanceOverviewHtml, attendanceTabsHtml, attendanceContentHtml, attendanceDetailsHtml, attendanceEntryHtml, attendanceEntryMessageHtml, attendanceWindow, attendanceIsReportView, bindAttendanceHub, resetAttendancePages, resetAttendanceFolders } from './attendanceHub.js?v=6741forms1';
+import { loadAttendanceAnalytics, invalidateAttendanceAnalytics } from './attendanceAnalytics.js?v=6741forms1';
+import { loadAttendanceClassData, attendanceClassDataFresh, loadAttendanceSessionState, markAttendanceUnverified, invalidateClassAcademicData, attendanceClasses, attendanceSourceData, applyAttendanceCheckIn } from './classAcademicData.js?v=6741forms1';
+import { prefetchMyClasses } from './classes.js?v=6741forms1';
 
 const HUB_TTL_MS = 45000;
 let activeAcademicScreen = '';
@@ -58,10 +58,12 @@ export function renderAttendance() {
 
 function renderAcademicShell(title, copy, active, icon) {
   const attendance = active === 'attendance';
+  const tasks = active === 'tasks';
+  const formsEnabled = tasks && window.KELASKU_FORMS_CONFIG?.ENABLED;
   const heading = attendance
     ? `<div class="att-page-context"><strong>ABSENSI</strong><span>Phase 6 · Academic Workflow</span></div><div id="attendance-overview"></div>`
-    : `<div class="page-head academic-page-head"><div><div class="eyebrow">PHASE 6 • Academic Workflow</div><h1>${esc(title)}</h1><p>${esc(copy)}</p></div><span class="phase-badge">ACTIVE</span></div>`;
-  const content = `${heading}
+    : `<div class="page-head academic-page-head"><div><div class="eyebrow">${tasks ? 'AKADEMIK' : 'PHASE 6 • Academic Workflow'}</div><h1>${esc(title)}</h1><p>${esc(copy)}</p></div>${formsEnabled ? `<button type="button" class="btn btn-primary" data-route="forms">${svg('i-plus')} Buat tugas umum</button>` : tasks ? '' : '<span class="phase-badge">ACTIVE</span>'}</div>`;
+  const content = `${heading}${formsEnabled ? '<nav class="task-scope-tabs" aria-label="Jenis tugas"><button type="button" data-route="tasks" aria-current="page">Tugas kelas</button><button type="button" data-route="forms">Tugas global</button></nav>' : ''}
     <section class="academic-toolbar panel ${attendance ? 'attendance-toolbar att-toolbar' : ''}" aria-label="Pencarian dan filter ${esc(title)}">
       <div class="academic-search">${svg('i-search')}<input id="academic-search" aria-label="Cari ${esc(title.toLowerCase())}" placeholder="${attendance ? 'Cari sesi, tanggal, atau topik…' : `Cari ${esc(title.toLowerCase())}…`}" autocomplete="off"></div>
       <select id="academic-class-filter" aria-label="Filter kelas" class="control compact-control"><option value="ALL">Semua Kelas</option></select>

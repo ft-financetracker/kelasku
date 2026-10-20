@@ -1,8 +1,8 @@
 {
-  "version": "6.7.40",
-  "build": "20261019.401",
+  "version": "6.7.41",
+  "build": "20261020.410",
   "schema": 17,
-  "release_date": "2026-10-19",
-  "release_note": "Formulir tetap memakai navigasi KelasKu; pengaturan navbar mendapat room langsung dan akses dari Pengaturan.",
-  "release_time_wib": "RC1"
+  "release_date": "2026-10-20",
+  "release_note": "Forms V1.1: tautan kategori tetap, peserta dalam tabel, impor kelas dan workspace ringkas.",
+  "release_time_wib": "08:22 WIB"
 }

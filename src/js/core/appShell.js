@@ -1,10 +1,10 @@
-import { state } from './state.js?v=6740forms2';
-import { esc, svg, logo, toast } from './utils.js?v=6740forms2';
-import { go, currentRoute } from './router.js?v=6740forms2';
-import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6740forms2';
-import { navigationMenus } from './navigationConfig.js?v=6740forms2';
-import { receiveAppConfig } from './configSync.js?v=6740forms2';
-import { startShellUpdates } from './shellUpdates.js?v=6740forms2';
+import { state } from './state.js?v=6741forms1';
+import { esc, svg, logo, toast } from './utils.js?v=6741forms1';
+import { go, currentRoute } from './router.js?v=6741forms1';
+import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6741forms1';
+import { navigationMenus } from './navigationConfig.js?v=6741forms1';
+import { receiveAppConfig } from './configSync.js?v=6741forms1';
+import { startShellUpdates } from './shellUpdates.js?v=6741forms1';
 
 let retainedNavigation = null, retainedOwner = '';
 const shellOptions = new WeakMap();
@@ -55,7 +55,7 @@ ${logo(true)}
             <button class="icon-btn shell-account-btn" id="shell-account" title="Profil" aria-label="Profil">${state.user?.avatar_url ? `<img class="shell-avatar-img" src="${esc(state.user.avatar_url)}" alt="">` : svg('i-user')}</button>
           </div>
         </div>
-        <div class="dashboard-body">${active==='dashboard'&&window.KELASKU_FORMS_CONFIG?.ENABLED?`<section class="forms-launch"><div><strong>Formulir</strong><small>Tugas global, penilaian, dan peringkat.</small></div><button type="button" class="btn btn-primary" data-route="forms">Buka Formulir</button></section>`:''}${content}</div>
+        <div class="dashboard-body">${content}</div>
       </main>
 
       ${bottomNavigationHtml(active)}
