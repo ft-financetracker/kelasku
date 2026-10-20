@@ -1,6 +1,6 @@
-import { api } from '../core/api.js?v=6741forms1';
-import { state } from '../core/state.js?v=6741forms1';
-import { primaryUrl } from '../core/utils.js?v=6741forms1';
+import { api } from '../core/api.js?v=6742forms1';
+import { state } from '../core/state.js?v=6742forms1';
+import { primaryUrl } from '../core/utils.js?v=6742forms1';
 
 const content = document.getElementById('public-links-content');
 const params = new URLSearchParams(location.search);

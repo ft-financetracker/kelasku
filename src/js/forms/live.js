@@ -1,15 +1,15 @@
-import {createFormsClient} from './client.js?v=6741forms1';
-import {emptyWorkspace,createWorkspaceService} from './workspace.js?v=6741forms1';
-import {mountWorkspace} from './view.js?v=6741forms1';
-import {api} from '../core/api.js?v=6741forms1';
-import {state} from '../core/state.js?v=6741forms1';
-import {go} from '../core/router.js?v=6741forms1';
-import {appShell,bindAppShell} from '../core/appShell.js?v=6741forms1';
+import {createFormsClient} from './client.js?v=6742forms1';
+import {emptyWorkspace,createWorkspaceService} from './workspace.js?v=6742forms1';
+import {mountWorkspace} from './view.js?v=6742forms1';
+import {api} from '../core/api.js?v=6742forms1';
+import {state} from '../core/state.js?v=6742forms1';
+import {go} from '../core/router.js?v=6742forms1';
+import {appShell,bindAppShell} from '../core/appShell.js?v=6742forms1';
 
 let active=null;
 let ownerCache=null,cacheBound=false;
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function style(){if(document.getElementById('kelasku-forms-style'))return;const l=document.createElement('link');l.id='kelasku-forms-style';l.rel='stylesheet';l.href='/src/css/forms.css?v=6741forms1';document.head.append(l);}
+function style(){if(document.getElementById('kelasku-forms-style'))return;const l=document.createElement('link');l.id='kelasku-forms-style';l.rel='stylesheet';l.href='/src/css/forms.css?v=6742forms1';document.head.append(l);}
 export async function startForms({root,alias='',owner=false,target='session'}={}){
  if(active){active.dispose();active=null;}style();root.classList.add('kkf');
  const config=window.KELASKU_FORMS_CONFIG||{};
@@ -34,7 +34,7 @@ export async function startForms({root,alias='',owner=false,target='session'}={}
    if(closed||!root.isConnected||state.sessionToken!==session){stop();return;}
    view.setLoadState();
   }else{
-   root.innerHTML='<div class="kkf-empty" role="status"><h2>Membuka tugas…</h2><p>Menyiapkan informasi sesi.</p></div>';
+   if(!root.querySelector('[role="status"],.public-loading-state'))root.innerHTML='<div class="kkf-empty" role="status"><h2>Membuka ruang tugas…</h2><p>Menyiapkan halamanmu.</p></div>';
    await service.publicSession();
    if(closed||!root.isConnected){stop();return;}
    view=mountWorkspace(root,{remote:service,initialMode:'student'});
@@ -43,7 +43,7 @@ export async function startForms({root,alias='',owner=false,target='session'}={}
  }catch(e){
   if(closed||!root.isConnected)return;
   if(owner&&view){if(warm){view.setLoadState();const p=document.createElement('p');p.className='kkf-note';p.setAttribute('role','status');p.textContent='Data terakhir ditampilkan. Pembaruan belum berhasil: '+(e.message||'Periksa koneksi.');root.querySelector('#kkf-main')?.prepend(p);}else view.setLoadState({error:e.message||'Data belum dapat dimuat.'});return active;}
-  stop();root.innerHTML='<div class="kkf-empty"><h2>Tugas belum dapat dibuka.</h2><p>'+escape(e.message)+'</p><button class="kkf-btn" id="kkf-retry-start">Coba lagi</button><a class="kkf-btn" href="/dashboard">Kembali ke KelasKu</a></div>';root.querySelector('#kkf-retry-start').onclick=()=>startForms({root,alias,owner});
+  stop();root.innerHTML='<div class="kkf-empty"><h2>Tugas belum dapat dibuka.</h2><p>'+escape(e.message)+'</p><button class="kkf-btn" id="kkf-retry-start">Coba lagi</button><a class="kkf-btn" href="/dashboard">Kembali ke KelasKu</a></div>';root.querySelector('#kkf-retry-start').onclick=()=>startForms({root,alias,owner,target});
  }
 }
 export function renderFormsOwner(){const app=document.getElementById('app');app.innerHTML=appShell({active:'forms',hideSearch:true,content:'<div id="kelasku-forms-root" class="kkf forms-workspace"></div>'});bindAppShell({onRefresh:()=>document.querySelector('#kelasku-forms-root [data-action="refresh-live"]')?.click()});return startForms({root:document.getElementById('kelasku-forms-root'),owner:true});}

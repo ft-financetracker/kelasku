@@ -1,10 +1,10 @@
-import { state } from './state.js?v=6741forms1';
-import { esc, svg, logo, toast } from './utils.js?v=6741forms1';
-import { go, currentRoute } from './router.js?v=6741forms1';
-import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6741forms1';
-import { navigationMenus } from './navigationConfig.js?v=6741forms1';
-import { receiveAppConfig } from './configSync.js?v=6741forms1';
-import { startShellUpdates } from './shellUpdates.js?v=6741forms1';
+import { state } from './state.js?v=6742forms1';
+import { esc, svg, logo, toast } from './utils.js?v=6742forms1';
+import { go, currentRoute } from './router.js?v=6742forms1';
+import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6742forms1';
+import { navigationMenus } from './navigationConfig.js?v=6742forms1';
+import { receiveAppConfig } from './configSync.js?v=6742forms1';
+import { startShellUpdates } from './shellUpdates.js?v=6742forms1';
 
 let retainedNavigation = null, retainedOwner = '';
 const shellOptions = new WeakMap();
@@ -38,7 +38,6 @@ export function appShell(options = {}) {
           ${sideItem('i-user', 'Profil', 'account', active === 'account')}
           ${sideItem('i-gear', 'Pengaturan', 'settings', active === 'settings' || active === 'app-info')}
           ${admin ? sideItem('i-shield', 'Super Admin', 'admin', active === 'admin') : ''}
-          ${admin ? sideItem('i-menu', 'Navigasi Bawah', 'admin-navigation', active === 'admin-navigation') : ''}
         </nav>
         <div class="sidebar-foot">@${esc(state.user?.username || '-')}<br>${esc(state.user?.kelasku_id || '-')}<br><br>KelasKu v${esc(window.KELASKU_CONFIG.APP_VERSION)}<br>Belajar Bersama Lebih Mudah.</div>
       </aside>

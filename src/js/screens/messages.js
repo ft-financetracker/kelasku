@@ -1,10 +1,10 @@
-import { state } from '../core/state.js?v=6741forms1';
-import { api } from '../core/api.js?v=6741forms1';
-import { esc, svg, toast, sameData } from '../core/utils.js?v=6741forms1';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6741forms1';
-import { confirmDialog } from '../core/dialog.js?v=6741forms1';
-import { go } from '../core/router.js?v=6741forms1';
-import { compressImageFile, blobToDataUrl, formatBytes } from '../core/media.js?v=6741forms1';
+import { state } from '../core/state.js?v=6742forms1';
+import { api } from '../core/api.js?v=6742forms1';
+import { esc, svg, toast, sameData } from '../core/utils.js?v=6742forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6742forms1';
+import { confirmDialog } from '../core/dialog.js?v=6742forms1';
+import { go } from '../core/router.js?v=6742forms1';
+import { compressImageFile, blobToDataUrl, formatBytes } from '../core/media.js?v=6742forms1';
 
 let activeClassId = '';
 let sending = false;

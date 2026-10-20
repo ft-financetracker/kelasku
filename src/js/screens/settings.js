@@ -1,10 +1,10 @@
-import { state } from '../core/state.js?v=6741forms1';
-import { api } from '../core/api.js?v=6741forms1';
-import { esc, svg, toast, semverCmp, C, sameData } from '../core/utils.js?v=6741forms1';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6741forms1';
-import { applyPreferences, previewPreferences } from '../core/preferences.js?v=6741forms1';
-import { go } from '../core/router.js?v=6741forms1';
-import { getAppSetupState, installPWA, enableNotifications, updateApp, checkForAppUpdate } from '../core/pwa.js?v=6741forms1';
+import { state } from '../core/state.js?v=6742forms1';
+import { api } from '../core/api.js?v=6742forms1';
+import { esc, svg, toast, semverCmp, C, sameData } from '../core/utils.js?v=6742forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6742forms1';
+import { applyPreferences, previewPreferences } from '../core/preferences.js?v=6742forms1';
+import { go } from '../core/router.js?v=6742forms1';
+import { getAppSetupState, installPWA, enableNotifications, updateApp, checkForAppUpdate } from '../core/pwa.js?v=6742forms1';
 
 const SETTINGS_TTL_MS = 120000;
 
@@ -74,7 +74,7 @@ function drawSettings(s) {
 
       ${settingsRoom({
         id: 'experience', icon: 'i-home', title: 'Navigasi & Pengalaman',
-        copy: 'Halaman awal, akses formulir, dan navigasi aplikasi.', count: `${2 + (window.KELASKU_FORMS_CONFIG?.ENABLED ? 1 : 0) + (admin ? 1 : 0)} Menu`,
+        copy: 'Halaman awal, akses formulir, dan navigasi aplikasi.', count: `${2 + (window.KELASKU_FORMS_CONFIG?.ENABLED ? 1 : 0) } Menu`,
         keywords: 'halaman awal startup beranda kelas onboarding tutorial pengalaman navigasi navbar bawah formulir tugas global',
         body: `
           <div class="settings-room-grid">
@@ -84,7 +84,6 @@ function drawSettings(s) {
           <div class="settings-inline-actions">
             <button type="button" id="replay-onboarding" class="btn btn-secondary">${svg('i-refresh')} Putar Ulang Onboarding</button>
             ${window.KELASKU_FORMS_CONFIG?.ENABLED ? '<button type="button" id="open-forms" class="btn btn-primary">'+svg('i-file')+' Buka Formulir</button>' : ''}
-            ${admin ? '<button type="button" id="open-navigation-settings" class="btn btn-secondary">'+svg('i-menu')+' Atur Navigasi Bawah</button>' : ''}
           </div>`
       })}
 
