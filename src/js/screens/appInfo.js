@@ -1,7 +1,7 @@
-import { C, esc, svg, toast, sameData } from '../core/utils.js?v=6740forms2';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6740forms2';
-import { getAppSetupState, checkForAppUpdate, updateApp } from '../core/pwa.js?v=6740forms2';
-import { go } from '../core/router.js?v=6740forms2';
+import { C, esc, svg, toast, sameData } from '../core/utils.js?v=6741forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6741forms1';
+import { getAppSetupState, checkForAppUpdate, updateApp } from '../core/pwa.js?v=6741forms1';
+import { go } from '../core/router.js?v=6741forms1';
 
 const CHANGELOG_CACHE_KEY='kelasku_changelog_cache';
 const RELEASE_BATCH=20;

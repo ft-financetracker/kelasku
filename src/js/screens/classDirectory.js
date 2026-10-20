@@ -1,5 +1,5 @@
 /** Class directory presentation. Membership, permissions and requests stay in classes.js. */
-import { esc, svg } from '../core/utils.js?v=6740forms2';
+import { esc, svg } from '../core/utils.js?v=6741forms1';
 
 export function isDemoClass(item = {}) {
   return item.is_demo === true || String(item.class_type || '').toUpperCase() === 'DEMO' || /^DEMO-/i.test(String(item.class_code || ''));
