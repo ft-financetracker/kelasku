@@ -5,32 +5,32 @@
  * Bootstrap tetap compound: config + user + settings + dashboard.
  */
 
-import { receiveAppConfig } from './core/configSync.js?v=6741forms1';
-import { state, setSession, setIdentity, clearSession } from './core/state.js?v=6741forms1';
-import { api } from './core/api.js?v=6741forms1';
-import { C, sleep, semverCmp } from './core/utils.js?v=6741forms1';
-import { readBool, writeJson } from './core/storage.js?v=6741forms1';
-import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=6741forms1';
-import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js?v=6741forms1';
-import { applyPreferences } from './core/preferences.js?v=6741forms1';
+import { receiveAppConfig } from './core/configSync.js?v=6742forms1';
+import { state, setSession, setIdentity, clearSession } from './core/state.js?v=6742forms1';
+import { api } from './core/api.js?v=6742forms1';
+import { C, sleep, semverCmp } from './core/utils.js?v=6742forms1';
+import { readBool, writeJson } from './core/storage.js?v=6742forms1';
+import { registerServiceWorker, initInstallCapture, updateApp, shouldShowAppSetup, startUpdateWatcher, checkForAppUpdate, consumeUpdateResult } from './core/pwa.js?v=6742forms1';
+import { registerRoute, go, startRouter, openDeepLink, currentRoute } from './core/router.js?v=6742forms1';
+import { applyPreferences } from './core/preferences.js?v=6742forms1';
 
-import { renderSplash } from './screens/splash.js?v=6741forms1';
-import { renderOnboarding } from './screens/onboarding.js?v=6741forms1';
-import { renderAuth } from './screens/auth.js?v=6741forms1';
-import { renderProfile } from './screens/profile.js?v=6741forms1';
-import { renderSetup } from './screens/setup.js?v=6741forms1';
-import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6741forms1';
-import { renderAccount } from './screens/account.js?v=6741forms1';
-import { renderSettings } from './screens/settings.js?v=6741forms1';
-import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6741forms1';
-import { renderClassRoom } from './screens/classRoom.js?v=6741forms1';
-import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminNavigation, renderAdminAudit } from './screens/admin.js?v=6741forms1';
-import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6741forms1';
-import { renderAppInfo } from './screens/appInfo.js?v=6741forms1';
-import { renderAttendanceLanding } from './screens/attendanceLanding.js?v=6741forms1';
-import { renderMessages, prefetchMessageRooms } from './screens/messages.js?v=6741forms1';
-import { renderNotifications } from './screens/notifications.js?v=6741forms1';
-import { renderFormsOwner } from './forms/live.js?v=6741forms1';
+import { renderSplash } from './screens/splash.js?v=6742forms1';
+import { renderOnboarding } from './screens/onboarding.js?v=6742forms1';
+import { renderAuth } from './screens/auth.js?v=6742forms1';
+import { renderProfile } from './screens/profile.js?v=6742forms1';
+import { renderSetup } from './screens/setup.js?v=6742forms1';
+import { renderDashboard, startNotificationPolling } from './screens/dashboard.js?v=6742forms1';
+import { renderAccount } from './screens/account.js?v=6742forms1';
+import { renderSettings } from './screens/settings.js?v=6742forms1';
+import { renderClasses, renderJoinLink, prefetchMyClasses } from './screens/classes.js?v=6742forms1';
+import { renderClassRoom } from './screens/classRoom.js?v=6742forms1';
+import { renderAdmin, renderAdminUsers, renderAdminClasses, renderAdminSystem, renderAdminNavigation, renderAdminAudit } from './screens/admin.js?v=6742forms1';
+import { renderSchedule, renderTasks, renderMaterials, renderAnnouncements, renderAttendance, loadAcademicHub } from './screens/academic.js?v=6742forms1';
+import { renderAppInfo } from './screens/appInfo.js?v=6742forms1';
+import { renderAttendanceLanding } from './screens/attendanceLanding.js?v=6742forms1';
+import { renderMessages, prefetchMessageRooms } from './screens/messages.js?v=6742forms1';
+import { renderNotifications } from './screens/notifications.js?v=6742forms1';
+import { renderFormsOwner } from './forms/live.js?v=6742forms1';
 
 const authGuard = renderer => () => { if(state.sessionToken)return renderer(); const route=currentRoute(); if(route&&route!=='auth')sessionStorage.setItem('kelasku_post_auth_route',route); return go('auth',{replace:true}); };
 

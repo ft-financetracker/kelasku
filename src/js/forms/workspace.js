@@ -1,4 +1,4 @@
-import * as Base from './model.js?v=6741forms1';
+import * as Base from './model.js?v=6742forms1';
 
 export const newId=()=>crypto.randomUUID();
 export function emptyWorkspace(){return {categories:[],participants:[],sessions:[],submissions:[],pointEvents:[],credentials:new Map(),drafts:new Map(),activeSessionId:'',revision:0,ownerName:'',publicBoards:{},exportSnapshot:null};}

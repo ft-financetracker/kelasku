@@ -1,15 +1,15 @@
-import { attendanceEnrollmentHtml, mountAttendanceEnrollment } from './attendanceEnrollment.js?v=6741forms1';
-import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6741forms1';
-import { loadClassAcademicData, loadAttendanceClassData, rememberAttendanceSessionDetail, applyAttendanceCheckIn } from './classAcademicData.js?v=6741forms1';
-import { state } from '../core/state.js?v=6741forms1';
-import { api } from '../core/api.js?v=6741forms1';
-import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js?v=6741forms1';
-import { appShell, bindAppShell } from '../core/appShell.js?v=6741forms1';
-import { confirmDialog } from '../core/dialog.js?v=6741forms1';
-import { go } from '../core/router.js?v=6741forms1';
-import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6741forms1';
-import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js?v=6741forms1';
-import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6741forms1';
+import { attendanceEnrollmentHtml, mountAttendanceEnrollment } from './attendanceEnrollment.js?v=6742forms1';
+import { loadAttendanceAnalytics, attendanceReportData, progressedAttendanceRecords, canonicalAttendanceActivityName, buildActivitySummary } from './attendanceAnalytics.js?v=6742forms1';
+import { loadClassAcademicData, loadAttendanceClassData, rememberAttendanceSessionDetail, applyAttendanceCheckIn } from './classAcademicData.js?v=6742forms1';
+import { state } from '../core/state.js?v=6742forms1';
+import { api } from '../core/api.js?v=6742forms1';
+import { esc, svg, toast, sameData, primaryUrl, randomId } from '../core/utils.js?v=6742forms1';
+import { appShell, bindAppShell } from '../core/appShell.js?v=6742forms1';
+import { confirmDialog } from '../core/dialog.js?v=6742forms1';
+import { go } from '../core/router.js?v=6742forms1';
+import { invalidateAcademicClientCache, openTaskModal } from './academic.js?v=6742forms1';
+import { compressImageFile, fileToDataUrl, formatBytes } from '../core/media.js?v=6742forms1';
+import { downloadXlsx, xlsxCell } from '../core/xlsx.js?v=6742forms1';
 
 let activeTab = 'overview';
 let timelineCategory = 'ALL';

@@ -1,8 +1,8 @@
 {
-  "version": "6.7.41",
-  "build": "20261020.410",
+  "version": "6.7.42",
+  "build": "20261020.420",
   "schema": 17,
   "release_date": "2026-10-20",
-  "release_note": "Forms V1.1: tautan kategori tetap, peserta dalam tabel, impor kelas dan workspace ringkas.",
+  "release_note": "Forms V1.2: hero tugas, langsung kerjakan, peringkat ringkas, akses navigasi khusus halaman Super Admin.",
   "release_time_wib": "08:22 WIB"
 }
