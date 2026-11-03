@@ -1,10 +1,10 @@
-import { state } from './state.js?v=6742forms1';
-import { esc, svg, logo, toast } from './utils.js?v=6742forms1';
-import { go, currentRoute } from './router.js?v=6742forms1';
-import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6742forms1';
-import { navigationMenus } from './navigationConfig.js?v=6742forms1';
-import { receiveAppConfig } from './configSync.js?v=6742forms1';
-import { startShellUpdates } from './shellUpdates.js?v=6742forms1';
+import { state } from './state.js?v=6743forms1';
+import { esc, svg, logo, toast } from './utils.js?v=6743forms1';
+import { go, currentRoute } from './router.js?v=6743forms1';
+import { bindShellInteractions, refreshFloatingNavigation, navigationSurfacePath, bottomNavigationRoute } from './shellInteractions.js?v=6743forms1';
+import { navigationMenus } from './navigationConfig.js?v=6743forms1';
+import { receiveAppConfig } from './configSync.js?v=6743forms1';
+import { startShellUpdates } from './shellUpdates.js?v=6743forms1';
 
 let retainedNavigation = null, retainedOwner = '';
 const shellOptions = new WeakMap();

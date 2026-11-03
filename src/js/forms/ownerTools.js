@@ -1,4 +1,4 @@
-import {icon} from './icons.js?v=6742forms1';
+import {icon} from './icons.js?v=6743forms1';
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const button=(a,t,i='plus',extra='')=>`<button type="button" class="kkf-btn" data-action="${a}" ${extra}>${icon(i)}${t}</button>`;
 const field=(t,c,h='')=>`<label class="kkf-field">${t}${c}${h?`<small>${h}</small>`:''}</label>`;
@@ -24,7 +24,47 @@ export function importGrid(state){
 export function rulesEditor(b){const a=b.activities,survey=b.kind==='SURVEY';
  return `<section class="kkf-rule-section"><h3>Nilai & peringkat</h3><div class="kkf-form-grid">${survey?'<p>Survei tidak menambah nilai atau poin.</p>':field('Poin maksimum sesi',input(b.pointWeight,'type="number" min="0" max="100000" data-builder="pointWeight"'),'Contoh: nilai 80 dengan maksimum 100 poin menghasilkan 80 poin.')}${field('Siapa yang melihat peringkat?',`<select class="kkf-select" data-builder="rankVisibility"><option value="PARTICIPANTS" ${b.rankVisibility==='PARTICIPANTS'?'selected':''}>Peserta yang sudah masuk</option><option value="PUBLIC" ${b.rankVisibility==='PUBLIC'?'selected':''}>Semua pengunjung</option><option value="OWNER" ${b.rankVisibility==='OWNER'?'selected':''}>Hanya pengelola</option></select>`)}</div></section><section class="kkf-rule-section"><h3>Hasil & pengumpulan</h3><div class="kkf-form-grid">${field('Kapan nilai terlihat?',`<select class="kkf-select" data-builder="release"><option value="AFTER_CLOSE" ${b.release==='AFTER_CLOSE'?'selected':''}>Setelah sesi ditutup</option><option value="MANUAL" ${b.release==='MANUAL'?'selected':''}>Saat saya merilis hasil</option><option value="AFTER_SUBMIT" ${b.release==='AFTER_SUBMIT'?'selected':''}>Setelah peserta mengirim</option></select>`)}<label class="kkf-check-row"><input type="checkbox" data-builder="revisionAllowed" ${b.revisionAllowed?'checked':''}><span><strong>Boleh revisi jawaban</strong><small>Hanya selama sesi dibuka. Bukti pengumpulan tetap sama.</small></span></label></div></section>${survey?'':`<details class="kkf-rule-section"><summary>Capaian keaktifan (opsional)</summary><p class="kkf-tiny kkf-muted">Capaian ini memberi apresiasi. Peringkat utama tetap memakai akumulasi poin kategori.</p><div class="kkf-rule-checks">${[['onTime','Tepat waktu','Kirim sebelum tenggat.'],['consistent','Konsisten','Menyelesaikan sesi yang ditugaskan.'],['earliest','Pengumpul terawal','Diurutkan dari waktu kirim.'],['fastest','Durasi tercepat','Sejak mulai pertama, termasuk jeda.'],['achievement','Pencapaian nilai','Mencapai nilai minimum.']].map(([k,t,h])=>check(t,k,a[k],h)).join('')}</div></details><details class="kkf-rule-section"><summary>Bonus poin kecepatan (opsional)</summary>${check('Aktifkan bonus','speedBonus',a.speedBonus,'Bonus diberikan setelah sesi ditutup, maksimal 5 poin.')}<div class="kkf-form-grid">${field('Nilai minimum untuk bonus',input(a.minimumScore,'data-activity="minimumScore" type="number" min="0" max="100"'))}${field('Bonus maksimal',input(a.bonusCap,'data-activity="bonusCap" type="number" min="0" max="5"'))}</div></details>`}<p class="kkf-tiny kkf-muted">Pengaturan ini dikunci saat sesi diterbitkan. Periksa dahulu pada langkah Pratinjau.</p>`;
 }
-export function categoryLanding(store,state,M){const c=store.categoryLanding,q=(state.categoryQuery||'').toLocaleLowerCase('id'),order={OPEN:0,SCHEDULED:1,CLOSED:2,ARCHIVED:3};
- const sessions=c.sessions.filter(s=>(!state.categoryPeriod||s.period===state.categoryPeriod)&&(!q||(s.title+' '+s.sequence).toLocaleLowerCase('id').includes(q))).sort((a,b)=>(order[M.stateOfSession(a)]??9)-(order[M.stateOfSession(b)]??9)||a.sequence-b.sequence);
- return `<section class="kkf-category-landing kkf-task-hero"><span class="kkf-eyebrow">RUANG TUGAS</span><h1>${esc(c.name)}</h1><h2>Pilih sesi. Tunjukkan progresmu.</h2><p>${esc(c.description)}</p><p class="kkf-tiny kkf-muted">Oleh ${esc(c.ownerName)} · Satu tautan untuk seluruh sesi pelajaran ini.</p>${c.sessions.some(s=>s.rankVisibility!=='OWNER')?button('category-ranking','Peringkat kategori','trophy'):''}</section><div class="kkf-toolbar"><label class="kkf-search">${icon('search')}<input id="kkf-category-query" type="search" placeholder="Cari sesi…" aria-label="Cari sesi" value="${esc(state.categoryQuery)}"></label><select id="kkf-category-period" class="kkf-select" aria-label="Periode sesi"><option value="">Semua periode</option>${[...new Set(c.sessions.map(s=>s.period))].map(p=>`<option ${state.categoryPeriod===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div><div class="kkf-panel kkf-category-sessions">${sessions.slice(0,state.categoryLimit).map(s=>`<div class="kkf-category-session"><div><span class="kkf-session-number">Sesi ${s.sequence}</span><small class="kkf-tiny kkf-muted">${esc(s.period)}</small><h2>${esc(s.title)}</h2><p class="kkf-tiny kkf-muted">${esc(M.statusLabel(M.stateOfSession(s)))} · ${s.questionCount||0} soal · ${esc(s.closesAt?M.formatTime(s.closesAt):'Tanpa tenggat')}</p></div>${button('category-session',M.stateOfSession(s)==='OPEN'?'Kerjakan tugas':'Lihat sesi','arrow',`data-id="${esc(s.id)}" data-start="${M.stateOfSession(s)==='OPEN'}"`)}</div>`).join('')||'<div class="kkf-empty">Belum ada sesi yang cocok.</div>'}</div>${sessions.length>state.categoryLimit?button('category-more','Tampilkan sesi lainnya','chevron'):''}`;
+export function categoryLanding(store,state,M){
+ const c=store.categoryLanding,q=(state.categoryQuery||'').trim().toLocaleLowerCase('id');
+ const order={OPEN:0,SCHEDULED:1,CLOSED:2,ARCHIVED:3};
+ const sessions=c.sessions.filter(s=>(!state.categoryPeriod||s.period===state.categoryPeriod)&&(!q||(s.title+' '+s.sequence).toLocaleLowerCase('id').includes(q)))
+  .sort((a,b)=>(order[M.stateOfSession(a)]??9)-(order[M.stateOfSession(b)]??9)||a.sequence-b.sequence);
+ const periods=[...new Set(c.sessions.map(s=>s.period).filter(Boolean))],limit=state.categoryLimit||20;
+ const period=state.categoryPeriod||(periods.length===1?periods[0]:'Semua periode');
+ const words=String(c.name||'Ruang tugas').trim().split(/\s+/),last=words.pop();
+ const title=words.length?esc(words.join(' '))+' <span>'+esc(last)+'</span>':esc(last);
+ const date=(value,fallback)=>{
+  if(!value)return `<span>${fallback}</span>`;
+  const d=new Date(value);
+  if(!Number.isFinite(d.getTime()))return '<span>Jadwal belum valid</span>';
+  const label=new Intl.DateTimeFormat('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d)+' WIB';
+  return `<time datetime="${d.toISOString()}">${esc(label)}</time>`;
+ };
+ const art=`<svg class="kkf-category-art" viewBox="0 0 260 150" aria-hidden="true" focusable="false">
+  <path d="M5 134Q78 71 164 108T264 68V150H5Z" fill="#0b67c4" opacity=".45"/>
+  <path d="M58 145Q127 94 209 128T274 97" fill="none" stroke="#25bbeb" stroke-width="2" opacity=".55"/>
+  <g transform="translate(27 85)"><rect x="0" y="24" width="83" height="21" rx="5" fill="#175eb1"/><path d="M9 28H76V41H9" fill="#b0ddf9"/><rect x="12" y="2" width="83" height="22" rx="5" fill="#2088d1"/><path d="M22 6H89V20H22" fill="#d2edff"/><path d="M28 11H84M28 15H84M15 33H70M15 37H70" stroke="#67a9db" stroke-width="1.5"/></g>
+  <g transform="translate(140 14) rotate(12)"><rect width="80" height="109" rx="12" fill="#08396b" transform="translate(6 7)"/><rect width="80" height="109" rx="12" fill="#1878bd" stroke="#75dfff" stroke-width="2"/><path d="M12 2H67Q77 2 78 13V37L2 73V13Q2 3 12 2Z" fill="#3aa7e1" opacity=".55"/><rect x="16" y="22" width="19" height="14" rx="3" fill="#71dcf4" opacity=".8"/><path d="M16 48H61M16 62H61M16 76H49" stroke="#78d3f5" stroke-width="5" stroke-linecap="round" opacity=".8"/></g>
+  <circle cx="129" cy="24" r="4" fill="#56dded"/><circle cx="233" cy="91" r="3" fill="#37c9e6"/><path d="M113 52v8m-4-4h8" stroke="#59daed" stroke-width="2" stroke-linecap="round"/>
+ </svg>`;
+ return `<div class="kkf-category-compact">
+ <section class="kkf-category-landing">
+  <div class="kkf-category-hero-copy"><div class="kkf-category-hero-meta"><span class="kkf-eyebrow">RUANG TUGAS</span><span class="kkf-category-period">${esc(period)}</span></div>
+   <h1>${title}</h1><p>${esc(c.description||'Pilih sesi. Tunjukkan progresmu.')}</p><small>Oleh ${esc(c.ownerName)}</small></div>${art}
+ </section>
+ <div class="kkf-category-controls">
+  <label class="kkf-search">${icon('search')}<input id="kkf-category-query" type="search" placeholder="Cari sesi tugas…" aria-label="Cari sesi" value="${esc(state.categoryQuery)}"></label>
+  <select id="kkf-category-period" class="kkf-select" aria-label="Periode sesi"><option value="">Semua periode</option>${periods.map(p=>`<option value="${esc(p)}" ${state.categoryPeriod===p?'selected':''}>${esc(p)}</option>`).join('')}</select>
+ </div>
+ <div class="kkf-category-list-head"><h2>Sesi tugas <span>${sessions.length}</span></h2>${c.sessions.some(s=>s.rankVisibility!=='OWNER')?button('category-ranking','Peringkat','trophy'):''}</div>
+ <div class="kkf-category-sessions">${sessions.slice(0,limit).map(s=>{
+  const st=M.stateOfSession(s);
+  return `<article class="kkf-category-session" data-session-state="${esc(st)}">
+   <div class="kkf-session-mark" aria-hidden="true">${icon('file')}</div>
+   <div class="kkf-session-main"><div class="kkf-session-meta"><span class="kkf-session-number">Sesi ${esc(s.sequence)}</span><span class="kkf-status is-${esc(st.toLowerCase())}">${esc(M.statusLabel(st))}</span><span class="kkf-session-count">${esc(s.questionCount||0)} soal</span></div><h2>${esc(s.title)}</h2></div>
+   ${button('category-session',st==='OPEN'?'Kerjakan tugas':'Lihat sesi','arrow',`data-id="${esc(s.id)}" data-start="${st==='OPEN'}" aria-label="${esc((st==='OPEN'?'Kerjakan tugas: ':'Lihat sesi: ')+s.title)}"`)}
+   <div class="kkf-session-dates"><div><strong>Buka</strong>${date(s.opensAt,'Sejak diterbitkan')}</div><div><strong>Tutup</strong>${date(s.closesAt,'Tanpa tenggat')}</div></div>
+  </article>`;
+ }).join('')||'<div class="kkf-empty">Belum ada sesi yang cocok.</div>'}</div>
+ ${sessions.length>limit?button('category-more','Sesi lainnya','chevron'):''}</div>`;
 }

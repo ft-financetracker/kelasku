@@ -1,15 +1,15 @@
-import {createFormsClient} from './client.js?v=6742forms1';
-import {emptyWorkspace,createWorkspaceService} from './workspace.js?v=6742forms1';
-import {mountWorkspace} from './view.js?v=6742forms1';
-import {api} from '../core/api.js?v=6742forms1';
-import {state} from '../core/state.js?v=6742forms1';
-import {go} from '../core/router.js?v=6742forms1';
-import {appShell,bindAppShell} from '../core/appShell.js?v=6742forms1';
+import {createFormsClient} from './client.js?v=6743forms1';
+import {emptyWorkspace,createWorkspaceService} from './workspace.js?v=6743forms1';
+import {mountWorkspace} from './view.js?v=6743forms1';
+import {api} from '../core/api.js?v=6743forms1';
+import {state} from '../core/state.js?v=6743forms1';
+import {go} from '../core/router.js?v=6743forms1';
+import {appShell,bindAppShell} from '../core/appShell.js?v=6743forms1';
 
 let active=null;
 let ownerCache=null,cacheBound=false;
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function style(){if(document.getElementById('kelasku-forms-style'))return;const l=document.createElement('link');l.id='kelasku-forms-style';l.rel='stylesheet';l.href='/src/css/forms.css?v=6742forms1';document.head.append(l);}
+function style(){if(document.getElementById('kelasku-forms-style'))return;const l=document.createElement('link');l.id='kelasku-forms-style';l.rel='stylesheet';l.href='/src/css/forms.css?v=6743forms1';document.head.append(l);}
 export async function startForms({root,alias='',owner=false,target='session'}={}){
  if(active){active.dispose();active=null;}style();root.classList.add('kkf');
  const config=window.KELASKU_FORMS_CONFIG||{};

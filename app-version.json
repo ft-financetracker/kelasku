@@ -1,8 +1,8 @@
 {
-  "version": "6.7.42",
-  "build": "20261020.420",
+  "version": "6.7.43",
+  "build": "20261021.430",
   "schema": 17,
-  "release_date": "2026-10-20",
-  "release_note": "Forms V1.2: hero tugas, langsung kerjakan, peringkat ringkas, akses navigasi khusus halaman Super Admin.",
-  "release_time_wib": "08:22 WIB"
+  "release_date": "2026-10-21",
+  "release_note": "Kategori tugas: hero biru ringkas, kartu sesi model list kelas, badge status, jadwal buka/tutup WIB.",
+  "release_time_wib": "07:58 WIB"
 }
