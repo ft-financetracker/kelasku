@@ -1,6 +1,6 @@
-import {api} from '../core/api.js?v=6742forms1';
+import {api} from '../core/api.js?v=6743forms1';
 
-export async function dispatchPublic({legacy=()=>import('../screens/publicLinks.js?v=6742forms1'),forms=async(alias,target)=>{const {startForms}=await import('./live.js?v=6742forms1');const host=document.createElement('div');host.id='kelasku-public-form';host.className='kkf';host.append(...document.body.childNodes);document.body.append(host);document.body.style.margin='0';await startForms({root:document.getElementById('kelasku-public-form'),alias,target});},resolve=alias=>api('getPublicRoute',{alias},{auth:false}),locationObject=location}={}){
+export async function dispatchPublic({legacy=()=>import('../screens/publicLinks.js?v=6743forms1'),forms=async(alias,target)=>{const {startForms}=await import('./live.js?v=6743forms1');const host=document.createElement('div');host.id='kelasku-public-form';host.className='kkf';host.append(...document.body.childNodes);document.body.append(host);document.body.style.margin='0';await startForms({root:document.getElementById('kelasku-public-form'),alias,target});},resolve=alias=>api('getPublicRoute',{alias},{auth:false}),locationObject=location}={}){
  const path=locationObject.pathname.replace(/^\/+|\/+$/g,''),params=new URLSearchParams(locationObject.search),alias=(params.get('c')||(!['','links.html','index.html'].includes(path)?path:'')).trim().toLowerCase();
  if(!window.KELASKU_FORMS_CONFIG?.ENABLED){document.getElementById('public-route-loading-style')?.remove();return legacy();}
  // Underscores remain valid in older class links; Forms aliases never use them.
